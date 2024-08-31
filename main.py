@@ -20,14 +20,16 @@ def display_message(message):
     pause()
 
 class Item:
-    def __init__(self, name, item_type, value, tier, attack=0, defence=0, health_restore=0):
+    def __init__(self, name, item_type, value, tier, attack=0, defence=0, effect_type=None, effect=0, cooldown=0):
         self.name = name
         self.type = item_type
         self.value = value
         self.tier = tier
         self.attack = attack
         self.defence = defence
-        self.health_restore = health_restore
+        self.effect_type = effect_type
+        self.effect = effect
+        self.cooldown = cooldown
 
 class Character:
     def __init__(self, name, hp, attack, defence):
@@ -105,9 +107,9 @@ class Player(Character):
 
     def use_item(self, item):
         if item.type == "consumable":
-            self.heal(item.health_restore)
+            self.heal(item.effect)
             self.inventory.remove(item)
-            print(f"You used {item.name} and restored {item.health_restore} HP.")
+            print(f"You used {item.name} and restored {item.effect} HP.")
         else:
             print("You can't use that item.")
 
@@ -118,6 +120,26 @@ class Player(Character):
         print("\nEquipped:")
         for slot, item in self.equipped.items():
             print(f"{slot.capitalize()}: {item.name if item else 'None'}")
+            
+    def show_consumables(self):
+        consumables = [item for item in self.inventory if item.type == "consumable"]
+        if consumables:
+            print("\nConsumable Items:")
+            for item in consumables:
+                effect_description = self.get_effect_description(item)
+                print(f"- {item.name}: {effect_description}")
+        else:
+            print("\nYou have no consumable items.")
+
+    def get_effect_description(self, item):
+        if item.effect_type == "healing":
+            return f"Restores {item.effect} HP"
+        elif item.effect_type == "damage":
+            return f"Deals {item.effect} damage"
+        elif item.effect_type == "buff":
+            return f"Increases attack by {item.effect}"
+        else:
+            return "Unknown effect"
 
 class Enemy(Character):
     def __init__(self, name, hp, attack, defence, exp, gold, tier):
@@ -194,34 +216,37 @@ class Game:
             "Wooden Shield": Item("Wooden Shield", "shield", 15, "low", defence=3),
             "Leather Helm": Item("Leather Helm", "helm", 10, "low", defence=2),
             #Low tier consumables
-            "Health Potion": Item("Health Potion", "consumable", 15, "low", health_restore=20),
+            "Health Potion": Item("Health Potion", "consumable", 15, "low", effect_type= "healing", effect=20, cooldown=3),
             #Medium tier items
             "Steel Sword": Item("Steel Sword", "weapon", 100, "medium", attack=15),
             "Kite Shield": Item("Kite Shield", "shield", 80, "medium", defence=8),
             #High tier
             "Enchanted Blade": Item("Enchanted Blade", "weapon", 300, "high", attack=25),
             "Dragon Shield": Item("Dragon Shield", "shield", 250, "high", defence=15),
-            "Elixir of Life": Item("Elixir of Life", "consumable", 120, "high", health_restore=100),
+            "Elixir of Life": Item("Elixir of Life", "consumable", 120, "high", effect_type="healing", effect=100, cooldown=3),
         }
 
     def initialise_enemies(self):
         self.enemies = {
-            "Rat": Enemy("Rat", 20, 5, 1, 10, 5, "low"),
+            #Easy Enemies
+            "Rat": Enemy("Rat", 20, 5, 1, 10, random.randrange(3, 10), "low"),
             "Goblin": Enemy("Goblin", 30, 8, 3, 15, 10, "low"),
+            #Medium Enemies
             "Wolf": Enemy("Wolf", 60, 15, 8, 30, 25, "medium"),
             "Orc": Enemy("Orc", 80, 18, 12, 40, 35, "medium"),
+            #Hard Enemies
             "Dragon": Enemy("Dragon", 200, 30, 25, 100, 200, "high"),
         }
 
     def initialise_map(self):
         self.game_map = {
-            "Village(Home)": {"enemies": [], "connected_to": ["Forest", "Plains"]},
-            "Forest(Low Tier)": {"enemies": ["Rat", "Goblin", "Wolf"], "connected_to": ["Village", "Mountain"]},
-            "Plains(Low Tier)": {"enemies": ["Goblin", "Wolf"], "connected_to": ["Village", "Desert"]},
-            "Mountain(Mid Tier)": {"enemies": ["Wolf", "Orc"], "connected_to": ["Forest", "Dragon's Lair"]},
-            "Desert(Mid Tier)": {"enemies": ["Orc"], "connected_to": ["Plains", "Ancient Ruins"]},
-            "Dragon's Lair(High Tier)": {"enemies": ["Dragon"], "connected_to": ["Mountain"]},
-            "Ancient Ruins(High Tier)": {"enemies": ["Orc", "Dragon"], "connected_to": ["Desert"]}
+            "Village": {"enemies": [], "connected_to": ["Forest", "Plains"]},
+            "Forest": {"enemies": ["Rat", "Goblin", "Wolf"], "connected_to": ["Village", "Mountain"]},
+            "Plains": {"enemies": ["Goblin", "Wolf"], "connected_to": ["Village", "Desert"]},
+            "Mountain": {"enemies": ["Wolf", "Orc"], "connected_to": ["Forest", "Dragon's Lair"]},
+            "Desert": {"enemies": ["Orc"], "connected_to": ["Plains", "Ancient Ruins"]},
+            "Dragon's Lair": {"enemies": ["Dragon"], "connected_to": ["Mountain"]},
+            "Ancient Ruins": {"enemies": ["Orc", "Dragon"], "connected_to": ["Desert"]}
         }
 
     def create_character(self):
@@ -229,6 +254,7 @@ class Game:
         self.player = Player(name)
         # Give the player a Peasants Outfit to start with
         starting_items = [self.items["Wooden Sword"], self.items["Peasants Top"], self.items["Peasants Bottoms"]]
+        self.player.inventory.append(self.items["Health Potion"])
         for item in starting_items:
             self.player.equip_item(item)
         print(f"Welcome, {self.player.name}! Your adventure begins in the Village.")
@@ -241,7 +267,7 @@ class Game:
         print(f"EXP: {self.player.exp}")
         print(f"Gold: {self.player.gold}")
         print(f"Attack: {self.player.attack}")
-        print(f"defence: {self.player.defence}")
+        print(f"Defence: {self.player.defence}")
         print(f"Current location: {self.current_location}")
         print("\nEquipped Items:")
         for slot, item in self.player.equipped.items():
@@ -297,20 +323,53 @@ class Game:
         self.player.heal(heal_amount)
         print(f"You rest and recover {heal_amount} HP.")
 
+    def calculate_damage(self, base_attack):
+        min_damage = max(1, base_attack - 5)
+        max_damage = base_attack + 5
+        damage = random.randint(min_damage, max_damage)
+        #Critical hit chance 10%
+        if random.random() < 0.1:
+            damage *= 2
+            print("You dealt a critical hit!")
+            if damage == 0:
+                print("Too bad 0 * 2 is still 0!")
+        return damage
+    
+    def use_battle_item(self, item, target):
+        if item.type == "consumable":
+            if item.effect_type == "healing":
+                heal_amount = item.effect
+                target.heal(heal_amount)
+                print(f"{target.name} used {item.name} and restored {heal_amount} HP.")
+            elif item.effect_type == "damage":
+                damage = item.effect
+                target.take_damage(damage)
+                print(f"{target.name} used {item.name} and dealt {damage} damage.")
+            elif item.effect_type == "buff":
+                buff_amount = item.effect
+                target.attack += buff_amount
+                print(f"{target.name} used {item.name} and increased attack by {buff_amount}.")
+            self.player.inventory.remove(item)
+        else:
+            print(f"{item.name} cannot be used in battle.")
+
     def battle(self, enemy):
         print(f"\nBattle start! {self.player.name} vs {enemy.name}")
         
         while self.player.is_alive() and enemy.is_alive():
             print(f"\n{self.player.name} HP: {self.player.hp}")
             print(f"{enemy.name} HP: {enemy.hp}")
-            action = input("Do you want to [a]ttack or [r]un? ")
+            action = input("Do you want to [a]ttack, [u]se item, or [r]un? ")
             
             if action.lower() == "a":
-                damage_to_enemy = max(0, self.player.attack - enemy.defence)
-                damage_to_player = max(0, enemy.attack - self.player.defence)
+                player_base_damage = self.calculate_damage(self.player.attack)
+                enemy_base_damage = self.calculate_damage(enemy.attack)
                 
-                enemy.take_damage(damage_to_enemy)
-                print(f"You dealt {damage_to_enemy} damage to {enemy.name}.")
+                player_damage = max(0, player_base_damage - enemy.defence)
+                enemy_damage = max(0, enemy_base_damage - self.player.defence)
+                
+                enemy.take_damage(player_damage)
+                print(f"You dealt {player_damage} damage to {enemy.name}.")
                 
                 if not enemy.is_alive():
                     print(f"You defeated the {enemy.name}!")
@@ -320,12 +379,26 @@ class Game:
                     self.loot_drop(enemy.tier)
                     break
                 
-                self.player.take_damage(damage_to_player)
-                print(f"{enemy.name} dealt {damage_to_player} damage to you.")
+                self.player.take_damage(enemy_damage)
+                print(f"{enemy.name} dealt {enemy_damage} damage to you.")
                 
                 if not self.player.is_alive():
                     print("You have been defeated. Game over.")
                     return
+            
+            elif action.lower() == "u":
+                self.player.show_consumables()
+                item_name = input("Enter the name of the item you want to use (or 'cancel'): ")
+                if item_name.lower() == 'cancel':
+                    continue
+                
+                item = next((item for item in self.player.inventory if item.name.lower() == item_name.lower()), None)
+                if item:
+                    target = self.player if item.effect_type in ["healing", "buff"] else enemy
+                    self.use_battle_item(item, target)
+                else:
+                    print("You don't have that item.")
+                pause()
             
             elif action.lower() == "r":
                 if random.random() < 0.5:
@@ -344,9 +417,9 @@ class Game:
             if enemy_tier == "low":
                 loot_pool = [item for item in self.items.values() if item.tier == "low"]
             elif enemy_tier == "medium":
-                loot_pool = [item for item in self.items.values() if item.tier in ["low", "medium"]]
+                loot_pool = [item for item in self.items.values() if item.tier == "medium"]
             else:  # high tier
-                loot_pool = list(self.items.values())
+                loot_pool = [item for item in self.items.values() if item.tier == "high"]
             
             item = random.choice(loot_pool)
             self.player.inventory.append(item)
@@ -414,13 +487,18 @@ class Game:
         
         while True:
             self.show_status()
-            action = input("\nWhat do you want to do? [m]ove, [i]nventory, [e]quip, [u]se item, [s]hop (Village only), [q]uit: ")
+            action = input("\nWhat do you want to do? [m]ove, [i]nventory, [c]onsumbales, [e]quip, [u]se item, [s]hop (Village only), [q]uit: ")
             
             if action.lower() == "m":
                 self.move()
             elif action.lower() == "i":
                 clear_screen()
                 self.player.show_inventory()
+                pause()
+            elif action.lower() == "c":
+                clear_screen()
+                self.player.show_consumables()
+                pause()
             elif action.lower() == "e":
                 clear_screen()
                 self.equip_menu()
@@ -452,15 +530,29 @@ class Game:
         print("You don't have that item.")
 
     def use_item_menu(self):
-        self.player.show_inventory()
+        self.player.show_consumables()
         item_name = input("Enter the name of the item you want to use (or 'cancel'): ")
         if item_name.lower() == "cancel":
             return
         for item in self.player.inventory:
-            if item.name.lower() == item_name.lower():
-                self.player.use_item(item)
+            if item.name.lower() == item_name.lower() and item.type == "consumable":
+                self.use_item(item)
                 return
-        print("You don't have that item.")
+        print("You don't have that consumable item.")
+        pause()
+
+    def use_item(self, item):
+        if item.effect_type == "healing":
+            heal_amount = min(item.effect, self.player.max_hp - self.player.hp)
+            self.player.heal(heal_amount)
+            print(f"You used {item.name} and restored {heal_amount} HP.")
+        elif item.effect_type == "buff":
+            self.player.attack += item.effect
+            print(f"You used {item.name} and increased your attack by {item.effect}.")
+        else:
+            print(f"You can't use {item.name} outside of battle.")
+            return
+        self.player.inventory.remove(item)
 
 if __name__ == "__main__":
     game = Game()
