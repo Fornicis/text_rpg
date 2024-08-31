@@ -1,15 +1,34 @@
 import random
-#Item class
+import os
+import platform
+
+def clear_screen():
+    operating_system = platform.system()
+    #Windows
+    if operating_system != 'Win64' and operating_system != 'Windows':
+        os.system('clear')
+    #Mac and Linux
+    else:
+        os.system('cls')
+
+def pause():
+    input("\nPress Enter to continue...")
+
+def display_message(message):
+    clear_screen()
+    print(message)
+    pause()
+
 class Item:
-    def __init__(self, name, item_type, value, tier, attack=0, defence=0, effect=0):
+    def __init__(self, name, item_type, value, tier, attack=0, defence=0, health_restore=0):
         self.name = name
         self.type = item_type
         self.value = value
         self.tier = tier
         self.attack = attack
         self.defence = defence
-        self.effect = effect
-#Character class, both player and enemy use this with child classes
+        self.health_restore = health_restore
+
 class Character:
     def __init__(self, name, hp, attack, defence):
         self.name = name
@@ -57,7 +76,7 @@ class Player(Character):
         self.defence += 3
         print(f"Congratulations! You reached level {self.level}!")
         print("Your stats have increased.")
-    #Equips item to given slot as specified in item, unequips current item from that slot
+
     def equip_item(self, item):
         if item.type in self.equipped:
             if self.equipped[item.type]:
@@ -67,11 +86,12 @@ class Player(Character):
                 self.attack += item.attack
             else:
                 self.defence += item.defence
-            self.inventory.remove(item)
+            if item in self.inventory:
+                self.inventory.remove(item)
             print(f"You equipped {item.name}.")
         else:
             print("You can't equip that item.")
-    #Helper function for equip_item
+
     def unequip_item(self, slot):
         item = self.equipped[slot]
         if item:
@@ -82,15 +102,15 @@ class Player(Character):
             self.inventory.append(item)
             self.equipped[slot] = None
             print(f"You unequipped {item.name}.")
-    #Use potions
+
     def use_item(self, item):
         if item.type == "consumable":
-            self.heal(item.effect)
+            self.heal(item.health_restore)
             self.inventory.remove(item)
-            print(f"You used {item.name} and restored {item.effect} HP.")
+            print(f"You used {item.name} and restored {item.health_restore} HP.")
         else:
             print("You can't use that item.")
-    #Lists inventory
+
     def show_inventory(self):
         print("\nInventory:")
         for item in self.inventory:
@@ -106,6 +126,52 @@ class Enemy(Character):
         self.gold = gold
         self.tier = tier
 
+class Shop:
+    def __init__(self, all_items):
+        self.inventory = {}
+        self.all_items = all_items
+        self.restock_counter = 0
+        self.restock_frequency = 10  # Restock every 10 game actions
+
+    def add_item(self, item, quantity):
+        if item.name in self.inventory:
+            self.inventory[item.name]['quantity'] += quantity
+        else:
+            self.inventory[item.name] = {'item': item, 'quantity': quantity}
+
+    def remove_item(self, item_name, quantity):
+        if item_name in self.inventory:
+            self.inventory[item_name]['quantity'] -= quantity
+            if self.inventory[item_name]['quantity'] <= 0:
+                del self.inventory[item_name]
+
+    def display_inventory(self):
+        print("\nShop Inventory:")
+        # Sort the inventory items by value
+        sorted_inventory = sorted(
+            self.inventory.items(),
+            key=lambda x: x[1]['item'].value,
+            reverse=False  # For descending order (highest value first)
+        )
+        for item_name, info in sorted_inventory:
+            print(f"- {item_name}: {info['quantity']} available (Price: {info['item'].value} gold)")
+
+    def rotate_stock(self):
+        self.restock_counter += 1
+        if self.restock_counter >= self.restock_frequency:
+            print("\nThe shop has restocked with new items!")
+            self.restock_counter = 0
+            self.inventory.clear()
+            self.stock_shop()
+
+    def stock_shop(self):
+        num_items = random.randint(5, 10)  # Stock 5-10 random items
+        available_items = list(self.all_items.values())
+        for _ in range(num_items):
+            item = random.choice(available_items)
+            quantity = random.randint(1, 5)
+            self.add_item(item, quantity)
+
 class Game:
     def __init__(self):
         self.player = None
@@ -113,52 +179,63 @@ class Game:
         self.initialise_items()
         self.initialise_enemies()
         self.initialise_map()
+        self.shop = Shop(self.items)
+        self.shop.stock_shop()
 
     def initialise_items(self):
         self.items = {
-            #Low tier items
+            #Starter items
+            "Peasants Top": Item("Peasants Top", "chest", 0, "starter", defence=1),
+            "Peasants Bottoms": Item("Peasants Bottoms", "legs", 0, "starter", defence=1),
+            "Wooden Sword": Item("Wooden Sword", "weapon", 0, "starter", attack=2),
+            #Low tier weapons
             "Rusty Sword": Item("Rusty Sword", "weapon", 20, "low", attack=5),
+            #Low tier armour
             "Wooden Shield": Item("Wooden Shield", "shield", 15, "low", defence=3),
             "Leather Helm": Item("Leather Helm", "helm", 10, "low", defence=2),
-            "Health Potion": Item("Health Potion", "consumable", 15, "low", effect=20),
+            #Low tier consumables
+            "Health Potion": Item("Health Potion", "consumable", 15, "low", health_restore=20),
             #Medium tier items
             "Steel Sword": Item("Steel Sword", "weapon", 100, "medium", attack=15),
             "Kite Shield": Item("Kite Shield", "shield", 80, "medium", defence=8),
-            #High tier items
+            #High tier
             "Enchanted Blade": Item("Enchanted Blade", "weapon", 300, "high", attack=25),
             "Dragon Shield": Item("Dragon Shield", "shield", 250, "high", defence=15),
-            "Elixir of Life": Item("Elixir of Life", "consumable", 120, "high", effect=100),
+            "Elixir of Life": Item("Elixir of Life", "consumable", 120, "high", health_restore=100),
         }
 
     def initialise_enemies(self):
         self.enemies = {
-            #Low tier enemies
             "Rat": Enemy("Rat", 20, 5, 1, 10, 5, "low"),
             "Goblin": Enemy("Goblin", 30, 8, 3, 15, 10, "low"),
-            #Medium tier enemies
             "Wolf": Enemy("Wolf", 60, 15, 8, 30, 25, "medium"),
             "Orc": Enemy("Orc", 80, 18, 12, 40, 35, "medium"),
-            #High tier enemies
             "Dragon": Enemy("Dragon", 200, 30, 25, 100, 200, "high"),
         }
 
     def initialise_map(self):
         self.game_map = {
-            "Village": {"enemies": [], "connected_to": ["Forest", "Plains"]},
-            "Forest": {"enemies": ["Rat", "Goblin", "Wolf"], "connected_to": ["Village", "Mountain"]},
-            "Plains": {"enemies": ["Goblin", "Wolf"], "connected_to": ["Village", "Desert"]},
-            "Mountain": {"enemies": ["Wolf", "Orc"], "connected_to": ["Forest", "Dragon's Lair"]},
-            "Desert": {"enemies": ["Orc"], "connected_to": ["Plains", "Ancient Ruins"]},
-            "Dragon's Lair": {"enemies": ["Dragon"], "connected_to": ["Mountain"]},
-            "Ancient Ruins": {"enemies": ["Orc", "Dragon"], "connected_to": ["Desert"]}
+            "Village(Home)": {"enemies": [], "connected_to": ["Forest", "Plains"]},
+            "Forest(Low Tier)": {"enemies": ["Rat", "Goblin", "Wolf"], "connected_to": ["Village", "Mountain"]},
+            "Plains(Low Tier)": {"enemies": ["Goblin", "Wolf"], "connected_to": ["Village", "Desert"]},
+            "Mountain(Mid Tier)": {"enemies": ["Wolf", "Orc"], "connected_to": ["Forest", "Dragon's Lair"]},
+            "Desert(Mid Tier)": {"enemies": ["Orc"], "connected_to": ["Plains", "Ancient Ruins"]},
+            "Dragon's Lair(High Tier)": {"enemies": ["Dragon"], "connected_to": ["Mountain"]},
+            "Ancient Ruins(High Tier)": {"enemies": ["Orc", "Dragon"], "connected_to": ["Desert"]}
         }
 
     def create_character(self):
         name = input("Enter your character's name: ")
         self.player = Player(name)
+        # Give the player a Peasants Outfit to start with
+        starting_items = [self.items["Wooden Sword"], self.items["Peasants Top"], self.items["Peasants Bottoms"]]
+        for item in starting_items:
+            self.player.equip_item(item)
         print(f"Welcome, {self.player.name}! Your adventure begins in the Village.")
+        print("You start with a Peasants Outfit equipped.")
 
     def show_status(self):
+        clear_screen()
         print(f"\n{self.player.name} (Level {self.player.level}):")
         print(f"HP: {self.player.hp}/{self.player.max_hp}")
         print(f"EXP: {self.player.exp}")
@@ -166,28 +243,60 @@ class Game:
         print(f"Attack: {self.player.attack}")
         print(f"defence: {self.player.defence}")
         print(f"Current location: {self.current_location}")
+        print("\nEquipped Items:")
+        for slot, item in self.player.equipped.items():
+            if item:
+                print(f"{slot.capitalize()}: {item.name}")
 
     def move(self):
+        clear_screen()
         print("\nConnected locations:")
         for location in self.game_map[self.current_location]["connected_to"]:
             print(f"- {location}")
-        destination = input("Where do you want to go? ")
+        destination = input("Where do you want to go? ").strip().title()
         if destination in self.game_map[self.current_location]["connected_to"]:
             self.current_location = destination
             print(f"You have arrived at {self.current_location}.")
-            self.encounter()
+            self.location_actions()
         else:
             print("You can't go there from here.")
-    #Spawns random enemy depending on location
+
+    def location_actions(self):
+        while True:
+            action = input("\nWhat would you like to do? [e]xplore, [r]est, [l]eave: ")
+            if action.lower() == 'e':
+                self.encounter()
+            elif action.lower() == 'r':
+                self.rest()
+            elif action.lower() == 'l':
+                break
+            else:
+                print("Invalid action. Try again.")
+
     def encounter(self):
         if self.game_map[self.current_location]["enemies"] and random.random() < 0.7:
-            enemy_name = random.choice(self.game_map[self.current_location]["enemies"])
-            enemy = self.enemies[enemy_name]
+            enemy_type = random.choice(self.game_map[self.current_location]["enemies"])
+            enemy_template = self.enemies[enemy_type]
+            # Create a new instance of the enemy
+            enemy = Enemy(
+                enemy_template.name,
+                enemy_template.hp,
+                enemy_template.attack,
+                enemy_template.defence,
+                enemy_template.exp,
+                enemy_template.gold,
+                enemy_template.tier
+            )
             print(f"You encountered a {enemy.name}!")
             self.battle(enemy)
         else:
-            print("You found nothing of interest.")
-    #Combat logic, random damage within attack range
+            print("You explored the area but found nothing of interest.")
+
+    def rest(self):
+        heal_amount = self.player.max_hp // 4  # Heal 25% of max HP
+        self.player.heal(heal_amount)
+        print(f"You rest and recover {heal_amount} HP.")
+
     def battle(self, enemy):
         print(f"\nBattle start! {self.player.name} vs {enemy.name}")
         
@@ -197,8 +306,8 @@ class Game:
             action = input("Do you want to [a]ttack or [r]un? ")
             
             if action.lower() == "a":
-                damage_to_enemy = max(0, (random.randint(self.player.attack // 2, self.player.attack * 2) - enemy.defence))
-                damage_to_player = max(0, (random.randint(enemy.attack // 2, enemy.attack * 2) - self.player.defence))
+                damage_to_enemy = max(0, self.player.attack - enemy.defence)
+                damage_to_player = max(0, enemy.attack - self.player.defence)
                 
                 enemy.take_damage(damage_to_enemy)
                 print(f"You dealt {damage_to_enemy} damage to {enemy.name}.")
@@ -229,7 +338,7 @@ class Game:
             
             else:
                 print("Invalid action. You lose your turn.")
-    #Random chance of loot, loot is dependant on enemy tier
+
     def loot_drop(self, enemy_tier):
         if random.random() < 0.3:  # 30% chance of loot drop
             if enemy_tier == "low":
@@ -242,27 +351,94 @@ class Game:
             item = random.choice(loot_pool)
             self.player.inventory.append(item)
             print(f"You found a {item.name}!")
-    
+            
+    def shop_menu(self):
+        while True:
+            clear_screen()
+            self.shop.rotate_stock()  # Check if it's time to rotate stock
+            print("\n--- Shop Menu ---")
+            print("1. Buy items")
+            print("2. Sell items")
+            print("3. Exit shop")
+            choice = input("Enter your choice: ")
+
+            if choice == '1':
+                self.buy_item()
+            elif choice == '2':
+                self.sell_item()
+            elif choice == '3':
+                break
+            else:
+                print("Invalid choice. Please try again.")
+
+    def buy_item(self):
+        self.shop.display_inventory()
+        item_name = input("Enter the name of the item you want to buy (or 'cancel'): ")
+        if item_name.lower() == 'cancel':
+            return
+
+        # Create a case-insensitive dictionary of inventory items
+        inventory_lower = {name.lower(): info for name, info in self.shop.inventory.items()}
+
+        if item_name.lower() in inventory_lower:
+            item_info = inventory_lower[item_name.lower()]
+            if self.player.gold >= item_info['item'].value:
+                self.player.gold -= item_info['item'].value
+                self.player.inventory.append(item_info['item'])
+                self.shop.remove_item(item_info['item'].name, 1)
+                print(f"You bought {item_info['item'].name} for {item_info['item'].value} gold.")
+            else:
+                print("You don't have enough gold to buy this item.")
+        else:
+            print("This item is not available in the shop.")
+
+
+    def sell_item(self):
+        self.player.show_inventory()
+        item_name = input("Enter the name of the item you want to sell (or 'cancel'): ")
+        if item_name.lower() == 'cancel':
+            return
+
+        for item in self.player.inventory:
+            if item.name.lower() == item_name.lower():
+                sell_price = item.value // 2  # Sell for half the buy price
+                self.player.gold += sell_price
+                self.player.inventory.remove(item)
+                self.shop.add_item(item, 1)
+                print(f"You sold {item.name} for {sell_price} gold.")
+                return
+        print("You don't have that item.")
+
     def game_loop(self):
         self.create_character()
         
         while True:
             self.show_status()
-            action = input("\nWhat do you want to do? [m]ove, [i]nventory, [e]quip, [u]se item, [q]uit: ")
+            action = input("\nWhat do you want to do? [m]ove, [i]nventory, [e]quip, [u]se item, [s]hop (Village only), [q]uit: ")
             
             if action.lower() == "m":
                 self.move()
             elif action.lower() == "i":
+                clear_screen()
                 self.player.show_inventory()
             elif action.lower() == "e":
+                clear_screen()
                 self.equip_menu()
             elif action.lower() == "u":
+                clear_screen()
                 self.use_item_menu()
+            elif action.lower() == "s":
+                if self.current_location == "Village":
+                    self.shop_menu()
+                else:
+                    print("You can only access the shop in the Village.")
             elif action.lower() == "q":
                 print("Thanks for playing!")
                 break
             else:
                 print("Invalid action. Try again.")
+                
+            self.shop.rotate_stock()  # Check if it's time to rotate stock after each action
 
     def equip_menu(self):
         self.player.show_inventory()
