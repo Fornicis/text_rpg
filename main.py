@@ -60,14 +60,15 @@ class Game:
         if destination in connected_locations:
             self.current_location = destination
             print(f"You have arrived at {self.current_location}.")
-            self.location_actions()
+            if self.current_location != "Village":
+                self.location_actions()
         else:
             print("You can't go there from here.")
 
     def location_actions(self):
         """Handles actions available at the current location."""
         while True:
-            action = input("\nWhat would you like to do? [e]xplore, [u]se item, [m]ove, [l]eave: ").lower()
+            action = input("\nWhat would you like to do?\n[e]xplore\n[u]se item\n[m]ove\n[l]eave\n>").lower()
             if action == 'e':
                 self.encounter()
             elif action == 'u':
@@ -128,7 +129,7 @@ class Game:
         while self.player.is_alive() and enemy.is_alive():
             self.player.update_cooldowns()
             print(f"\n{self.player.name} HP: {self.player.hp}\n{enemy.name} HP: {enemy.hp}")
-            action = input("Do you want to [a]ttack, [u]se item, or [r]un? ").lower()
+            action = input("Do you want to:\n[a]ttack\n[u]se item\n[r]un?\n>").lower()
             
             if action == "a":
                 self.player_attack(enemy)
@@ -320,11 +321,15 @@ class Game:
     def game_loop(self):
         """Main game loop that handles player actions."""
         self.create_character()
-        self.show_status()
         while True:
             self.player.update_cooldowns()
-            action = input("\nWhat do you want to do? [m]ove, [i]nventory, [c]onsumbables, [e]quip, "
-                           "[l]ocation actions, [u]se item, [s]hop (Village only), [r]est, [q]uit: ").lower()
+            self.show_status()
+            if self.current_location == "Village":
+                action = input("\nWhat do you want to do?\n[m]ove\n[i]nventory\n[c]onsumables\n[e]quip"
+                            "\n[u]se item\n[s]hop\n[r]est\n[q]uit\n>").lower()
+            else:
+                action = input("\nWhat do you want to do?\n[m]ove\n[i]nventory\n[c]onsumables\n[e]quip"
+                            "\n[l]ocation actions\n[u]se item\n[q]uit\n>").lower()
             
             if action == "m":
                 self.move()
@@ -340,25 +345,24 @@ class Game:
             elif action == "e":
                 clear_screen()
                 self.equip_menu()
-            elif action == "l":
-                clear_screen()
-                self.location_actions()
             elif action == "u":
                 clear_screen()
                 self.use_item_menu()
-            elif action == "s":
-                if self.current_location == "Village":
-                    self.shop_menu()
-                else:
-                    print("You can only access the shop in the Village.")
             elif action == "r":
                 self.rest()
+                pause()
             elif action == "q":
                 print("Thanks for playing!")
                 break
+            elif action == "l" and self.current_location != "Village":
+                clear_screen()
+                self.location_actions()
+            elif action == "s" and self.current_location == "Village":
+                self.shop_menu()
             else:
                 print("Invalid action. Try again.")
-                
+            
+            self.show_status()    
             self.shop.rotate_stock()  # Check if it's time to rotate stock after each action
 
 if __name__ == "__main__":
