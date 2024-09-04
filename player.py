@@ -29,11 +29,13 @@ class Player(Character):
             "weapon": None,
             "helm": None,
             "chest": None,
+            "belt": None,
             "legs": None,
             "boots": None,
             "gloves": None,
             "shield": None,
-            "back": None
+            "back": None,
+            "ring": None,
         }
         self.cooldowns = {}
 
@@ -46,8 +48,9 @@ class Player(Character):
         self.level += 1
         self.max_hp += 20
         self.hp = self.max_hp
-        self.attack += 5
-        self.defence += 3
+        self.attack += 3
+        self.defence += 1
+        self.exp = self.exp // 2
         print(f"Congratulations! You reached level {self.level}!")
         print("Your stats have increased.")
 
@@ -58,6 +61,9 @@ class Player(Character):
             self.equipped[item.type] = item
             if item.type == "weapon":
                 self.attack += item.attack
+            elif item.type == "ring":
+                self.attack += item.attack
+                self.defence += item.defence
             else:
                 self.defence += item.defence
             if item in self.inventory:
@@ -71,6 +77,9 @@ class Player(Character):
         if item:
             if slot == "weapon":
                 self.attack -= item.attack
+            elif item.type == "ring":
+                self.attack += item.attack
+                self.defence += item.defence
             else:
                 self.defence -= item.defence
             self.inventory.append(item)
@@ -119,7 +128,14 @@ class Player(Character):
     def show_inventory(self):
         print("\nInventory:")
         for item in self.inventory:
-            print(f"- {item.name} (Value: {item.value} gold)")
+            if item.type == "weapon":
+                print(f"- {item.name} (Attack: {item.attack}) (Value: {item.value} gold)")
+            elif item.type == "ring":
+                print(f"- {item.name} (Attack: {item.attack} Defence: {item.defence}) (Value: {item.value})")
+            elif item.type in ["helm", "chest", "belt", "legs", "shield", "back", "gloves", "boots"]:
+                print(f"- {item.name} (Defence: {item.defence})(Value: {item.value} gold)")
+            else:
+                print(f"- {item.name} (Value: {item.value} gold)")
         print("\nEquipped:")
         for slot, item in self.equipped.items():
             print(f"{slot.capitalize()}: {item.name if item else 'None'}")
