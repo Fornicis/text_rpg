@@ -34,10 +34,15 @@ class Game:
             self.items["Wooden Sword"],
             self.items["Peasants Top"],
             self.items["Peasants Bottoms"],
-            self.items["Basic Health Potion"]
+            self.items["Minor Health Potion"],
+            self.items["Small Bomb"],
+            self.items["Courage Charm"]
         ]
         for item in starting_items:
-            self.player.equip_item(item)
+            if item in ["weapon", "chest", "legs"]:
+                self.player.equip_item(item)
+            else:
+                self.player.inventory.append(item)
         print(f"Welcome, {self.player.name}! Your adventure begins in the Village.")
 
     def show_status(self):
@@ -154,6 +159,9 @@ class Game:
                 self.run_away(enemy)
             else:
                 print("Invalid action. You lose your turn.")
+        
+        if self.player.is_alive():        
+            self.player.remove_all_buffs()
 
     def player_attack(self, enemy):
         """Handles the player's attack on the enemy."""
@@ -205,14 +213,27 @@ class Game:
         if item.type == "consumable":
             if item.effect_type == "healing":
                 target.heal(item.effect)
-                print(f"{target.name} used {item.name} and restored {item.effect} HP.")
+                print(f"{self.player.name} used {item.name} and restored {item.effect} HP to {target.name}.")
             elif item.effect_type == "damage":
+                initial_hp = target.hp
                 target.take_damage(item.effect)
-                print(f"{target.name} used {item.name} and dealt {item.effect} damage.")
+                damage_dealt = initial_hp - target.hp
+                print(f"{self.player.name} used {item.name} and dealt {damage_dealt} damage to {target.name}.")
+                if not target.is_alive():
+                    print(f"{target.name} has been defeated!")
+                    print(f"You gained {target.exp} EXP and {target.gold} gold.")
+                    self.player.gain_exp(target.exp)
             elif item.effect_type == "buff":
-                target.attack += item.effect
-                print(f"{target.name} used {item.name} and increased attack by {item.effect}.")
-            self.player.inventory.remove(item)
+                if isinstance(target, Player):  # Only apply buffs to the player
+                    if isinstance(item.effect, tuple):
+                        stat, value = item.effect
+                        target.apply_buff(stat, value)
+                        print(f"{self.player.name} used {item.name} and increased {stat} by {value}.")
+                    else:
+                        target.apply_buff("attack", item.effect)
+                        print(f"{self.player.name} used {item.name} and increased attack by {item.effect}.")
+                else:
+                    print(f"Cannot apply buff to {target.name}.")
         else:
             print(f"{item.name} cannot be used in battle.")
 
@@ -345,8 +366,8 @@ class Game:
             else:
                 action = input("\nWhat do you want to do?\n[m]ove\n[i]nventory\n[c]onsumables\n[e]quip"
                             "\n[l]ocation actions\n[u]se item\n[q]uit\n>").lower()
-            
             if action == "m":
+                clear_screen()
                 self.move()
             elif action == "i":
                 clear_screen()

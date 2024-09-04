@@ -38,6 +38,7 @@ class Player(Character):
             "ring": None,
         }
         self.cooldowns = {}
+        self.active_buffs = {}
 
     def gain_exp(self, amount):
         self.exp += amount
@@ -85,6 +86,24 @@ class Player(Character):
             self.inventory.append(item)
             self.equipped[slot] = None
             print(f"You unequipped {item.name}.")
+            
+    def apply_buff(self, stat, value):
+        """Apply a buff to the player's stats."""
+        if stat == "attack":
+            self.attack += value
+        elif stat == "defence":
+            self.defence += value
+        self.active_buffs[stat] = value
+
+    def remove_all_buffs(self):
+        """Remove all active buffs from the player."""
+        for stat, value in self.active_buffs.items():
+            if stat == "attack":
+                self.attack -= value
+            elif stat == "defence":
+                self.defence -= value
+        self.active_buffs.clear()
+        print("All battle buffs have been removed.")
 
     def use_item(self, item):
         if item.name in self.cooldowns and self.cooldowns[item.name] > 0:
@@ -100,8 +119,9 @@ class Player(Character):
                 print(f"You can't use {item.name} outside of battle.")
                 return False
             elif item.effect_type == "buff":
-                self.apply_buff(item.effect[0], item.effect[1], item.duration)
-                print(f"You used {item.name} and gained a temporary buff.")
+                stat, value = item.effect
+                self.apply_buff(stat, value)
+                print(f"You used {item.name} and gained a temporary {stat} buff of {value}.")
             
             self.inventory.remove(item)
             self.cooldowns[item.name] = item.cooldown
@@ -156,6 +176,10 @@ class Player(Character):
         elif item.effect_type == "damage":
             return f"Deals {item.effect} damage"
         elif item.effect_type == "buff":
-            return f"Increases attack by {item.effect}"
+            if isinstance(item.effect, tuple):
+                stat, value = item.effect
+                return f"Increases {stat} by {value}"
+            else:
+                return f"Increases attack by {item.effect}"
         else:
             return "Unknown effect"
