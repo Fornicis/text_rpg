@@ -33,10 +33,13 @@ class WorldMap:
         }
         
     def get_connected_locations(self, current_location):
+        #Returns connected locations of the current area
         return self._game_map[current_location]["connected_to"]
 
     def get_enemies(self, location):
+        #Returns which enemies are in each area
         return self._game_map[location]["enemies"]
 
     def get_all_locations(self):
+        #Returns of a list of all the locations in the map
         return list(self._game_map.keys())

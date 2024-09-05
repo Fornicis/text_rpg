@@ -8,16 +8,16 @@ from shop import Shop
 from world_map import WorldMap
 
 def clear_screen():
-    """Clears the console screen based on the operating system."""
+    #Clears the console screen based on the operating system.
     os.system('cls' if platform.system() in ['Win64', 'Windows'] else 'clear')
 
 def pause():
-    """Pauses the game until the user presses Enter."""
+    #Pauses the game until the user presses Enter.
     input("\nPress Enter to continue...")
 
 class Game:
     def __init__(self):
-        """Initializes the game with default settings and items."""
+        #Initializes the game with default settings and items.
         self.player = None
         self.current_location = "Village"
         self.world_map = WorldMap()
@@ -27,7 +27,7 @@ class Game:
         self.shop.stock_shop()
 
     def create_character(self):
-        """Creates a new player character."""
+        #Creates a new player character.
         name = input("Enter your character's name: ")
         self.player = Player(name)
         starting_items = [
@@ -46,7 +46,7 @@ class Game:
         print(f"Welcome, {self.player.name}! Your adventure begins in the Village.")
 
     def show_status(self):
-        """Displays the player's current status."""
+        #Displays the player's current status.
         clear_screen()
         print(f"\n{self.player.name} (Level {self.player.level}):")
         print(f"HP: {self.player.hp}/{self.player.max_hp}, EXP: {self.player.exp}, Gold: {self.player.gold}, "
@@ -71,7 +71,7 @@ class Game:
                 print(f"{slot.capitalize()}: None")
 
     def move(self):
-        """Handles player movement between locations."""
+        #Handles player movement between locations.
         clear_screen()
         print("\nConnected locations:")
         connected_locations = self.world_map.get_connected_locations(self.current_location)
@@ -86,7 +86,7 @@ class Game:
             print("You can't go there from here.")
 
     def location_actions(self):
-        """Handles actions available at the current location."""
+        #Handles actions available at the current location.
         while True:
             action = input("\nWhat would you like to do?\n[e]xplore\n[u]se item\n[m]ove\n[l]eave\n>").lower()
             if action == 'e':
@@ -101,7 +101,7 @@ class Game:
                 print("Invalid action. Try again.")
 
     def encounter(self):
-        """Handles enemy encounters during exploration."""
+        #Handles enemy encounters during exploration.
         possible_enemies = self.world_map.get_enemies(self.current_location)
         if possible_enemies and random.random() < 0.7:
             enemy_type = random.choice(possible_enemies)
@@ -125,7 +125,7 @@ class Game:
 
     def rest(self):
         clear_screen()
-        """Restores a portion of the player's health, only in the Village."""
+        #Restores a portion of the player's health, only in the Village.
         if self.current_location != "Village":
             print("You can only rest in the Village.")
             return
@@ -135,7 +135,7 @@ class Game:
         print(f"You rest and recover {heal_amount} HP.")
 
     def calculate_damage(self, base_attack):
-        """Calculates damage dealt based on the player's attack."""
+        #Calculates damage dealt based on the player's attack.
         damage = random.randint(max(1, base_attack - 5), base_attack + 5)
         if random.random() < 0.1:  # Critical hit chance 10%
             damage *= 2
@@ -143,7 +143,7 @@ class Game:
         return damage
     
     def battle(self, enemy):
-        """Handles the battle mechanics between the player and an enemy."""
+        #Handles the battle mechanics between the player and an enemy.
         print(f"\nBattle start! {self.player.name} vs {enemy.name}")
         
         while self.player.is_alive() and enemy.is_alive():
@@ -164,7 +164,7 @@ class Game:
             self.player.remove_all_buffs()
 
     def player_attack(self, enemy):
-        """Handles the player's attack on the enemy."""
+        #Handles the player's attack on the enemy.
         player_damage = max(0, self.calculate_damage(self.player.attack) - enemy.defence)
         enemy.take_damage(player_damage)
         print(f"You dealt {player_damage} damage to {enemy.name}.")
@@ -185,7 +185,7 @@ class Game:
             print("You have been defeated. Game over.")
 
     def use_item_in_battle(self, enemy):
-        """Handles using an item during battle."""
+        #Handles using an item during battle.
         self.player.show_consumables()
         item_name = input("Enter the name of the item you want to use (or 'cancel'): ")
         if item_name.lower() == 'cancel':
@@ -200,7 +200,7 @@ class Game:
         pause()
 
     def run_away(self, enemy):
-        """Handles the player's attempt to run away from battle."""
+        #Handles the player's attempt to run away from battle.
         if random.random() < 0.5:
             print("You successfully ran away!")
         else:
@@ -209,7 +209,7 @@ class Game:
             print(f"You failed to run away and took {damage_taken} damage.")
 
     def use_battle_item(self, item, target):
-        """Uses an item during battle, applying its effects to the target."""
+        #Uses an item during battle, applying its effects to the target.
         if item.type == "consumable":
             if item.effect_type == "healing":
                 target.heal(item.effect)
@@ -238,7 +238,7 @@ class Game:
             print(f"{item.name} cannot be used in battle.")
 
     def loot_drop(self, enemy_tier):
-        """Handles loot drops after defeating an enemy."""
+        #Handles loot drops after defeating an enemy.
         if random.random() < 0.3:  # 30% chance of loot drop
             loot_pool = [item for item in self.items.values() if item.tier in self.get_loot_tiers(enemy_tier)]
             item = random.choice(loot_pool)
@@ -246,7 +246,7 @@ class Game:
             print(f"You found a {item.name}!")
 
     def get_loot_tiers(self, enemy_tier):
-        """Returns the appropriate loot tiers based on the enemy tier."""
+        #Returns the appropriate loot tiers based on the enemy tier.
         tiers = {
             "low": ["common"],
             "medium": ["medium"],
@@ -258,7 +258,7 @@ class Game:
         return tiers.get(enemy_tier, ["mythical"])
 
     def shop_menu(self):
-        """Displays the shop menu for buying and selling items."""
+        #Displays the shop menu for buying and selling items.
         while True:
             clear_screen()
             self.shop.rotate_stock()  # Check if it's time to rotate stock
@@ -278,7 +278,7 @@ class Game:
                 print("Invalid choice. Please try again.")
 
     def buy_item(self):
-        """Handles the buying of items from the shop."""
+        #Handles the buying of items from the shop.
         self.shop.display_inventory()
         item_name = input("Enter the name of the item you want to buy (or 'cancel'): ")
         if item_name.lower() == 'cancel':
@@ -298,7 +298,7 @@ class Game:
             print("This item is not available in the shop.")
 
     def sell_item(self):
-        """Handles the selling of items to the shop."""
+        #Handles the selling of items to the shop.
         self.player.show_inventory()
         item_name = input("Enter the name of the item you want to sell (or 'cancel'): ")
         if item_name.lower() == 'cancel':
@@ -315,7 +315,7 @@ class Game:
         print("You don't have that item.")
 
     def equip_menu(self):
-        """Handles equipping items from the player's inventory."""
+        #Handles equipping items from the player's inventory.
         self.player.show_inventory()
         item_name = input("Enter the name of the item you want to equip (or 'cancel'): ")
         if item_name.lower() == "cancel":
@@ -327,7 +327,7 @@ class Game:
         print("You don't have that item.")
 
     def use_item(self, item):
-        """Uses an item from the player's inventory."""
+        #Uses an item from the player's inventory.
         if item.effect_type == "healing":
             heal_amount = min(item.effect, self.player.max_hp - self.player.hp)
             self.player.heal(heal_amount)
@@ -341,7 +341,7 @@ class Game:
         self.player.inventory.remove(item)
 
     def use_item_menu(self):
-        """Displays the menu for using items from the inventory."""
+        #Displays the menu for using items from the inventory.
         self.player.show_inventory()
         item_name = input("Enter the name of the item you want to use (or 'cancel'): ")
         if item_name.lower() == "cancel":
@@ -355,7 +355,7 @@ class Game:
         pause()
 
     def game_loop(self):
-        """Main game loop that handles player actions."""
+        #Main game loop that handles player actions.
         self.create_character()
         while True:
             self.player.update_cooldowns()
