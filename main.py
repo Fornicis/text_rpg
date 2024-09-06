@@ -24,26 +24,16 @@ class Game:
         self.items = initialise_items()
         self.enemies = initialise_enemies()
         self.shop = Shop(self.items)
-        self.shop.stock_shop()
 
     def create_character(self):
         #Creates a new player character.
         name = input("Enter your character's name: ")
         self.player = Player(name)
-        starting_items = [
-            self.items["Wooden Sword"],
-            self.items["Peasants Top"],
-            self.items["Peasants Bottoms"],
-            self.items["Minor Health Potion"],
-            self.items["Small Bomb"],
-            self.items["Courage Charm"]
-        ]
-        for item in starting_items:
-            if item in ["weapon", "chest", "legs"]:
-                self.player.equip_item(item)
-            else:
-                self.player.inventory.append(item)
         print(f"Welcome, {self.player.name}! Your adventure begins in the Village.")
+        
+    def initialise_game(self):
+        self.create_character()
+        self.shop.stock_shop(self.player.level)
 
     def show_status(self):
         #Displays the player's current status.
@@ -74,8 +64,10 @@ class Game:
         #Handles player movement between locations.
         clear_screen()
         print("\nConnected locations:")
-        connected_locations = self.world_map.get_connected_locations(self.current_location)
-        print("\n".join(f"- {location}" for location in connected_locations))
+        connected_locations = self.world_map.get_connected_locations(self.current_location, self.player.level)
+        for location in connected_locations:
+            level_req = self.world_map.get_location_level_req(location)
+            print(f"- {location} (Required Level: {level_req})")
         destination = input("Where do you want to go? ").strip().title()
         if destination in connected_locations:
             self.current_location = destination
@@ -258,10 +250,9 @@ class Game:
         return tiers.get(enemy_tier, ["mythical"])
 
     def shop_menu(self):
-        #Displays the shop menu for buying and selling items.
         while True:
             clear_screen()
-            self.shop.rotate_stock()  # Check if it's time to rotate stock
+            self.shop.rotate_stock(self.player.level)  # Pass player level
             print("\n--- Shop Menu ---")
             print("1. Buy items")
             print("2. Sell items")
@@ -279,7 +270,7 @@ class Game:
 
     def buy_item(self):
         #Handles the buying of items from the shop.
-        self.shop.display_inventory()
+        self.shop.display_inventory(self.player.level)  # Pass player level
         item_name = input("Enter the name of the item you want to buy (or 'cancel'): ")
         if item_name.lower() == 'cancel':
             return
@@ -356,7 +347,8 @@ class Game:
 
     def game_loop(self):
         #Main game loop that handles player actions.
-        self.create_character()
+        self.initialise_game()
+        pause()
         while True:
             self.player.update_cooldowns()
             self.show_status()
@@ -399,7 +391,7 @@ class Game:
                 print("Invalid action. Try again.")
             
             self.show_status()    
-            self.shop.rotate_stock()  # Check if it's time to rotate stock after each action
+            self.shop.rotate_stock(self.player.level)  # Check if it's time to rotate stock after each action
 
 if __name__ == "__main__":
     game = Game()

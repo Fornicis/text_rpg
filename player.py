@@ -1,5 +1,5 @@
 import random
-from items import Item
+from items import Item, initialise_items
 
 class Character:
     def __init__(self, name, hp, attack, defence):
@@ -45,6 +45,30 @@ class Player(Character):
         }
         self.cooldowns = {}
         self.active_buffs = {}
+        self.items = initialise_items()
+        self.give_starter_items()
+        
+    def give_starter_items(self):
+        starter_items = [
+            "Wooden Sword",
+            "Peasants Top",
+            "Peasants Bottoms",
+            "Minor Health Potion",
+            "Small Bomb",
+            "Courage Charm"
+        ]
+        
+        for item_name in starter_items:
+            item = self.items[item_name]
+            self.inventory.append(item)
+            print(f"Added {item.name} to inventory.")
+            
+            if item.type in ["weapon", "helm", "chest", "waist", "legs", "boots", "gloves", "shield", "back", "ring"]:
+                self.equip_item(item)
+        
+        print("\nStarter items added and equipped:")
+        self.show_inventory()
+
 
     def gain_exp(self, amount):
         # Gain experience and level up if threshold reached
@@ -106,14 +130,17 @@ class Player(Character):
         self.active_buffs[stat] = value
 
     def remove_all_buffs(self):
-        # Remove all active buffs
-        for stat, value in self.active_buffs.items():
-            if stat == "attack":
-                self.attack -= value
-            elif stat == "defence":
-                self.defence -= value
-        self.active_buffs.clear()
-        print("All battle buffs have been removed.")
+    #Remove all active buffs from the player
+        if self.active_buffs:
+            for stat, value in self.active_buffs.items():
+                if stat == "attack":
+                    self.attack -= value
+                elif stat == "defence":
+                    self.defence -= value
+            buff_count = len(self.active_buffs)
+            self.active_buffs.clear()
+            print(f"{buff_count} battle buff{'s' if buff_count > 1 else ''} removed.")
+        # If there are no active buffs, the method will silently do nothing
 
     def use_item(self, item):
         # Use a consumable item if not on cooldown
