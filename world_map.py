@@ -1,3 +1,5 @@
+import os
+
 class WorldMap:
     def __init__(self):
         self._game_map = {
@@ -22,8 +24,8 @@ class WorldMap:
             "Scorching Plains": {"enemies": ["Fire Elemental", "Sandstorm Djinn", "Mirage Assassin", "Sunburst Phoenix", "Desert Colossus"], "connected_to": ["Desert", "Death Valley"], "min_level": 11},
             "Shadowed Valley": {"enemies": ["Nightmare Stalker", "Void Weaver", "Shadow Dragon", "Ethereal Banshee", "Abyssal Behemoth"], "connected_to": ["Valley", "Volcanic Valley"], "min_level": 11},
             #Very Hard Monster Areas
-            "Death Caves": {"enemies": ["Necropolis Guardian", "Soul Reaver", "Bone Colossus", "Spectral Devourer", "Lich King"], "connected_to": [], "min_level": 17},
-            "Ancient Ruins": {"enemies": ["Timeless Sphinx", "Eternal Pharaoh", "Anubis Reborn", "Mummy Emperor", "Living Obelisk"], "connected_to": ["Desert"], "min_level": 17},
+            "Death Caves": {"enemies": ["Necropolis Guardian", "Soul Reaver", "Bone Colossus", "Spectral Devourer", "Lich King"], "connected_to": ["Toxic Swamp", "Dragons Lair"], "min_level": 17},
+            "Ancient Ruins": {"enemies": ["Timeless Sphinx", "Eternal Pharaoh", "Anubis Reborn", "Mummy Emperor", "Living Obelisk"], "connected_to": ["Ruins", "Death Valley"], "min_level": 17},
             "Death Valley": {"enemies": ["Apocalypse Horseman", "Abyssal Wyrm", "Void Titan", "Chaos Incarnate", "Eternity Warden"], "connected_to": ["Scorching Plains", "Ancient Ruins", "Volcanic Valley"], "min_level": 15},
             "Dragons Lair": {"enemies": ["Ancient Wyvern", "Elemental Drake", "Dragonlord", "Chromatic Dragon", "Elder Dragon"], "connected_to": ["Mountain Peaks", "Death Caves", "Volcanic Valley"], "min_level": 15},
             #Extreme Monster Areas
@@ -47,3 +49,79 @@ class WorldMap:
     def get_min_level(self, location):
         #Returns minimum level required to enter area
         return self._game_map[location]["min_level"]
+    
+    def display_map(self, current_location, player_level):
+        os.system('cls' if os.name == 'nt' else 'clear')
+        print("\n=== World Map ===\n")
+        
+        map_art = """
+                                               [HEAVENS]
+                                                  |
+    [ANCIENT]------[DEATH_V]---------[VOLCANIC]------[DRAGONS]-----[DEATH_C]
+          |                |                      |                   |                |
+          |                |                      |                   |                |            
+        [RUINS]        [SCORCHING]       [SHADOWED]     [MOUNTAIN_P]    [TOXIC]
+          |                |                      |                   |                |
+          |                |                      |                   |                |
+        [TEMPLE]----------[DESERT]-----------------[VALLEY]-------------[MOUNTAIN]-----------[SWAMP]
+          |                |                                          |                |
+          |                |                                          |                |
+        [CAVE]------------[PLAINS]----------------[VILLAGE]------------[FOREST]----------[DEEPWOODS]
+        """
+        
+        # Define a dictionary to map markers to actual location names
+        location_markers = {
+            "[HEAVENS]": "Heavens",
+            "[ANCIENT]": "Ancient Ruins",
+            "[DEATH_V]": "Death Valley",
+            "[VOLCANIC]": "Volcanic Valley",
+            "[DRAGONS]": "Dragons Lair",
+            "[DEATH_C]": "Death Caves",
+            "[RUINS]": "Ruins",
+            "[SCORCHING]": "Scorching Plains",
+            "[SHADOWED]": "Shadowed Valley",
+            "[MOUNTAIN_P]": "Mountain Peaks",
+            "[TOXIC]": "Toxic Swamp",
+            "[TEMPLE]": "Temple",
+            "[DESERT]": "Desert",
+            "[VALLEY]": "Valley",
+            "[MOUNTAIN]": "Mountain",
+            "[SWAMP]": "Swamp",
+            "[CAVE]": "Cave",
+            "[PLAINS]": "Plains",
+            "[VILLAGE]": "Village",
+            "[FOREST]": "Forest",
+            "[DEEPWOODS]": "Deepwoods"
+        }
+        
+        # Highlight current location
+        for marker, location in location_markers.items():
+            if location == current_location:
+                map_art = map_art.replace(marker, f"*{location}*")
+            else:
+                map_art = map_art.replace(marker, location)
+        
+        # Add zero-width spaces to the beginning of each line
+        map_art = "\u200B" + map_art.replace("\n", "\n\u200B")
+        
+        print(map_art)
+        
+        print("\nLegend:")
+        print("* Your current location *")
+        print("------ Direct connection")
+        print()
+        
+        # Display available directions
+        connected_locations = self.get_connected_locations(current_location)
+        if connected_locations:
+            print("You can go to:")
+            for loc in connected_locations:
+                min_level = self.get_min_level(loc)
+                if player_level >= min_level:
+                    print(f"  - {loc}")
+                else:
+                    print(f"  - {loc} (Locked - Required Level: {min_level})")
+        else:
+            print("There are no connected locations from here.")
+
+        input("\nPress Enter to continue...")

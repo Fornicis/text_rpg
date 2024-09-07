@@ -403,6 +403,63 @@ class Game:
                 return
         print("You don't have that item.")
         pause()
+        
+    """def display_map(self):
+        clear_screen()
+        print("\n=== World Map ===\n")
+        
+        # Get all locations and sort them by minimum level
+        all_locations = [(loc, self.world_map.get_min_level(loc)) for loc in self.world_map.get_all_locations()]
+        all_locations.sort(key=lambda x: x[1])  # Sort by minimum level
+
+        # Create a dictionary to store locations by their minimum level
+        locations_by_level = {}
+        for loc, level in all_locations:
+            if level not in locations_by_level:
+                locations_by_level[level] = []
+            locations_by_level[level].append(loc)
+
+        # Display the map
+        for level in sorted(locations_by_level.keys()):
+            print(f"Level {level}:")
+            for location in locations_by_level[level]:
+                if location == self.current_location:
+                    print(f"  * {location} (You are here)")
+                else:
+                    connections = self.world_map.get_connected_locations(location)
+                    if self.current_location in connections:
+                        print(f"  - {location} (Connected)")
+                    else:
+                        print(f"    {location}")
+            print()
+
+        # Display legend
+        print("Legend:")
+        print("* Your current location")
+        print("- Connected location")
+        print()
+
+        # Display available directions
+        connected_locations = self.world_map.get_connected_locations(self.current_location)
+        if connected_locations:
+            print("You can go to:")
+            for loc in connected_locations:
+                direction = self.get_direction(self.current_location, loc)
+                min_level = self.world_map.get_min_level(loc)
+                if self.player.level >= min_level:
+                    print(f"  - {direction}: {loc}")
+                else:
+                    print(f"  - {direction}: {loc} (Locked - Required Level: {min_level})")
+        else:
+            print("There are no connected locations from here.")
+
+        input("\nPress Enter to continue...")
+
+    def get_direction(self, from_location, to_location):
+        # This is a simplified direction system. You might want to expand this
+        # based on your game's geography if you have a more complex map layout.
+        directions = ["North", "East", "South", "West"]
+        return random.choice(directions)"""
 
     def game_loop(self):
         #Main game loop that handles player actions.
@@ -412,10 +469,10 @@ class Game:
             self.show_status()
             if self.current_location == "Village":
                 action = input("\nWhat do you want to do?\n[m]ove\n[i]nventory\n[c]onsumables\n[e]quip"
-                            "\n[u]se item\n[s]hop\n[r]est\n[q]uit\n>").lower()
+                            "\n[u]se item\n[s]hop\n[r]est\n[v]iew map\n[q]uit\n>").lower()
             else:
                 action = input("\nWhat do you want to do?\n[m]ove\n[i]nventory\n[c]onsumables\n[e]quip"
-                            "\n[l]ocation actions\n[u]se item\n[q]uit\n>").lower()
+                            "\n[l]ocation actions\n[u]se item\n[v]iew map\n[q]uit\n>").lower()
             if action == "m":
                 clear_screen()
                 self.move()
@@ -437,6 +494,8 @@ class Game:
             elif action == "r":
                 self.rest()
                 pause()
+            elif action == "v":
+                self.world_map.display_map(self.current_location, self.player.level)
             elif action == "q":
                 print("Thanks for playing!")
                 break
