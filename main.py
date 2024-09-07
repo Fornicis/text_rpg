@@ -30,19 +30,6 @@ class Game:
         #Creates a new player character.
         name = input("Enter your character's name: ")
         self.player = Player(name)
-        starting_items = [
-            self.items["Wooden Sword"],
-            self.items["Peasants Top"],
-            self.items["Peasants Bottoms"],
-            self.items["Minor Health Potion"],
-            self.items["Small Bomb"],
-            self.items["Courage Charm"]
-        ]
-        for item in starting_items:
-            if item in ["weapon", "chest", "legs"]:
-                self.player.equip_item(item)
-            else:
-                self.player.inventory.append(item)
         print(f"Welcome, {self.player.name}! Your adventure begins in the Village.")
 
     def show_status(self):
@@ -71,17 +58,27 @@ class Game:
                 print(f"{slot.capitalize()}: None")
 
     def move(self):
-        #Handles player movement between locations.
+        #Handles player movement dependant on player level
         clear_screen()
         print("\nConnected locations:")
         connected_locations = self.world_map.get_connected_locations(self.current_location)
-        print("\n".join(f"- {location}" for location in connected_locations))
+        for location in connected_locations:
+            min_level = self.world_map.get_min_level(location)
+            if self.player.level >= min_level:
+                print(f"- {location} (Required Level: {min_level})")
+            else:
+                print(f"- {location} (Required Level: {min_level}) [LOCKED]")
+        
         destination = input("Where do you want to go? ").strip().title()
         if destination in connected_locations:
-            self.current_location = destination
-            print(f"You have arrived at {self.current_location}.")
-            if self.current_location != "Village":
-                self.location_actions()
+            min_level = self.world_map.get_min_level(destination)
+            if self.player.level >= min_level:
+                self.current_location = destination
+                print(f"You have arrived at {self.current_location}.")
+                if self.current_location != "Village":
+                    self.location_actions()
+            else:
+                print(f"You need to be at least level {min_level} to enter the {destination}.")
         else:
             print("You can't go there from here.")
 
@@ -249,8 +246,8 @@ class Game:
         #Returns the appropriate loot tiers based on the enemy tier.
         tiers = {
             "low": ["common"],
-            "medium": ["medium"],
-            "medium-hard": ["medium", "rare"],
+            "medium": ["uncommon"],
+            "medium-hard": ["uncommon", "rare"],
             "hard": ["rare"],
             "very-hard": ["epic"],
             "extreme": ["legendary"],
@@ -315,16 +312,69 @@ class Game:
         print("You don't have that item.")
 
     def equip_menu(self):
-        #Handles equipping items from the player's inventory.
-        self.player.show_inventory()
-        item_name = input("Enter the name of the item you want to equip (or 'cancel'): ")
-        if item_name.lower() == "cancel":
-            return
-        for item in self.player.inventory:
-            if item.name.lower() == item_name.lower():
-                self.player.equip_item(item)
-                return
-        print("You don't have that item.")
+        while True:
+            clear_screen()
+            print("\n=== Equipment Menu ===")
+            print("\nCurrently Equipped:")
+            for slot, item in self.player.equipped.items():
+                if item:
+                    print(f"{slot.capitalize()}: {item.name}")
+                    if item.attack > 0:
+                        print(f"  Attack: +{item.attack}")
+                    if item.defence > 0:
+                        print(f"  Defence: +{item.defence}")
+                else:
+                    print(f"{slot.capitalize()}: None")
+
+            print("\nInventory:")
+            equippable_items = [item for item in self.player.inventory if item.type in self.player.equipped]
+            for i, item in enumerate(equippable_items, 1):
+                print(f"{i}. {item.name} (Type: {item.type.capitalize()})")
+
+            choice = input("\nEnter the number of the item you want to equip (or 'q' to quit): ")
+            if choice.lower() == 'q':
+                break
+
+            try:
+                item_index = int(choice) - 1
+                if 0 <= item_index < len(equippable_items):
+                    selected_item = equippable_items[item_index]
+                    current_item = self.player.equipped[selected_item.type]
+
+                    print(f"\nComparing {selected_item.name} with current {selected_item.type}:")
+                    print(f"Current {selected_item.type.capitalize()}: ", end="")
+                    if current_item:
+                        print(f"{current_item.name}")
+                        print(f"  Attack: +{current_item.attack}")
+                        print(f"  Defence: +{current_item.defence}")
+                    else:
+                        print("None")
+
+                    print(f"New {selected_item.type.capitalize()}: {selected_item.name}")
+                    print(f"  Attack: +{selected_item.attack}")
+                    print(f"  Defence: +{selected_item.defence}")
+
+                    if current_item:
+                        attack_change = selected_item.attack - current_item.attack
+                        defence_change = selected_item.defence - current_item.defence
+                    else:
+                        attack_change = selected_item.attack
+                        defence_change = selected_item.defence
+
+                    print(f"\nChanges if equipped:")
+                    print(f"  Attack: {attack_change:+d}")
+                    print(f"  Defence: {defence_change:+d}")
+
+                    confirm = input("\nDo you want to equip this item? (y/n): ")
+                    if confirm.lower() == 'y':
+                        self.player.equip_item(selected_item)
+                        print(f"\n{selected_item.name} equipped!")
+                else:
+                    print("Invalid item number. Please try again.")
+            except ValueError:
+                print("Invalid input. Please enter a number or 'q' to quit.")
+
+            input("\nPress Enter to continue...")
 
     def use_item(self, item):
         #Uses an item from the player's inventory.
