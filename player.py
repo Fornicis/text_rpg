@@ -47,8 +47,9 @@ class Player(Character):
         self.active_buffs = {}
         self.items = initialise_items()
         self.give_starter_items()
-        
+    
     def give_starter_items(self):
+        #Gives starter items to the player
         starter_items = [
             "Wooden Sword",
             "Peasants Top",
@@ -68,8 +69,7 @@ class Player(Character):
         
         print("\nStarter items added and equipped:")
         self.show_inventory()
-
-
+        
     def gain_exp(self, amount):
         # Gain experience and level up if threshold reached
         self.exp += amount
