@@ -87,10 +87,14 @@ class Game:
         while True:
             action = input("\nWhat would you like to do?\n[e]xplore\n[u]se item\n[m]ove\n[l]eave\n>").lower()
             if action == 'e':
+                clear_screen()
                 self.encounter()
             elif action == 'u':
+                clear_screen()
                 self.use_item_menu()
             elif action == 'm':
+                clear_screen()
+                self.world_map.display_map(self.current_location, self.player.level)
                 self.move()
             elif action == 'l':
                 break
@@ -153,7 +157,8 @@ class Game:
             elif action == "u":
                 self.use_item_in_battle(enemy)
             elif action == "r":
-                self.run_away(enemy)
+                if self.run_away(enemy):
+                    return
             else:
                 print("Invalid action. You lose your turn.")
         
@@ -200,10 +205,14 @@ class Game:
         #Handles the player's attempt to run away from battle.
         if random.random() < 0.5:
             print("You successfully ran away!")
+            pause()
+            clear_screen()
+            return True
         else:
             damage_taken = max(0, enemy.attack - self.player.defence)
             self.player.take_damage(damage_taken)
             print(f"You failed to run away and took {damage_taken} damage.")
+            return False
 
     def use_battle_item(self, item, target):
         #Uses an item during battle, applying its effects to the target.
@@ -404,63 +413,6 @@ class Game:
         print("You don't have that item.")
         pause()
         
-    """def display_map(self):
-        clear_screen()
-        print("\n=== World Map ===\n")
-        
-        # Get all locations and sort them by minimum level
-        all_locations = [(loc, self.world_map.get_min_level(loc)) for loc in self.world_map.get_all_locations()]
-        all_locations.sort(key=lambda x: x[1])  # Sort by minimum level
-
-        # Create a dictionary to store locations by their minimum level
-        locations_by_level = {}
-        for loc, level in all_locations:
-            if level not in locations_by_level:
-                locations_by_level[level] = []
-            locations_by_level[level].append(loc)
-
-        # Display the map
-        for level in sorted(locations_by_level.keys()):
-            print(f"Level {level}:")
-            for location in locations_by_level[level]:
-                if location == self.current_location:
-                    print(f"  * {location} (You are here)")
-                else:
-                    connections = self.world_map.get_connected_locations(location)
-                    if self.current_location in connections:
-                        print(f"  - {location} (Connected)")
-                    else:
-                        print(f"    {location}")
-            print()
-
-        # Display legend
-        print("Legend:")
-        print("* Your current location")
-        print("- Connected location")
-        print()
-
-        # Display available directions
-        connected_locations = self.world_map.get_connected_locations(self.current_location)
-        if connected_locations:
-            print("You can go to:")
-            for loc in connected_locations:
-                direction = self.get_direction(self.current_location, loc)
-                min_level = self.world_map.get_min_level(loc)
-                if self.player.level >= min_level:
-                    print(f"  - {direction}: {loc}")
-                else:
-                    print(f"  - {direction}: {loc} (Locked - Required Level: {min_level})")
-        else:
-            print("There are no connected locations from here.")
-
-        input("\nPress Enter to continue...")
-
-    def get_direction(self, from_location, to_location):
-        # This is a simplified direction system. You might want to expand this
-        # based on your game's geography if you have a more complex map layout.
-        directions = ["North", "East", "South", "West"]
-        return random.choice(directions)"""
-
     def game_loop(self):
         #Main game loop that handles player actions.
         self.create_character()
@@ -475,6 +427,7 @@ class Game:
                             "\n[l]ocation actions\n[u]se item\n[v]iew map\n[q]uit\n>").lower()
             if action == "m":
                 clear_screen()
+                self.world_map.display_map(self.current_location, self.player.level)
                 self.move()
             elif action == "i":
                 clear_screen()
