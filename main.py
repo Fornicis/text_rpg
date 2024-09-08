@@ -33,16 +33,50 @@ def display_help():
     
     Welcome to Text RPG Adventure!
     
-    In this game, you'll explore a vast world, battle monsters,
-    and collect items to upgrade yourself. 
-    Here are some basic instructions:
-    
-    - Use the menu options to navigate through the game
-    - In battles, you can attack, use items, or try to run
-    - Visit the shop in the Village to buy and sell items
-    - Explore different areas to level up and find better loot
-    - Save your game regularly to keep your progress
-    
+    BASIC GAMEPLAY:
+    - You start in the Village, which serves as your home base.
+    - Explore different areas, battle monsters, and collect loot to level up.
+    - Your goal is to become strong enough to face the ultimate challenges.
+
+    NAVIGATION:
+    - Use the [m]ove command to travel between connected areas.
+    - Some areas have level requirements to enter.
+    - Use the [v]iew map command to see the world layout.
+
+    COMBAT:
+    - Battles are turn-based. You can:
+      [a]ttack: Deal damage to the enemy
+      [u]se item: Use a consumable from your inventory
+      [r]un: Attempt to flee (not always successful)
+    - Defeating enemies grants EXP and sometimes loot.
+
+    INVENTORY AND EQUIPMENT:
+    - Access your [i]nventory to see your items.
+    - Use the [e]quip command to manage your gear.
+    - [c]onsumables can be viewed separately for quick access.
+
+    SHOP:
+    - Visit the shop in the Village to buy and sell items.
+    - The shop's inventory changes periodically.
+
+    SAVING AND LOADING:
+    - Use the [sa]ve game command to save your progress.
+    - You can load your game from the main menu.
+
+    OTHER COMMANDS:
+    - [r]est: Restore some HP (only in the Village)
+    - [u]se item: Use a consumable item
+    - [l]ocation actions: Perform actions specific to your current location
+
+    TIPS:
+    - Pay attention to your HP, EXP, and gold.
+    - Upgrade your equipment regularly.
+    - Save your game often to avoid losing progress.
+    - Explore new areas as you level up, but be cautious of tough enemies.
+
+    Remember, most actions can be performed by typing the letter in brackets, 
+    e.g., 'm' for move, 'i' for inventory, etc.
+
     Good luck on your adventure!
     """)
     input("Press Enter to return to the main menu...")
