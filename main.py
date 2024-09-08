@@ -6,6 +6,7 @@ from enemies import initialise_enemies, Enemy
 from items import initialise_items
 from shop import Shop
 from world_map import WorldMap
+from save_system import save_game, load_game, get_save_files
 
 def clear_screen():
     #Clears the console screen based on the operating system.
@@ -413,18 +414,60 @@ class Game:
         print("You don't have that item.")
         pause()
         
+    def choose_save_file(self, for_loading=False):
+        save_files = get_save_files()
+        if not save_files:
+            if for_loading:
+                print("No save files found.")
+                return None
+            else:
+                return input("Enter a name for your new save file: ") + ".json"
+        
+        print("Available save files:")
+        for i, file in enumerate(save_files, 1):
+            print(f"{i}. {file}")
+        
+        if not for_loading:
+            print(f"{len(save_files) + 1}. Create a new save file")
+        
+        while True:
+            try:
+                choice = int(input("Enter the number of your choice: "))
+                if 1 <= choice <= len(save_files):
+                    return save_files[choice - 1]
+                elif not for_loading and choice == len(save_files) + 1:
+                    return input("Enter a name for your new save file: ") + ".json"
+                else:
+                    print("Invalid choice. Please try again.")
+            except ValueError:
+                print("Please enter a number.")
+        
     def game_loop(self):
         #Main game loop that handles player actions.
-        self.create_character()
+        load_option = input("Do you want to load a saved game? (y/n): ").lower()
+        if load_option == 'y':
+            save_file = self.choose_save_file(for_loading=True)
+            if save_file:
+                loaded_player, loaded_location = load_game(save_file)
+                if loaded_player and loaded_location:
+                    self.player = loaded_player
+                    self.current_location = loaded_location
+                else:
+                    self.create_character()
+            else:
+                self.create_character()
+        else:
+            self.create_character()
+        
         while True:
             self.player.update_cooldowns()
             self.show_status()
             if self.current_location == "Village":
                 action = input("\nWhat do you want to do?\n[m]ove\n[i]nventory\n[c]onsumables\n[e]quip"
-                            "\n[u]se item\n[s]hop\n[r]est\n[v]iew map\n[q]uit\n>").lower()
+                            "\n[u]se item\n[s]hop\n[r]est\n[v]iew map\n[sa]ve game\n[q]uit\n>").lower()
             else:
                 action = input("\nWhat do you want to do?\n[m]ove\n[i]nventory\n[c]onsumables\n[e]quip"
-                            "\n[l]ocation actions\n[u]se item\n[v]iew map\n[q]uit\n>").lower()
+                            "\n[l]ocation actions\n[u]se item\n[v]iew map\n[sa]ve game\n[q]uit\n>").lower()
             if action == "m":
                 clear_screen()
                 self.world_map.display_map(self.current_location, self.player.level)
@@ -450,6 +493,10 @@ class Game:
             elif action == "v":
                 self.world_map.display_map(self.current_location, self.player.level)
             elif action == "q":
+                save_option = input("Do you want to save before quitting? (y/n): ").lower()
+                if save_option == "y":
+                    save_file = self.choose_save_file()
+                    save_game(self.player, self.current_location, save_file)
                 print("Thanks for playing!")
                 break
             elif action == "l" and self.current_location != "Village":
@@ -457,6 +504,9 @@ class Game:
                 self.location_actions()
             elif action == "s" and self.current_location == "Village":
                 self.shop_menu()
+            elif action == "sa":
+                save_file = self.choose_save_file()
+                save_game(self.player, self.current_location, save_file)
             else:
                 print("Invalid action. Try again.")
             
