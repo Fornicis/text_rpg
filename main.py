@@ -57,6 +57,8 @@ def display_help():
 
     SHOP:
     - Visit the shop in the Village to buy and sell items.
+    - To sell items just enter the number associated with the item.
+    - Multiple items can be sold at once, simple enter the numbers seperated by a space.
     - The shop's inventory changes periodically.
 
     SAVING AND LOADING:
@@ -367,7 +369,7 @@ class Game:
             if choice == '1':
                 self.buy_item()
             elif choice == '2':
-                self.sell_item()
+                self.sell_items()
             elif choice == '3':
                 break
             else:
@@ -393,22 +395,48 @@ class Game:
         else:
             print("This item is not available in the shop.")
 
-    def sell_item(self):
-        #Handles the selling of items to the shop.
-        self.player.show_inventory()
-        item_name = input("Enter the name of the item you want to sell (or 'cancel'): ")
-        if item_name.lower() == 'cancel':
-            return
+    def sell_items(self):
+        while True:
+            self.player.show_inventory()
+            print("\nEnter the numbers of the items you want to sell, separated by spaces.")
+            print("For example, to sell items 1, 3, and 5, type: 1 3 5")
+            print("Type 'done' when you're finished selling items.")
 
-        for item in self.player.inventory:
-            if item.name.lower() == item_name.lower():
-                sell_price = item.value // 2  # Sell for half the buy price
-                self.player.gold += sell_price
-                self.player.inventory.remove(item)
-                self.shop.add_item(item, 1)
-                print(f"You sold {item.name} for {sell_price} gold.")
-                return
-        print("You don't have that item.")
+            choice = input("\nYour choice: ").lower()
+            
+            if choice == 'done':
+                break
+            
+            try:
+                item_indices = [int(i) - 1 for i in choice.split()]
+                items_to_sell = [self.player.inventory[i] for i in item_indices if 0 <= i < len(self.player.inventory)]
+                
+                if not items_to_sell:
+                    print("No valid items selected.")
+                    continue
+                
+                total_value = sum(item.value // 2 for item in items_to_sell)
+                
+                print("\nYou're about to sell:")
+                for item in items_to_sell:
+                    print(f"- {item.name} for {item.value // 2} gold")
+                print(f"\nTotal value: {total_value} gold")
+                
+                confirm = input("Do you want to proceed? (y/n): ").lower()
+                if confirm == 'y':
+                    for item in items_to_sell:
+                        sell_price = item.value // 2
+                        self.player.gold += sell_price
+                        self.player.inventory.remove(item)
+                        self.shop.add_item(item, 1)
+                    print(f"You sold {len(items_to_sell)} items for a total of {total_value} gold.")
+                else:
+                    print("Sale cancelled.")
+            
+            except ValueError:
+                print("Invalid input. Please enter numbers separated by spaces.")
+            
+            input("\nPress Enter to continue...")
 
     def equip_menu(self):
         while True:

@@ -188,15 +188,15 @@ class Player(Character):
     def show_inventory(self):
         # Display inventory and equipped items
         print("\nInventory:")
-        for item in self.inventory:
+        for i, item in enumerate(self.inventory, 1):
             if item.type == "weapon":
-                print(f"- {item.name} (Attack: {item.attack}) (Value: {item.value} gold)")
+                print(f"{i}. {item.name} (Attack: {item.attack}) (Value: {item.value} gold)")
             elif item.type == "ring":
-                print(f"- {item.name} (Attack: {item.attack} Defence: {item.defence}) (Value: {item.value})")
+                print(f"{i}. {item.name} (Attack: {item.attack} Defence: {item.defence}) (Value: {item.value})")
             elif item.type in ["helm", "chest", "belt", "legs", "shield", "back", "gloves", "boots"]:
-                print(f"- {item.name} (Defence: {item.defence})(Value: {item.value} gold)")
+                print(f"{i}. {item.name} (Defence: {item.defence})(Value: {item.value} gold)")
             else:
-                print(f"- {item.name} (Value: {item.value} gold)")
+                print(f"{i}. {item.name} (Value: {item.value} gold)")
         print("\nEquipped:")
         for slot, item in self.equipped.items():
             print(f"{slot.capitalize()}: {item.name if item else 'None'}")
