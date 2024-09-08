@@ -58,7 +58,7 @@ def display_help():
     SHOP:
     - Visit the shop in the Village to buy and sell items.
     - To sell items just enter the number associated with the item.
-    - Multiple items can be sold at once, simple enter the numbers seperated by a space.
+    - Multiple items can be bought/sold at once, simple enter the numbers seperated by a space.
     - The shop's inventory changes periodically.
 
     SAVING AND LOADING:
@@ -147,8 +147,59 @@ class Game:
                         print(f"  Cooldown: {item.cooldown} turns")
             else:
                 print(f"{slot.capitalize()}: None")
-
+                
     def move(self):
+        clear_screen()
+        print("\nConnected locations:")
+        connected_locations = self.world_map.get_connected_locations(self.current_location)
+        available_locations = []
+        
+        for i, location in enumerate(connected_locations, 1):
+            min_level = self.world_map.get_min_level(location)
+            if self.player.level >= min_level:
+                print(f"{i}. {location} (Required Level: {min_level})")
+                available_locations.append(location)
+            else:
+                print(f"X. {location} (Required Level: {min_level}) [LOCKED]")
+        
+        while True:
+            choice = input("\nWhere do you want to go? (Enter number, name, or first few letters): ").strip()
+            
+            if choice.isdigit():
+                index = int(choice) - 1
+                if 0 <= index < len(available_locations):
+                    destination = available_locations[index]
+                    break
+            else:
+                matching_locations = [loc for loc in available_locations if loc.lower().startswith(choice.lower())]
+                if len(matching_locations) == 1:
+                    destination = matching_locations[0]
+                    break
+                elif len(matching_locations) > 1:
+                    print("Multiple matching locations found. Please be more specific:")
+                    for loc in matching_locations:
+                        print(f"- {loc}")
+                else:
+                    print("No matching location found.")
+            
+            print("Invalid choice. Please try again.")
+        
+        min_level = self.world_map.get_min_level(destination)
+        if self.player.level >= min_level:
+            self.current_location = destination
+            print(f"You have arrived at {self.current_location}.")
+            if self.current_location == "Village":
+                print("Welcome to the Village! You can rest, shop, or prepare for your next adventure here.")
+                return False  # Indicate that we should not run location actions
+            else:
+                return True  # Indicate that we should run location actions
+        else:
+            print(f"You need to be at least level {min_level} to enter {destination}.")
+            return False
+        
+        input("\nPress Enter to continue...")
+
+    """def move(self):
         #Handles player movement dependant on player level
         clear_screen()
         print("\nConnected locations:")
@@ -171,22 +222,18 @@ class Game:
             else:
                 print(f"You need to be at least level {min_level} to enter the {destination}.")
         else:
-            print("You can't go there from here.")
+            print("You can't go there from here.")"""
 
     def location_actions(self):
         #Handles actions available at the current location.
         while True:
-            action = input("\nWhat would you like to do?\n[e]xplore\n[u]se item\n[m]ove\n[l]eave\n>").lower()
+            action = input("\nWhat would you like to do?\n[e]xplore\n[u]se item\n[l]eave\n>").lower()
             if action == 'e':
                 clear_screen()
                 self.encounter()
             elif action == 'u':
                 clear_screen()
                 self.use_item_menu()
-            elif action == 'm':
-                clear_screen()
-                self.world_map.display_map(self.current_location, self.player.level)
-                self.move()
             elif action == 'l':
                 break
             else:
@@ -612,7 +659,9 @@ class Game:
             if action == "m":
                 clear_screen()
                 self.world_map.display_map(self.current_location, self.player.level)
-                self.move()
+                run_location_actions = self.move()
+                if run_location_actions:
+                    self.location_actions()
             elif action == "i":
                 clear_screen()
                 self.player.show_inventory()
