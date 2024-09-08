@@ -285,11 +285,6 @@ class Game:
             else:
                 print("Invalid action. You lose your turn.")
             
-            if enemy.is_alive():
-                enemy_damage = max(0, enemy.attack - self.player.defence)
-                self.player.take_damage(enemy_damage)
-                print(f"{enemy.name} dealt {enemy_damage} damage to you.")
-            
             if not self.player.is_alive():
                 print("You have been defeated. Game over.")
                 
