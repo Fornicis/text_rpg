@@ -15,6 +15,60 @@ def clear_screen():
 def pause():
     #Pauses the game until the user presses Enter.
     input("\nPress Enter to continue...")
+    
+def display_title():
+    clear_screen()
+    print("""
+    ╔═══════════════════════════════════════════╗
+    ║             TEXT RPG ADVENTURE            ║
+    ║                                           ║
+    ║              © Fornicis, 2024             ║
+    ╚═══════════════════════════════════════════╝
+    """)
+
+def display_help():
+    clear_screen()
+    print("""
+    === HELP ===
+    
+    Welcome to Text RPG Adventure!
+    
+    In this game, you'll explore a vast world, battle monsters,
+    and collect items to upgrade yourself. 
+    Here are some basic instructions:
+    
+    - Use the menu options to navigate through the game
+    - In battles, you can attack, use items, or try to run
+    - Visit the shop in the Village to buy and sell items
+    - Explore different areas to level up and find better loot
+    - Save your game regularly to keep your progress
+    
+    Good luck on your adventure!
+    """)
+    input("Press Enter to return to the main menu...")
+    
+def title_screen():
+    while True:
+        display_title()
+        print("\n    1. Play")
+        print("    2. Load Game")
+        print("    3. Help")
+        print("    4. Quit")
+        
+        choice = input("\nEnter your choice (1-4): ")
+        
+        if choice == '1':
+            return "new_game"
+        elif choice == '2':
+            return "load_game"
+        elif choice == '3':
+            display_help()
+        elif choice == '4':
+            print("Thanks for playing! Goodbye.")
+            exit()
+        else:
+            print("Invalid choice. Please try again.")
+            input("Press Enter to continue...")
 
 class Game:
     def __init__(self):
@@ -430,20 +484,27 @@ class Game:
         
     def game_loop(self):
         #Main game loop that handles player actions.
-        load_option = input("Do you want to load a saved game? (y/n): ").lower()
-        if load_option == 'y':
-            save_file = self.choose_save_file(for_loading=True)
-            if save_file:
-                loaded_player, loaded_location = load_game(save_file)
-                if loaded_player and loaded_location:
-                    self.player = loaded_player
-                    self.current_location = loaded_location
-                else:
-                    self.create_character()
-            else:
+        while True:
+            action = title_screen()
+            
+            if action == "new_game":
                 self.create_character()
-        else:
-            self.create_character()
+                break
+            elif action == "load_game":
+                save_file = self.choose_save_file(for_loading=True)
+                if save_file:
+                    loaded_player, loaded_location = load_game(save_file)
+                    if loaded_player and loaded_location:
+                        self.player = loaded_player
+                        self.current_location = loaded_location
+                        break
+                    else:
+                        print("Failed to load the game. Starting a new game.")
+                        self.create_character()
+                        break
+                else:
+                    print("No save file selected. Returning to main menu.")
+                    input("Press Enter to continue...")
         
         while True:
             self.player.update_cooldowns()
