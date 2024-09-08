@@ -241,6 +241,7 @@ class Game:
                         print(f"{self.player.name} used {item.name} and increased attack by {item.effect}.")
                 else:
                     print(f"Cannot apply buff to {target.name}.")
+            self.player.inventory.remove(item)
         else:
             print(f"{item.name} cannot be used in battle.")
 
@@ -386,20 +387,6 @@ class Game:
 
             input("\nPress Enter to continue...")
 
-    def use_item(self, item):
-        #Uses an item from the player's inventory.
-        if item.effect_type == "healing":
-            heal_amount = min(item.effect, self.player.max_hp - self.player.hp)
-            self.player.heal(heal_amount)
-            print(f"You used {item.name} and restored {heal_amount} HP.")
-        elif item.effect_type == "buff":
-            self.player.attack += item.effect
-            print(f"You used {item.name} and increased your attack by {item.effect}.")
-        else:
-            print(f"You can't use {item.name} outside of battle.")
-            return
-        self.player.inventory.remove(item)
-
     def use_item_menu(self):
         #Displays the menu for using items from the inventory.
         self.player.show_inventory()
@@ -408,8 +395,7 @@ class Game:
             return
         for item in self.player.inventory:
             if item.name.lower() == item_name.lower():
-                if self.player.use_item(item):
-                    print(f"You used {item.name}.")
+                self.player.use_item(item)
                 return
         print("You don't have that item.")
         pause()
