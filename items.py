@@ -43,7 +43,7 @@ def initialise_items():
         "Leather Gloves": Item("Leather Gloves", "gloves", 8, "common", defence=1),
         "Leather Cloak": Item("Leather Cloak", "back", 14, "common", defence=1),
         "Leather Leggings": Item("Leather Leggings", "legs", 12, "common", defence=2),
-        "Leather Belt": Item("Leather Belt", "waist", 10, "common", defence=1),
+        "Leather Belt": Item("Leather Belt", "belt", 10, "common", defence=1),
         "Leather Wristband": Item("Leather Wristband", "ring", 20, "common", attack=1, defence=1),
         "Leather Cap": Item("Leather Cap", "helm", 9, "common", defence=1),
         "Leather Vest": Item("Leather Vest", "chest", 22, "common", defence=2),
@@ -89,7 +89,7 @@ def initialise_items():
         "Bronze Gauntlets": Item("Bronze Gauntlets", "gloves", 30, "uncommon", defence=2),
         "Iron-Trimmed Cloak": Item("Iron-Trimmed Cloak", "back", 45, "uncommon", defence=3),
         "Bronze Greaves": Item("Bronze Greaves", "legs", 50, "uncommon", defence=4),
-        "Iron Belt": Item("Iron Belt", "waist", 35, "uncommon", defence=2),
+        "Iron Belt": Item("Iron Belt", "belt", 35, "uncommon", defence=2),
         "Bronze Ring": Item("Bronze Ring", "ring", 60, "uncommon", attack=2, defence=1),
         "Iron Buckler": Item("Iron Buckler", "shield", 32, "uncommon", defence=3),
         "Bronze Coif": Item("Bronze Coif", "helm", 38, "uncommon", defence=2),
@@ -98,7 +98,7 @@ def initialise_items():
         "Iron Vambraces": Item("Iron Vambraces", "gloves", 28, "uncommon", defence=2),
         "Bronze-Weave Mantle": Item("Bronze-Weave Mantle", "back", 43, "uncommon", defence=2),
         "Iron Cuisses": Item("Iron Cuisses", "legs", 48, "uncommon", defence=3),
-        "Bronze Girdle": Item("Bronze Girdle", "waist", 33, "uncommon", defence=2),
+        "Bronze Girdle": Item("Bronze Girdle", "belt", 33, "uncommon", defence=2),
         "Iron Band": Item("Iron Band", "ring", 58, "uncommon", attack=1, defence=2),
 
         ## Consumables
@@ -125,7 +125,7 @@ def initialise_items():
         "Steel Gauntlets": Item("Steel Gauntlets", "gloves", 90, "rare", defence=4),
         "Reinforced Cloak": Item("Reinforced Cloak", "back", 100, "rare", defence=5),
         "Steel Cuisses": Item("Steel Cuisses", "legs", 110, "rare", defence=8),
-        "Steel Girdle": Item("Steel Girdle", "waist", 85, "rare", defence=3),
+        "Steel Girdle": Item("Steel Girdle", "belt", 85, "rare", defence=3),
         "Steel Signet": Item("Steel Signet", "ring", 150, "rare", attack=3, defence=2),
         "Steel Tower Shield": Item("Steel Tower Shield", "shield", 48, "rare", defence=8),
         "Steel Great Helm": Item("Steel Great Helm", "helm", 85, "rare", defence=7),
@@ -134,7 +134,7 @@ def initialise_items():
         "Steel Fists": Item("Steel Fists", "gloves", 95, "rare", defence=5),
         "Steel-Threaded Cape": Item("Steel-Threaded Cape", "back", 105, "rare", defence=6),
         "Steel Tassets": Item("Steel Tassets", "legs", 115, "rare", defence=9),
-        "Steel Fauld": Item("Steel Fauld", "waist", 88, "rare", defence=4),
+        "Steel Fauld": Item("Steel Fauld", "belt", 88, "rare", defence=4),
         "Steel Circlet": Item("Steel Circlet", "ring", 155, "rare", attack=4, defence=3),
 
         ## Consumables
@@ -162,7 +162,7 @@ def initialise_items():
         "Mithril Gauntlets": Item("Mithril Gauntlets", "gloves", 270, "epic", defence=6),
         "Mithril-Woven Cape": Item("Mithril-Woven Cape", "back", 320, "epic", defence=8),
         "Mithril Leggings": Item("Mithril Leggings", "legs", 330, "epic", defence=14),
-        "Mithril Waistguard": Item("Mithril Waistguard", "waist", 290, "epic", defence=5),
+        "Mithril Waistguard": Item("Mithril Waistguard", "belt", 290, "epic", defence=5),
         "Mithril Band": Item("Mithril Band", "ring", 400, "epic", attack=5, defence=3),
         "Mithril Aegis": Item("Mithril Aegis", "shield", 230, "epic", defence=13),
         "Mithril Crown": Item("Mithril Crown", "helm", 290, "epic", defence=10),
@@ -171,7 +171,7 @@ def initialise_items():
         "Mithril Vambraces": Item("Mithril Vambraces", "gloves", 280, "epic", defence=7),
         "Mithril Shroud": Item("Mithril Shroud", "back", 330, "epic", defence=9),
         "Mithril Cuisses": Item("Mithril Cuisses", "legs", 340, "epic", defence=15),
-        "Mithril Tasset": Item("Mithril Tasset", "waist", 300, "epic", defence=6),
+        "Mithril Tasset": Item("Mithril Tasset", "belt", 300, "epic", defence=6),
         "Mithril Signet": Item("Mithril Signet", "ring", 410, "epic", attack=6, defence=4),
 
         ## Consumables
@@ -198,7 +198,7 @@ def initialise_items():
         "Adamantite Fists": Item("Adamantite Fists", "gloves", 1150, "legendary", defence=10),
         "Adamantite Shadowcloak": Item("Adamantite Shadowcloak", "back", 1250, "legendary", defence=14),
         "Adamantite Legguards": Item("Adamantite Legguards", "legs", 1280, "legendary", defence=25),
-        "Adamantite Cinch": Item("Adamantite Cinch", "waist", 1180, "legendary", defence=8),
+        "Adamantite Cinch": Item("Adamantite Cinch", "belt", 1180, "legendary", defence=8),
         "Adamantite Loop": Item("Adamantite Loop", "ring", 1500, "legendary", attack=8, defence=5),
         "Adamantite Aegis": Item("Adamantite Aegis", "shield", 980, "legendary", defence=22),
         "Adamantite Diadem": Item("Adamantite Diadem", "helm", 1150, "legendary", defence=17),
@@ -207,7 +207,7 @@ def initialise_items():
         "Adamantite Crushers": Item("Adamantite Crushers", "gloves", 1180, "legendary", defence=11),
         "Adamantite Veil": Item("Adamantite Veil", "back", 1270, "legendary", defence=15),
         "Adamantite Cuisses": Item("Adamantite Cuisses", "legs", 1300, "legendary", defence=27),
-        "Adamantite Girdle": Item("Adamantite Girdle", "waist", 1200, "legendary", defence=9),
+        "Adamantite Girdle": Item("Adamantite Girdle", "belt", 1200, "legendary", defence=9),
         "Adamantite Seal": Item("Adamantite Seal", "ring", 1550, "legendary", attack=9, defence=6),
 
         ## Consumables
@@ -234,7 +234,7 @@ def initialise_items():
         "Gauntlets of Primordial Might": Item("Gauntlets of Primordial Might", "gloves", 5100, "mythical", defence=20),
         "Cloak of Celestial Shadows": Item("Cloak of Celestial Shadows", "back", 5400, "mythical", defence=28),
         "Leggings of Cosmic Balance": Item("Leggings of Cosmic Balance", "legs", 5350, "mythical", defence=45),
-        "Girdle of Worldly Axis": Item("Girdle of Worldly Axis", "waist", 5250, "mythical", defence=15),
+        "Girdle of Worldly Axis": Item("Girdle of Worldly Axis", "belt", 5250, "mythical", defence=15),
         "Band of Divine Providence": Item("Band of Divine Providence", "ring", 6000, "mythical", attack=15, defence=10),
         "Bulwark of Eternal Defiance": Item("Bulwark of Eternal Defiance", "shield", 4900, "mythical", defence=55),
         "Diadem of Omniscient Thought": Item("Diadem of Omniscient Thought", "helm", 5250, "mythical", defence=32),
@@ -243,7 +243,7 @@ def initialise_items():
         "Vambraces of Cosmic Manipulation": Item("Vambraces of Cosmic Manipulation", "gloves", 5150, "mythical", defence=22),
         "Mantle of Ethereal Whispers": Item("Mantle of Ethereal Whispers", "back", 5450, "mythical", defence=30),
         "Tassets of Reality's Anchor": Item("Tassets of Reality's Anchor", "legs", 5400, "mythical", defence=48),
-        "Cincture of Dimensional Stability": Item("Cincture of Dimensional Stability", "waist", 5300, "mythical", defence=17),
+        "Cincture of Dimensional Stability": Item("Cincture of Dimensional Stability", "belt", 5300, "mythical", defence=17),
         "Signet of Cosmic Influence": Item("Signet of Cosmic Influence", "ring", 6100, "mythical", attack=17, defence=12),
 
         ## Consumables

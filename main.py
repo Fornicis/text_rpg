@@ -150,7 +150,7 @@ class Game:
         
         while self.player.is_alive() and enemy.is_alive():
             self.player.update_cooldowns()
-            print(f"\n{self.player.name} HP: {self.player.hp}\n{enemy.name} HP: {enemy.hp}")
+            print(f"\n{self.player.name} HP: {self.player.hp}\nAttack: {self.player.attack}\nDefence: {self.player.defence}\n\n{enemy.name} HP: {enemy.hp}\nAttack: {enemy.attack}\nDefence: {enemy.defence}\n")
             action = input("Do you want to:\n[a]ttack\n[u]se item\n[r]un?\n>").lower()
             
             if action == "a":
