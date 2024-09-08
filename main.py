@@ -367,7 +367,7 @@ class Game:
             choice = input("Enter your choice: ")
 
             if choice == '1':
-                self.buy_item()
+                self.buy_items()
             elif choice == '2':
                 self.sell_items()
             elif choice == '3':
@@ -375,25 +375,57 @@ class Game:
             else:
                 print("Invalid choice. Please try again.")
 
-    def buy_item(self):
+    def buy_items(self):
         #Handles the buying of items from the shop.
-        self.shop.display_inventory(self.player.level)
-        item_name = input("Enter the name of the item you want to buy (or 'cancel'): ")
-        if item_name.lower() == 'cancel':
-            return
+        while True:
+            clear_screen()
+            self.shop.display_inventory(self.player.level)
+            print(f"\nYour gold: {self.player.gold}")
+            print("\nEnter the numbers of the items you want to buy, separated by spaces.")
+            print("For example, to buy items 1, 3, and 5, type: 1 3 5")
+            print("Type 'done' when you're finished buying items.")
 
-        inventory_lower = {name.lower(): info for name, info in self.shop.inventory.items()}
-        if item_name.lower() in inventory_lower:
-            item_info = inventory_lower[item_name.lower()]
-            if self.player.gold >= item_info['item'].value:
-                self.player.gold -= item_info['item'].value
-                self.player.inventory.append(item_info['item'])
-                self.shop.remove_item(item_info['item'].name, 1)
-                print(f"You bought {item_info['item'].name} for {item_info['item'].value} gold.")
-            else:
-                print("You don't have enough gold to buy this item.")
-        else:
-            print("This item is not available in the shop.")
+            choice = input("\nYour choice: ").lower()
+            
+            if choice == 'done':
+                break
+            
+            try:
+                item_indices = [int(i) - 1 for i in choice.split()]
+                sorted_inventory = sorted(self.shop.inventory.items(), key=lambda x: x[1]['item'].value, reverse=False)
+                items_to_buy = [sorted_inventory[i][1]['item'] for i in item_indices if 0 <= i < len(sorted_inventory)]
+                
+                if not items_to_buy:
+                    print("No valid items selected.")
+                    continue
+                
+                total_cost = sum(item.value for item in items_to_buy)
+                
+                print("\nYou're about to buy:")
+                for item in items_to_buy:
+                    print(f"- {item.name} for {item.value} gold")
+                print(f"\nTotal cost: {total_cost} gold")
+                
+                if self.player.gold < total_cost:
+                    print("You don't have enough gold to buy these items.")
+                    input("\nPress Enter to continue...")
+                    continue
+                
+                confirm = input("Do you want to proceed? (y/n): ").lower()
+                if confirm == 'y':
+                    for item in items_to_buy:
+                        self.player.gold -= item.value
+                        self.player.inventory.append(item)
+                        self.shop.remove_item(item.name, 1)
+                    print(f"You bought {len(items_to_buy)} items for a total of {total_cost} gold.")
+                else:
+                    print("Purchase cancelled.")
+            
+            except (ValueError, IndexError):
+                print("Invalid input. Please enter valid item numbers separated by spaces.")
+            
+            input("\nPress Enter to continue...")
+
 
     def sell_items(self):
         while True:

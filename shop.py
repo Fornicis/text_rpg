@@ -24,16 +24,15 @@ class Shop:
                 del self.inventory[item_name]
 
     def display_inventory(self, player_level):
-        # Display available items sorted by value
         print("\nShop Inventory:")
         sorted_inventory = sorted(
             self.inventory.items(),
             key=lambda x: x[1]['item'].value,
             reverse=False
         )
-        for item_name, info in sorted_inventory:
+        for i, (item_name, info) in enumerate(sorted_inventory, 1):
             if self.is_item_available(info['item'], player_level):
-                print(f"- {item_name}: {info['quantity']} available (Price: {info['item'].value} gold)")
+                print(f"{i}. {item_name}: {info['quantity']} available (Price: {info['item'].value} gold)")
 
     def rotate_stock(self, player_level):
         # Restock shop after a certain number of actions
