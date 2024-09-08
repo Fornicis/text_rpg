@@ -41,6 +41,7 @@ def display_help():
     NAVIGATION:
     - Use the [m]ove command to travel between connected areas.
     - Some areas have level requirements to enter.
+    - Use numbers, name, or first few characters of area to move to it.
     - Use the [v]iew map command to see the world layout.
 
     COMBAT:
@@ -149,6 +150,7 @@ class Game:
                 print(f"{slot.capitalize()}: None")
                 
     def move(self):
+        #Handles player movement
         clear_screen()
         print("\nConnected locations:")
         connected_locations = self.world_map.get_connected_locations(self.current_location)
@@ -197,33 +199,6 @@ class Game:
             print(f"You need to be at least level {min_level} to enter {destination}.")
             return False
         
-        input("\nPress Enter to continue...")
-
-    """def move(self):
-        #Handles player movement dependant on player level
-        clear_screen()
-        print("\nConnected locations:")
-        connected_locations = self.world_map.get_connected_locations(self.current_location)
-        for location in connected_locations:
-            min_level = self.world_map.get_min_level(location)
-            if self.player.level >= min_level:
-                print(f"- {location} (Required Level: {min_level})")
-            else:
-                print(f"- {location} (Required Level: {min_level}) [LOCKED]")
-        
-        destination = input("Where do you want to go? ").strip().title()
-        if destination in connected_locations:
-            min_level = self.world_map.get_min_level(destination)
-            if self.player.level >= min_level:
-                self.current_location = destination
-                print(f"You have arrived at {self.current_location}.")
-                if self.current_location != "Village":
-                    self.location_actions()
-            else:
-                print(f"You need to be at least level {min_level} to enter the {destination}.")
-        else:
-            print("You can't go there from here.")"""
-
     def location_actions(self):
         #Handles actions available at the current location.
         while True:
@@ -282,7 +257,7 @@ class Game:
         return damage
     
     def battle(self, enemy):
-        #Handles the battle mechanics between the player and an enemy.
+        #Battle logic
         print(f"\nBattle start! {self.player.name} vs {enemy.name}")
         
         while self.player.is_alive() and enemy.is_alive():
@@ -293,15 +268,33 @@ class Game:
             if action == "a":
                 self.player_attack(enemy)
             elif action == "u":
-                self.use_item_in_battle(enemy)
+                clear_screen()
+                used_item = self.use_item_menu(in_combat=True, enemy=enemy)
+                if used_item:
+                    if used_item.effect_type == "damage" and not enemy.is_alive():
+                        print(f"{enemy.name} has been defeated!")
+                        self.player.gain_exp(enemy.exp)
+                        self.player.gold += enemy.gold
+                        print(f"You gained {enemy.exp} EXP and {enemy.gold} gold.")
+                        return
+                else:
+                    print("No item used. You lose your turn.")
             elif action == "r":
                 if self.run_away(enemy):
                     return
             else:
                 print("Invalid action. You lose your turn.")
-        
-        if self.player.is_alive():        
-            self.player.remove_all_buffs()
+            
+            if enemy.is_alive():
+                enemy_damage = max(0, enemy.attack - self.player.defence)
+                self.player.take_damage(enemy_damage)
+                print(f"{enemy.name} dealt {enemy_damage} damage to you.")
+            
+            if not self.player.is_alive():
+                print("You have been defeated. Game over.")
+                
+            if self.player.is_alive() and not enemy.is_alive():
+                self.player.remove_all_buffs()
 
     def player_attack(self, enemy):
         #Handles the player's attack on the enemy.
@@ -324,21 +317,6 @@ class Game:
         if not self.player.is_alive():
             print("You have been defeated. Game over.")
 
-    def use_item_in_battle(self, enemy):
-        #Handles using an item during battle.
-        self.player.show_consumables()
-        item_name = input("Enter the name of the item you want to use (or 'cancel'): ")
-        if item_name.lower() == 'cancel':
-            return
-        
-        item = next((item for item in self.player.inventory if item.name.lower() == item_name.lower()), None)
-        if item:
-            target = self.player if item.effect_type in ["healing", "buff"] else enemy
-            self.use_battle_item(item, target)
-        else:
-            print("You don't have that item.")
-        pause()
-
     def run_away(self, enemy):
         #Handles the player's attempt to run away from battle.
         if random.random() < 0.5:
@@ -352,35 +330,20 @@ class Game:
             print(f"You failed to run away and took {damage_taken} damage.")
             return False
 
-    def use_battle_item(self, item, target):
-        #Uses an item during battle, applying its effects to the target.
-        if item.type == "consumable":
-            if item.effect_type == "healing":
-                target.heal(item.effect)
-                print(f"{self.player.name} used {item.name} and restored {item.effect} HP to {target.name}.")
-            elif item.effect_type == "damage":
-                initial_hp = target.hp
-                target.take_damage(item.effect)
-                damage_dealt = initial_hp - target.hp
-                print(f"{self.player.name} used {item.name} and dealt {damage_dealt} damage to {target.name}.")
-                if not target.is_alive():
-                    print(f"{target.name} has been defeated!")
-                    print(f"You gained {target.exp} EXP and {target.gold} gold.")
-                    self.player.gain_exp(target.exp)
-            elif item.effect_type == "buff":
-                if isinstance(target, Player):  # Only apply buffs to the player
-                    if isinstance(item.effect, tuple):
-                        stat, value = item.effect
-                        target.apply_buff(stat, value)
-                        print(f"{self.player.name} used {item.name} and increased {stat} by {value}.")
-                    else:
-                        target.apply_buff("attack", item.effect)
-                        print(f"{self.player.name} used {item.name} and increased attack by {item.effect}.")
-                else:
-                    print(f"Cannot apply buff to {target.name}.")
+    def use_combat_item(self, item, enemy):
+        #Uses items in combat, prints different messages based on item used
+        if item.effect_type == "healing":
+            success, message = self.player.use_item(item)
+            print(message)
+        elif item.effect_type == "damage":
+            damage = item.effect
+            enemy.take_damage(damage)
             self.player.inventory.remove(item)
-        else:
-            print(f"{item.name} cannot be used in battle.")
+            print(f"You used {item.name} and dealt {damage} damage to {enemy.name}.")
+        elif item.effect_type == "buff":
+            success, message = self.player.use_item(item)
+            print(message)
+        return item
 
     def loot_drop(self, enemy_tier):
         #Handles loot drops after defeating an enemy.
@@ -430,11 +393,11 @@ class Game:
             print(f"\nYour gold: {self.player.gold}")
             print("\nEnter the numbers of the items you want to buy, separated by spaces.")
             print("For example, to buy items 1, 3, and 5, type: 1 3 5")
-            print("Type 'done' when you're finished buying items.")
+            print("Type 'q' when you're finished buying items.")
 
             choice = input("\nYour choice: ").lower()
             
-            if choice == 'done':
+            if choice == 'q':
                 break
             
             try:
@@ -475,15 +438,16 @@ class Game:
 
 
     def sell_items(self):
+        #Handles selling of multiple items at once to shop
         while True:
             self.player.show_inventory()
             print("\nEnter the numbers of the items you want to sell, separated by spaces.")
             print("For example, to sell items 1, 3, and 5, type: 1 3 5")
-            print("Type 'done' when you're finished selling items.")
+            print("Type 'q' when you're finished selling items.")
 
             choice = input("\nYour choice: ").lower()
             
-            if choice == 'done':
+            if choice == 'q':
                 break
             
             try:
@@ -582,18 +546,47 @@ class Game:
 
             input("\nPress Enter to continue...")
 
-    def use_item_menu(self):
-        #Displays the menu for using items from the inventory.
-        self.player.show_inventory()
-        item_name = input("Enter the name of the item you want to use (or 'cancel'): ")
-        if item_name.lower() == "cancel":
-            return
-        for item in self.player.inventory:
-            if item.name.lower() == item_name.lower():
-                self.player.use_item(item)
-                return
-        print("You don't have that item.")
-        pause()
+    def use_item_menu(self, in_combat=False, enemy=None):
+        usable_items = self.player.show_usable_items()
+        if not usable_items:
+            return None
+
+        while True:
+            choice = input("\nEnter the number or name of the item you want to use (or 'c' to cancel): ").strip().lower()
+            
+            if choice == 'c':
+                return None
+            
+            selected_item = None
+            if choice.isdigit():
+                index = int(choice) - 1
+                if 0 <= index < len(usable_items):
+                    selected_item = usable_items[index]
+            else:
+                matching_items = [item for item in usable_items if item.name.lower().startswith(choice)]
+                if len(matching_items) == 1:
+                    selected_item = matching_items[0]
+                elif len(matching_items) > 1:
+                    print("Multiple matching items found. Please be more specific:")
+                    for item in matching_items:
+                        print(f"- {item.name}")
+                else:
+                    print("No matching item found.")
+            
+            if selected_item:
+                if selected_item.name in self.player.cooldowns and self.player.cooldowns[selected_item.name] > 0:
+                    print(f"You can't use {selected_item.name} yet. Cooldown: {self.player.cooldowns[selected_item.name]} turns.")
+                elif in_combat:
+                    if selected_item.effect_type in ["healing", "damage", "buff"]:
+                        return self.use_combat_item(selected_item, enemy)
+                    else:
+                        print(f"You can't use {selected_item.name} in combat.")
+                else:
+                    success, message = self.player.use_item(selected_item)
+                    print(message)
+                    return selected_item if success else None
+            else:
+                print("Invalid choice. Please try again.")
         
     def choose_save_file(self, for_loading=False):
         save_files = get_save_files()
@@ -688,7 +681,7 @@ class Game:
                     save_file = self.choose_save_file()
                     save_game(self.player, self.current_location, save_file)
                 print("Thanks for playing!")
-                break
+                title_screen()
             elif action == "l" and self.current_location != "Village":
                 clear_screen()
                 self.location_actions()

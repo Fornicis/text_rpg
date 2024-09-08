@@ -152,21 +152,21 @@ class Player(Character):
             if item.effect_type == "healing":
                 heal_amount = min(item.effect, self.max_hp - self.hp)
                 self.heal(heal_amount)
-                print(f"You used {item.name} and restored {heal_amount} HP.")
+                message = f"You used {item.name} and restored {heal_amount} HP."
             elif item.effect_type == "damage":
-                print(f"You can't use {item.name} outside of battle.")
-                return False
+                message = f"You can't use {item.name} outside of battle."
+                return False, message
             elif item.effect_type == "buff":
                 stat, value = item.effect
                 self.apply_buff(stat, value)
-                print(f"You used {item.name} and gained a temporary {stat} buff of {value}.")
+                message = f"You used {item.name} and gained a temporary {stat} buff of {value}."
             
             self.inventory.remove(item)
             self.cooldowns[item.name] = item.cooldown
-            return True
+            return True, message
         else:
-            print(f"You can't use {item.name}.")
-            return False
+            message = f"You can't use {item.name}."
+            return False, message
 
     def update_cooldowns(self):
         # Decrease cooldowns each turn
@@ -226,3 +226,15 @@ class Player(Character):
                 return f"Increases attack by {item.effect}"
         else:
             return "Unknown effect"
+        
+    def show_usable_items(self):
+        usable_items = [item for item in self.inventory if item.type == "consumable"]
+        if not usable_items:
+            print("You have no usable items.")
+            return None
+        
+        print("\nUsable Items:")
+        for i, item in enumerate(usable_items, 1):
+            effect_description = self.get_effect_description(item)
+            print(f"{i}. {item.name}: {effect_description}")
+        return usable_items
