@@ -3,7 +3,7 @@ from display import *
 from player import Player
 from enemies import initialise_enemies, Enemy
 from items import initialise_items
-from shop import Shop
+from shop import Armourer, Alchemist
 from battle import Battle
 from world_map import WorldMap
 from save_system import save_game, load_game, get_save_files
@@ -16,8 +16,10 @@ class Game:
         self.world_map = WorldMap()
         self.items = initialise_items()
         self.enemies = initialise_enemies()
-        self.shop = Shop(self.items)
-        self.shop.stock_shop()
+        self.armourer = Armourer(self.items)
+        self.armourer.stock_shop()
+        self.alchemist = Alchemist(self.items)
+        self.alchemist.stock_shop()
         self.battle = None
 
     def create_character(self):
@@ -321,7 +323,7 @@ class Game:
             self.show_status()
             if self.current_location == "Village":
                 action = input("\nWhat do you want to do?\n[m]ove\n[i]nventory\n[c]onsumables\n[e]quip"
-                            "\n[u]se item\n[s]hop\n[r]est\n[v]iew map\n[sa]ve game\n[q]uit\n>").lower()
+                            "\n[u]se item\n[a]lchemist\n[ar]mourer\n[r]est\n[v]iew map\n[sa]ve game\n[q]uit\n>").lower()
             else:
                 action = input("\nWhat do you want to do?\n[m]ove\n[i]nventory\n[c]onsumables\n[e]quip"
                             "\n[l]ocation actions\n[u]se item\n[v]iew map\n[sa]ve game\n[q]uit\n>").lower()
@@ -361,8 +363,10 @@ class Game:
             elif action == "l" and self.current_location != "Village":
                 clear_screen()
                 self.location_actions()
-            elif action == "s" and self.current_location == "Village":
-                self.shop.shop_menu(self.player)
+            elif action == "ar" and self.current_location == "Village":
+                self.armourer.shop_menu(self.player)
+            elif action == "a" and self.current_location == "Village":
+                self.alchemist.shop_menu(self.player)
             elif action == "sa":
                 save_file = self.choose_save_file()
                 save_game(self.player, self.current_location, save_file)
@@ -370,7 +374,8 @@ class Game:
                 print("Invalid action. Try again.")
             
             self.show_status()    
-            self.shop.rotate_stock(self.player.level)  # Check if it's time to rotate stock after each action
+            self.armourer.rotate_stock(self.player.level)  # Check if it's time to rotate stock after each action
+            self.alchemist.rotate_stock(self.player.level)
 
 if __name__ == "__main__":
     game = Game()
