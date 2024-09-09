@@ -128,7 +128,7 @@ class Game:
         #Displays the player's current status.
         clear_screen()
         print(f"\n{self.player.name} (Level {self.player.level}):")
-        print(f"HP: {self.player.hp}/{self.player.max_hp}, EXP: {self.player.exp}, Gold: {self.player.gold}, "
+        print(f"HP: {self.player.hp}/{self.player.max_hp}, EXP: {self.player.exp}/{self.player.level*100}, Gold: {self.player.gold}, "
             f"Attack: {self.player.attack}, Defence: {self.player.defence}, Current location: {self.current_location}")
         print("\nEquipped Items:")
         for slot, item in self.player.equipped.items():
