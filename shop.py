@@ -31,7 +31,20 @@ class BaseShop:
         )
         for i, (item_name, info) in enumerate(sorted_inventory, 1):
             if self.is_item_available(info['item'], player_level):
+                item = info['item']
                 print(f"{i}. {item_name}: {info['quantity']} available (Price: {info['item'].value} gold)")
+                self.display_item_stats(item)
+                
+    def display_item_stats(self, item):
+        print(f"   Type: {item.type.capitalize()}")
+        print(f"   Tier: {item.tier.capitalize()}")
+        if item.attack > 0:
+            print(f"   Attack: +{item.attack}")
+        if item.defence > 0:
+            print(f"   Defence: +{item.defence}")
+        if item.effect_type:
+            print(f"   Effect: {item.effect_type.capitalize()} ({item.effect})")
+            print(f"   Cooldown: {item.cooldown} turns")
 
     def rotate_stock(self, player_level):
         self.restock_counter += 1
