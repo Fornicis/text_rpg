@@ -1,111 +1,12 @@
-import os
-import platform
 import random
+from display import *
 from player import Player
 from enemies import initialise_enemies, Enemy
 from items import initialise_items
 from shop import Shop
+from battle import Battle
 from world_map import WorldMap
 from save_system import save_game, load_game, get_save_files
-
-def clear_screen():
-    #Clears the console screen based on the operating system.
-    os.system('cls' if platform.system() in ['Win64', 'Windows'] else 'clear')
-
-def pause():
-    #Pauses the game until the user presses Enter.
-    input("\nPress Enter to continue...")
-    
-def display_title():
-    clear_screen()
-    print("""
-    ╔═══════════════════════════════════════════╗
-    ║             TEXT RPG ADVENTURE            ║
-    ║                                           ║
-    ║              © Fornicis, 2024             ║
-    ╚═══════════════════════════════════════════╝
-    """)
-
-def display_help():
-    clear_screen()
-    print("""
-    === HELP ===
-    
-    Welcome to Text RPG Adventure!
-    
-    BASIC GAMEPLAY:
-    - You start in the Village, which serves as your home base.
-    - Explore different areas, battle monsters, and collect loot to level up.
-    - Your goal is to become strong enough to face the ultimate challenges.
-
-    NAVIGATION:
-    - Use the [m]ove command to travel between connected areas.
-    - Some areas have level requirements to enter.
-    - Use numbers, name, or first few characters of area to move to it.
-    - Use the [v]iew map command to see the world layout.
-
-    COMBAT:
-    - Battles are turn-based. You can:
-      [a]ttack: Deal damage to the enemy
-      [u]se item: Use a consumable from your inventory
-      [r]un: Attempt to flee (not always successful)
-    - Defeating enemies grants EXP and sometimes loot.
-
-    INVENTORY AND EQUIPMENT:
-    - Access your [i]nventory to see your items.
-    - Use the [e]quip command to manage your gear.
-    - [c]onsumables can be viewed separately for quick access.
-
-    SHOP:
-    - Visit the shop in the Village to buy and sell items.
-    - To sell items just enter the number associated with the item.
-    - Multiple items can be bought/sold at once, simple enter the numbers seperated by a space.
-    - The shop's inventory changes periodically.
-
-    SAVING AND LOADING:
-    - Use the [sa]ve game command to save your progress.
-    - You can load your game from the main menu.
-
-    OTHER COMMANDS:
-    - [r]est: Restore some HP (only in the Village)
-    - [u]se item: Use a consumable item
-    - [l]ocation actions: Perform actions specific to your current location
-
-    TIPS:
-    - Pay attention to your HP, EXP, and gold.
-    - Upgrade your equipment regularly.
-    - Save your game often to avoid losing progress.
-    - Explore new areas as you level up, but be cautious of tough enemies.
-
-    Remember, most actions can be performed by typing the letter in brackets, 
-    e.g., 'm' for move, 'i' for inventory, etc.
-
-    Good luck on your adventure!
-    """)
-    input("Press Enter to return to the main menu...")
-    
-def title_screen():
-    while True:
-        display_title()
-        print("\n    1. Play")
-        print("    2. Load Game")
-        print("    3. Help")
-        print("    4. Quit")
-        
-        choice = input("\nEnter your choice (1-4): ")
-        
-        if choice == '1':
-            return "new_game"
-        elif choice == '2':
-            return "load_game"
-        elif choice == '3':
-            display_help()
-        elif choice == '4':
-            print("Thanks for playing! Goodbye.")
-            exit()
-        else:
-            print("Invalid choice. Please try again.")
-            input("Press Enter to continue...")
 
 class Game:
     def __init__(self):
@@ -117,12 +18,18 @@ class Game:
         self.enemies = initialise_enemies()
         self.shop = Shop(self.items)
         self.shop.stock_shop()
+        self.battle = None
 
     def create_character(self):
         #Creates a new player character.
         name = input("Enter your character's name: ")
         self.player = Player(name)
+        self.initialise_battle()
         print(f"Welcome, {self.player.name}! Your adventure begins in the Village.")
+        
+    def initialise_battle(self):
+        if self.player is not None:
+            self.battle = Battle(self.player, self.items)
 
     def show_status(self):
         #Displays the player's current status.
@@ -233,7 +140,7 @@ class Game:
             )
             
             print(f"You encountered a {enemy.name}!")
-            self.battle(enemy)
+            self.battle.battle(enemy)
         else:
             print("You explored the area but found nothing of interest.")
 
@@ -247,98 +154,6 @@ class Game:
         heal_amount = self.player.max_hp // 4  # Heal 25% of max HP
         self.player.heal(heal_amount)
         print(f"You rest and recover {heal_amount} HP.")
-
-    def calculate_damage(self, base_attack):
-        #Calculates damage dealt based on the player's attack.
-        damage = random.randint(max(1, base_attack - 5), base_attack + 5)
-        if random.random() < 0.1:  # Critical hit chance 10%
-            damage *= 2
-            print("You dealt a critical hit!")
-        return damage
-    
-    def battle(self, enemy):
-        #Battle logic
-        print(f"\nBattle start! {self.player.name} vs {enemy.name}")
-        
-        while self.player.is_alive() and enemy.is_alive():
-            self.player.update_cooldowns()
-            print(f"\n{self.player.name} HP: {self.player.hp}\nAttack: {self.player.attack}\nDefence: {self.player.defence}\n\n{enemy.name} HP: {enemy.hp}\nAttack: {enemy.attack}\nDefence: {enemy.defence}\n")
-            action = input("Do you want to:\n[a]ttack\n[u]se item\n[r]un?\n>").lower()
-            
-            if action == "a":
-                self.player_attack(enemy)
-            elif action == "u":
-                clear_screen()
-                used_item = self.use_item_menu(in_combat=True, enemy=enemy)
-                if used_item:
-                    if used_item.effect_type == "damage" and not enemy.is_alive():
-                        print(f"{enemy.name} has been defeated!")
-                        self.player.gain_exp(enemy.exp)
-                        self.player.gold += enemy.gold
-                        print(f"You gained {enemy.exp} EXP and {enemy.gold} gold.")
-                        return
-                else:
-                    print("No item used. You lose your turn.")
-            elif action == "r":
-                if self.run_away(enemy):
-                    return
-            else:
-                print("Invalid action. You lose your turn.")
-            
-            if not self.player.is_alive():
-                print("You have been defeated. Game over.")
-                
-            if self.player.is_alive() and not enemy.is_alive():
-                self.player.remove_all_buffs()
-
-    def player_attack(self, enemy):
-        #Handles the player's attack on the enemy.
-        player_damage = max(0, self.calculate_damage(self.player.attack) - enemy.defence)
-        enemy.take_damage(player_damage)
-        print(f"You dealt {player_damage} damage to {enemy.name}.")
-        
-        if not enemy.is_alive():
-            print(f"You defeated the {enemy.name}!")
-            self.player.gain_exp(enemy.exp)
-            self.player.gold += enemy.gold
-            print(f"You gained {enemy.exp} EXP and {enemy.gold} gold.")
-            self.loot_drop(enemy.tier)
-            return
-        
-        enemy_damage = max(0, self.calculate_damage(enemy.attack) - self.player.defence)
-        self.player.take_damage(enemy_damage)
-        print(f"{enemy.name} dealt {enemy_damage} damage to you.")
-        
-        if not self.player.is_alive():
-            print("You have been defeated. Game over.")
-
-    def run_away(self, enemy):
-        #Handles the player's attempt to run away from battle.
-        if random.random() < 0.5:
-            print("You successfully ran away!")
-            pause()
-            clear_screen()
-            return True
-        else:
-            damage_taken = max(0, enemy.attack - self.player.defence)
-            self.player.take_damage(damage_taken)
-            print(f"You failed to run away and took {damage_taken} damage.")
-            return False
-
-    def use_combat_item(self, item, enemy):
-        #Uses items in combat, prints different messages based on item used
-        if item.effect_type == "healing":
-            success, message = self.player.use_item(item)
-            print(message)
-        elif item.effect_type == "damage":
-            damage = item.effect
-            enemy.take_damage(damage)
-            self.player.inventory.remove(item)
-            print(f"You used {item.name} and dealt {damage} damage to {enemy.name}.")
-        elif item.effect_type == "buff":
-            success, message = self.player.use_item(item)
-            print(message)
-        return item
 
     def loot_drop(self, enemy_tier):
         #Handles loot drops after defeating an enemy.
@@ -359,122 +174,6 @@ class Game:
             "extreme": ["legendary"],
         }
         return tiers.get(enemy_tier, ["mythical"])
-
-    def shop_menu(self):
-        #Displays the shop menu for buying and selling items.
-        while True:
-            clear_screen()
-            self.shop.rotate_stock(self.player.level)  # Check if it's time to rotate stock
-            print("\n--- Shop Menu ---")
-            print("1. Buy items")
-            print("2. Sell items")
-            print("3. Exit shop")
-            choice = input("Enter your choice: ")
-
-            if choice == '1':
-                self.buy_items()
-            elif choice == '2':
-                self.sell_items()
-            elif choice == '3':
-                break
-            else:
-                print("Invalid choice. Please try again.")
-
-    def buy_items(self):
-        #Handles the buying of items from the shop.
-        while True:
-            clear_screen()
-            self.shop.display_inventory(self.player.level)
-            print(f"\nYour gold: {self.player.gold}")
-            print("\nEnter the numbers of the items you want to buy, separated by spaces.")
-            print("For example, to buy items 1, 3, and 5, type: 1 3 5")
-            print("Type 'q' when you're finished buying items.")
-
-            choice = input("\nYour choice: ").lower()
-            
-            if choice == 'q':
-                break
-            
-            try:
-                item_indices = [int(i) - 1 for i in choice.split()]
-                sorted_inventory = sorted(self.shop.inventory.items(), key=lambda x: x[1]['item'].value, reverse=False)
-                items_to_buy = [sorted_inventory[i][1]['item'] for i in item_indices if 0 <= i < len(sorted_inventory)]
-                
-                if not items_to_buy:
-                    print("No valid items selected.")
-                    continue
-                
-                total_cost = sum(item.value for item in items_to_buy)
-                
-                print("\nYou're about to buy:")
-                for item in items_to_buy:
-                    print(f"- {item.name} for {item.value} gold")
-                print(f"\nTotal cost: {total_cost} gold")
-                
-                if self.player.gold < total_cost:
-                    print("You don't have enough gold to buy these items.")
-                    input("\nPress Enter to continue...")
-                    continue
-                
-                confirm = input("Do you want to proceed? (y/n): ").lower()
-                if confirm == 'y':
-                    for item in items_to_buy:
-                        self.player.gold -= item.value
-                        self.player.inventory.append(item)
-                        self.shop.remove_item(item.name, 1)
-                    print(f"You bought {len(items_to_buy)} items for a total of {total_cost} gold.")
-                else:
-                    print("Purchase cancelled.")
-            
-            except (ValueError, IndexError):
-                print("Invalid input. Please enter valid item numbers separated by spaces.")
-            
-            input("\nPress Enter to continue...")
-
-
-    def sell_items(self):
-        #Handles selling of multiple items at once to shop
-        while True:
-            self.player.show_inventory()
-            print("\nEnter the numbers of the items you want to sell, separated by spaces.")
-            print("For example, to sell items 1, 3, and 5, type: 1 3 5")
-            print("Type 'q' when you're finished selling items.")
-
-            choice = input("\nYour choice: ").lower()
-            
-            if choice == 'q':
-                break
-            
-            try:
-                item_indices = [int(i) - 1 for i in choice.split()]
-                items_to_sell = [self.player.inventory[i] for i in item_indices if 0 <= i < len(self.player.inventory)]
-                
-                if not items_to_sell:
-                    print("No valid items selected.")
-                    continue
-                
-                total_value = sum(item.value // 2 for item in items_to_sell)
-                
-                print("\nYou're about to sell:")
-                for item in items_to_sell:
-                    print(f"- {item.name} for {item.value // 2} gold")
-                print(f"\nTotal value: {total_value} gold")
-                
-                confirm = input("Do you want to proceed? (y/n): ").lower()
-                if confirm == 'y':
-                    for item in items_to_sell:
-                        sell_price = item.value // 2
-                        self.player.gold += sell_price
-                        self.player.inventory.remove(item)
-                        self.shop.add_item(item, 1)
-                    print(f"You sold {len(items_to_sell)} items for a total of {total_value} gold.")
-                else:
-                    print("Sale cancelled.")
-            
-            except ValueError:
-                print("Invalid input. Please enter numbers separated by spaces.")
-            
-            input("\nPress Enter to continue...")
 
     def equip_menu(self):
         while True:
@@ -626,6 +325,7 @@ class Game:
                     if loaded_player and loaded_location:
                         self.player = loaded_player
                         self.current_location = loaded_location
+                        self.initialise_battle()
                         break
                     else:
                         print("Failed to load the game. Starting a new game.")
@@ -681,7 +381,7 @@ class Game:
                 clear_screen()
                 self.location_actions()
             elif action == "s" and self.current_location == "Village":
-                self.shop_menu()
+                self.shop.shop_menu(self.player)
             elif action == "sa":
                 save_file = self.choose_save_file()
                 save_game(self.player, self.current_location, save_file)
