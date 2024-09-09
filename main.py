@@ -34,27 +34,8 @@ class Game:
     def show_status(self):
         #Displays the player's current status.
         clear_screen()
-        print(f"\n{self.player.name} (Level {self.player.level}):")
-        print(f"HP: {self.player.hp}/{self.player.max_hp}, EXP: {self.player.exp}/{self.player.level*100}, Gold: {self.player.gold}, "
-            f"Attack: {self.player.attack}, Defence: {self.player.defence}, Current location: {self.current_location}")
-        print("\nEquipped Items:")
-        for slot, item in self.player.equipped.items():
-            if item:
-                print(f"{slot.capitalize()}: {item.name} (Tier: {item.tier.capitalize()})")
-                if item.attack > 0:
-                    print(f"  Attack: +{item.attack}")
-                if item.defence > 0:
-                    print(f"  Defence: +{item.defence}")
-                if item.effect_type:
-                    print(f"  Effect: {item.effect_type.capitalize()} - ", end="")
-                    if isinstance(item.effect, tuple):
-                        print(f"{item.effect[0].capitalize()} +{item.effect[1]}")
-                    else:
-                        print(f"{item.effect}")
-                    if item.cooldown > 0:
-                        print(f"  Cooldown: {item.cooldown} turns")
-            else:
-                print(f"{slot.capitalize()}: None")
+        self.player.show_status()
+        print(f"Current location: {self.current_location}")
                 
     def move(self):
         #Handles player movement
