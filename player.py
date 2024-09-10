@@ -150,6 +150,9 @@ class Player(Character):
             self.attack += value
         elif stat == "defence":
             self.defence += value
+        elif stat == "all_stats":
+            self.defence += value
+            self.attack += value
         self.active_buffs[stat] = value
 
     def remove_all_buffs(self):
@@ -160,6 +163,9 @@ class Player(Character):
                     self.attack -= value
                 elif stat == "defence":
                     self.defence -= value
+                elif stat == "all_stats":
+                    self.defence -= value
+                    self.attack -= value
             buff_count = len(self.active_buffs)
             self.active_buffs.clear()
             print(f"{buff_count} battle buff{'s' if buff_count > 1 else ''} removed.")
