@@ -21,9 +21,9 @@ class Battle:
         
         if not enemy.is_alive():
             print(f"You defeated the {enemy.name}!")
-            self.player.gain_exp(enemy.exp)
+            self.player.gain_exp(enemy.exp, enemy.level)
             self.player.gold += enemy.gold
-            print(f"You gained {enemy.exp} EXP and {enemy.gold} gold.")
+            print(f"You gained {enemy.gold} gold.")
             return True
         
         enemy_damage = max(0, self.calculate_damage(enemy.attack) - self.player.defence)

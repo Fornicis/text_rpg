@@ -119,7 +119,8 @@ class Game:
                 defence=enemy_template.defence,
                 exp=enemy_template.exp,
                 gold=enemy_template.gold,
-                tier=enemy_template.tier
+                tier=enemy_template.tier,
+                level=enemy_template.level
             )
             
             print(f"You encountered a {enemy.name}!")

@@ -93,9 +93,21 @@ class Player(Character):
         print("\nStarter items added and equipped:")
         self.show_inventory()
         
-    def gain_exp(self, amount):
-        # Gain experience and level up if threshold reached
-        self.exp += amount
+    def gain_exp(self, amount, enemy_level):
+        # Gain experience and level up if threshold reached, scales down with overlevelling
+        level_difference = self.level - enemy_level
+        #Define the scaling factor
+        if level_difference <= 0:
+            scaling_factor = 1 #Full exp if player is equal or lower level
+        else:
+            #Reduce exp by 10% for every level above enemy level, minimum 10%
+            scaling_factor = max(0.1, 1 - (level_difference * 0.1))
+        #Applies scaling factor    
+        scaled_exp = int(amount * scaling_factor)
+        #Gain exp based on scaled exp
+        self.exp += scaled_exp
+        print(f"You gained {scaled_exp} experience!")
+        #Check for level up
         if self.exp >= self.level * 100:
             self.level_up()
 
