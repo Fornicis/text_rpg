@@ -4,25 +4,29 @@ from items import Item
 from display import clear_screen
 
 class BaseShop:
+    #Standard shop class, this will allow easy addition of other shops without having to rewrite lots of code
     def __init__(self, all_items):
-        self.inventory = {}
-        self.all_items = all_items
-        self.restock_counter = 0
-        self.restock_frequency = 10
+        self.inventory = {} #Dictionary of items in the shop
+        self.all_items = all_items 
+        self.restock_counter = 0 #Counter to check if its time for new items to be stocked
+        self.restock_frequency = 10 #Amount counter needs to reach before restock occurs
 
     def add_item(self, item, quantity):
+        #Helper function add sold items to shop inventory
         if item.name in self.inventory:
             self.inventory[item.name]['quantity'] += quantity
         else:
             self.inventory[item.name] = {'item': item, 'quantity': quantity}
 
     def remove_item(self, item_name, quantity):
+        #Helper function to remove sold items from shop inventory
         if item_name in self.inventory:
             self.inventory[item_name]['quantity'] -= quantity
             if self.inventory[item_name]['quantity'] <= 0:
                 del self.inventory[item_name]
 
     def display_inventory(self, player_level):
+        #Displays the shop inventory, sorted in descending value, with each item assigned a number for each of buying
         print(f"\n{self.__class__.__name__} Inventory:")
         sorted_inventory = sorted(
             self.inventory.items(),
@@ -36,6 +40,7 @@ class BaseShop:
                 self.display_item_stats(item)
                 
     def display_item_stats(self, item):
+        #Shows the stats and effect of different items
         print(f"   Type: {item.type.capitalize()}")
         print(f"   Tier: {item.tier.capitalize()}")
         if item.attack > 0:
@@ -47,6 +52,7 @@ class BaseShop:
             print(f"   Cooldown: {item.cooldown} turns")
 
     def rotate_stock(self, player_level):
+        #Helper function which increases the restock counter when called and calls stock_shop based on player level when counter reaches frequency, clears old stock
         self.restock_counter += 1
         if self.restock_counter >= self.restock_frequency:
             print(f"\nThe {self.__class__.__name__} has restocked with new items!")
@@ -55,6 +61,7 @@ class BaseShop:
             self.stock_shop(player_level)
 
     def stock_shop(self, player_level=1):
+        #Function which restocks shop based on player level, random amount of items between 5 and 10, only stocks one of weapons and armour
         num_items = random.randint(5, 10)
         available_items = [item for item in self.all_items.values() if self.is_item_available(item, player_level)]
         for _ in range(num_items):
@@ -63,6 +70,7 @@ class BaseShop:
             self.add_item(item, quantity)
 
     def is_item_available(self, item, player_level):
+        #Stocks items based on the level of the player ensuring high level items aren't buyable until required level is met
         tier_levels = {
             "starter": 1,
             "common": 1,
@@ -75,10 +83,12 @@ class BaseShop:
         return player_level >= tier_levels.get(item.tier, 1)
 
     def buy_items(self, player):
+        #Allows the player to buy items from the shop
         while True:
             clear_screen()
             self.display_inventory(player.level)
             print(f"\nYour gold: {player.gold}")
+            #Allows player to buy multiple items by typing the related item numbers
             print("\nEnter the numbers of the items you want to buy, separated by spaces.")
             print("For example, to buy items 1, 3, and 5, type: 1 3 5")
             print("Type 'q' when you're finished buying items.")
@@ -97,19 +107,20 @@ class BaseShop:
                     print("No valid items selected.")
                     continue
                 
-                total_cost = sum(item.value for item in items_to_buy)
+                total_cost = sum(item.value for item in items_to_buy) 
                 
                 print("\nYou're about to buy:")
                 for item in items_to_buy:
                     print(f"- {item.name} for {item.value} gold")
-                print(f"\nTotal cost: {total_cost} gold")
+                print(f"\nTotal cost: {total_cost} gold") #Shows total cost of the items player has selected
                 
                 if player.gold < total_cost:
+                    #Refuses sale if player is too poor
                     print("You don't have enough gold to buy these items.")
                     input("\nPress Enter to continue...")
                     continue
                 
-                confirm = input("Do you want to proceed? (y/n): ").lower()
+                confirm = input("Do you want to proceed? (y/n): ").lower() #Confirms player wants to buy the items
                 if confirm == 'y':
                     for item in items_to_buy:
                         player.gold -= item.value
@@ -125,6 +136,7 @@ class BaseShop:
             input("\nPress Enter to continue...")
 
     def sell_items(self, player):
+        #Same as buy items but for selling, shop buys for half the item value
         while True:
             clear_screen()
             self.display_sellable_items(player)
@@ -170,12 +182,14 @@ class BaseShop:
             input("\nPress Enter to continue...")
 
     def display_sellable_items(self, player):
+        #Shows a list of items the player can sell, offers half item value
         print("\nItems you can sell:")
         sellable_items = self.get_sellable_items(player)
         for i, item in enumerate(sellable_items, 1):
             print(f"{i}. {item.name} (Sell value: {item.value // 2} gold)")
 
     def get_sellable_items(self, player):
+        #Shows items the player can sell
         return [item for item in player.inventory if self.can_sell_item(item)]
 
     def can_sell_item(self, item):
@@ -183,6 +197,7 @@ class BaseShop:
         return True
 
     def shop_menu(self, player):
+        #Shows the shop menu offering player option to buy, sell, or exit
         while True:
             self.rotate_stock(player.level)
             print(f"\n--- {self.__class__.__name__} Menu ---")
@@ -201,15 +216,19 @@ class BaseShop:
                 print("Invalid choice. Please try again.")
 
 class Armourer(BaseShop):
+    #Child class of shop called Armour, sells weapons and armour
     def __init__(self, all_items):
         super().__init__({k: v for k, v in all_items.items() if v.type in ["weapon", "shield", "helm", "chest", "boots", "gloves", "back", "legs", "belt", "ring"]})
 
     def can_sell_item(self, item):
+        #Allows player to sell armour and weapons
         return item.type in ["weapon", "shield", "helm", "chest", "boots", "gloves", "back", "legs", "belt", "ring"]
 
 class Alchemist(BaseShop):
+    #Child class of Shop called Alchemist, sells potions
     def __init__(self, all_items):
         super().__init__({k: v for k, v in all_items.items() if v.type == "consumable"})
 
     def can_sell_item(self, item):
+        #Allows player to sell consumables
         return item.type == "consumable"

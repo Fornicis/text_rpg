@@ -35,7 +35,7 @@ def initialise_items():
         "Wooden Blowgun": Item("Wooden Blowgun", "weapon", 18, "common", attack=4),
         "Leather Flail": Item("Leather Flail", "weapon", 26, "common", attack=7),
 
-        ## Armor
+        ## Armour
         "Leather Shield": Item("Leather Shield", "shield", 15, "common", defence=2),
         "Leather Helm": Item("Leather Helm", "helm", 10, "common", defence=1),
         "Leather Chest": Item("Leather Chest", "chest", 25, "common", defence=3),
@@ -81,7 +81,7 @@ def initialise_items():
         "Bronze Xiphos": Item("Bronze Xiphos", "weapon", 36, "uncommon", attack=10),
         "Iron War Scythe": Item("Iron War Scythe", "weapon", 45, "uncommon", attack=14),
 
-        ## Armor
+        ## Armour
         "Bronze Shield": Item("Bronze Shield", "shield", 30, "uncommon", defence=4),
         "Iron Helm": Item("Iron Helm", "helm", 40, "uncommon", defence=3),
         "Bronze Chestplate": Item("Bronze Chestplate", "chest", 55, "uncommon", defence=6),
@@ -117,7 +117,7 @@ def initialise_items():
         "Steel Claymore": Item("Steel Claymore", "weapon", 71, "rare", attack=19),
         "Steel Chakram": Item("Steel Chakram", "weapon", 63, "rare", attack=15),
 
-        ## Armor
+        ## Armour
         "Steel Kite Shield": Item("Steel Kite Shield", "shield", 45, "rare", defence=7),
         "Steel Helm": Item("Steel Helm", "helm", 80, "rare", defence=6),
         "Steel Breastplate": Item("Steel Breastplate", "chest", 120, "rare", defence=10),
@@ -154,10 +154,10 @@ def initialise_items():
         "Mithril Chakram Pair": Item("Mithril Chakram Pair", "weapon", 258, "epic", attack=25),
 
 
-        ## Armor
+        ## Armour
         "Mithril Tower Shield": Item("Mithril Tower Shield", "shield", 220, "epic", defence=12),
         "Mithril Full Helm": Item("Mithril Full Helm", "helm", 280, "epic", defence=9),
-        "Mithril Plate Armor": Item("Mithril Plate Armor", "chest", 350, "epic", defence=18),
+        "Mithril Plate Armour": Item("Mithril Plate Armour", "chest", 350, "epic", defence=18),
         "Mithril Greaves": Item("Mithril Greaves", "boots", 300, "epic", defence=7),
         "Mithril Gauntlets": Item("Mithril Gauntlets", "gloves", 270, "epic", defence=6),
         "Mithril-Woven Cape": Item("Mithril-Woven Cape", "back", 320, "epic", defence=8),
@@ -190,7 +190,7 @@ def initialise_items():
         "Adamantite Titan's Fist": Item("Adamantite Titan's Fist", "weapon", 1090, "legendary", attack=44),
         "Adamantite Whisperwind": Item("Adamantite Whisperwind", "weapon", 1040, "legendary", attack=41),
 
-        ## Armor
+        ## Armour
         "Adamantite Bulwark": Item("Adamantite Bulwark", "shield", 950, "legendary", defence=20),
         "Adamantite Crown": Item("Adamantite Crown", "helm", 1100, "legendary", defence=15),
         "Adamantite Godplate": Item("Adamantite Godplate", "chest", 1300, "legendary", defence=30),
@@ -226,7 +226,7 @@ def initialise_items():
         "Harmony's Discord": Item("Harmony's Discord", "weapon", 5350, "mythical", attack=108),
         "Apocalypse Incarnate": Item("Apocalypse Incarnate", "weapon", 5450, "mythical", attack=111),
 
-        ## Armor
+        ## Armour
         "Aegis of the Cosmos": Item("Aegis of the Cosmos", "shield", 4800, "mythical", defence=50),
         "Crown of Infinite Wisdom": Item("Crown of Infinite Wisdom", "helm", 5200, "mythical", defence=30),
         "Vestment of Universal Constants": Item("Vestment of Universal Constants", "chest", 5500, "mythical", defence=60),

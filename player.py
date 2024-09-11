@@ -11,6 +11,7 @@ class Character:
         self.defence = defence
         
     def show_status(self):
+        #Shows the status and equipment of the player, 
         print(f"\n{self.name} (Level {self.level}):")
         print(f"HP: {self.hp}/{self.max_hp}, EXP: {self.exp}/{self.level*100}, Gold: {self.gold}, "
               f"Attack: {self.attack}, Defence: {self.defence}")
@@ -47,13 +48,13 @@ class Character:
 
 class Player(Character):
     def __init__(self, name):
-        # Initialize player with default stats
+        # Initialise player with default stats
         super().__init__(name, hp=100, attack=10, defence=5)
         self.level = 1
         self.exp = 0
         self.gold = 0
         self.inventory = []
-        # Initialize equipment slots
+        # Initialise equipment slots
         self.equipped = {
             "weapon": None,
             "helm": None,
@@ -83,11 +84,13 @@ class Player(Character):
         ]
         
         for item_name in starter_items:
+            #Adds starter items to the players inventory
             item = self.items[item_name]
             self.inventory.append(item)
             print(f"Added {item.name} to inventory.")
             
             if item.type in ["weapon", "helm", "chest", "waist", "legs", "boots", "gloves", "shield", "back", "ring"]:
+                #Auto equips the players start equipment to save time
                 self.equip_item(item)
         
         print("\nStarter items added and equipped:")
@@ -190,6 +193,7 @@ class Player(Character):
             return False
 
         if item.type == "consumable":
+            #Ensures player can only use appropriate items outside of battle, no point damaging the environment with damaging effects
             if item.effect_type == "healing":
                 heal_amount = min(item.effect, self.max_hp - self.hp)
                 self.heal(heal_amount)
@@ -269,6 +273,7 @@ class Player(Character):
             return "Unknown effect"
         
     def show_usable_items(self):
+        #Shows a list of usable items if available, else prints that none are available
         usable_items = [item for item in self.inventory if item.type == "consumable"]
         if not usable_items:
             print("You have no usable items.")
