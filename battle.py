@@ -8,13 +8,15 @@ class Battle:
         self.items = items
 
     def calculate_damage(self, base_attack):
-        damage = random.randint(max(1, base_attack - 5), base_attack + 5)
+        #Calculates player and enemy damage within a range of 50% less to 50% more
+        damage = random.randint(max(1, base_attack // 2), base_attack * 1.5)
         if random.random() < 0.1:  # Critical hit chance 10%
             damage *= 2
             print("Critical hit!")
         return damage
 
     def player_attack(self, enemy):
+        #Handles the player attacking, if enemy dies, player gains exp and gold with a chance for loot, else the enemy attacks back
         player_damage = max(0, self.calculate_damage(self.player.attack) - enemy.defence)
         enemy.take_damage(player_damage)
         print(f"You dealt {player_damage} damage to {enemy.name}.")
@@ -37,16 +39,18 @@ class Battle:
         return False
 
     def run_away(self, enemy):
+        #Gives the player a 50% chance to run away from the enemy, if they fail, the enemy attacks, damage is set based on difference between enemy attack and player defence * 2
         if random.random() < 0.5:
             print("You successfully ran away!")
             return True
         else:
-            damage_taken = max(0, enemy.attack - self.player.defence)
+            damage_taken = max(0, (enemy.attack * 2) - self.player.defence)
             self.player.take_damage(damage_taken)
             print(f"You failed to run away and took {damage_taken} damage.")
             return False
 
     def battle(self, enemy):
+        #Battle logic, displays player and enemy stats, updates the cooldowns of any items
         print(f"\nBattle start! {self.player.name} vs {enemy.name}")
         
         while self.player.is_alive() and enemy.is_alive():
@@ -55,10 +59,12 @@ class Battle:
             action = input("Do you want to:\n[a]ttack\n[u]se item\n[r]un?\n>").lower()
             
             if action == "a":
+                #Runs the player_attack method when selected
                 battle_over = self.player_attack(enemy)
                 if battle_over:
                     return
             elif action == "u":
+                #Handles item usage and ensures player gains exp and gold if enemy dies
                 used_item = self.use_item_menu(enemy)
                 if used_item:
                     if used_item.effect_type == "damage" and not enemy.is_alive():
@@ -70,6 +76,7 @@ class Battle:
                 else:
                     print("No item used. You lose your turn.")
             elif action == "r":
+                #Handles the player trying to run away
                 if self.run_away(enemy):
                     return
             else:
@@ -80,9 +87,11 @@ class Battle:
                 return
             
         if self.player.is_alive() and not enemy.is_alive():
+            #Removes all buffs from the player at the end of a battle
             self.player.remove_all_buffs()
 
     def use_item_menu(self, enemy):
+        #Handles item usage inside battle, checks if player has the item, if so and not on cooldown, uses item by calling use_combat_item method
         usable_items = self.player.show_usable_items()
         if not usable_items:
             return None
@@ -120,6 +129,7 @@ class Battle:
                 print("Invalid choice. Please try again.")
                 
     def use_combat_item(self, item, enemy):
+        #Handles the use of items in combat, ensures items are correctly applied
         if item.effect_type == "healing":
             success, message = self.player.use_item(item)
             print(message)

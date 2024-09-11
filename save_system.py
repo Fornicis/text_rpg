@@ -6,14 +6,17 @@ from items import Item, initialise_items
 SAVE_DIRECTORY = "saves"
 
 def ensure_save_directory():
+    #Makes a folder called saves if one does not exist in the path
     if not os.path.exists(SAVE_DIRECTORY):
         os.makedirs(SAVE_DIRECTORY)
 
 def get_save_files():
+    #Shows a list of save_files in the saves folder as long as they end with .json
     ensure_save_directory()
     return [f for f in os.listdir(SAVE_DIRECTORY) if f.endswith('.json')]
 
 def save_game(player, current_location, filename):
+    #Saves all stats, items, equipment and location of the player to chosen save file, makes a new save if requested to do so
     ensure_save_directory()
     save_data = {
         "player": {
@@ -39,6 +42,7 @@ def save_game(player, current_location, filename):
     print(f"Game saved successfully to {filepath}")
 
 def load_game(filename):
+    #Pulls data from specified save file and loads that into the game parsing information to relevant sections
     filepath = os.path.join(SAVE_DIRECTORY, filename)
     if not os.path.exists(filepath):
         print(f"Save file {filename} not found.")
