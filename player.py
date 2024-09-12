@@ -80,7 +80,7 @@ class Player(Character):
             "Peasants Bottoms",
             "Minor Health Potion",
             "Small Bomb",
-            "Courage Charm"
+            "Quick Warrior's Drop"
         ]
         
         for item_name in starter_items:
