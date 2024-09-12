@@ -9,7 +9,7 @@ class Battle:
 
     def calculate_damage(self, base_attack):
         #Calculates player and enemy damage within a range of 50% less to 50% more
-        damage = random.randint(max(1, base_attack // 2), base_attack * 1.5)
+        damage = random.randint(max(1, base_attack // 2), int(base_attack * 1.5))
         if random.random() < 0.1:  # Critical hit chance 10%
             damage *= 2
             print("Critical hit!")
