@@ -1,5 +1,5 @@
 class Item:
-    def __init__(self, name, item_type, value, tier, attack=0, defence=0, effect_type=None, effect=0, cooldown=0):
+    def __init__(self, name, item_type, value, tier, attack=0, defence=0, effect_type=None, effect=0, cooldown=0, duration=0, tick_effect=0):
         self.name = name
         self.type = item_type
         self.value = value
@@ -9,6 +9,8 @@ class Item:
         self.effect_type = effect_type
         self.effect = effect
         self.cooldown = cooldown
+        self.duration = duration
+        self.tick_effect = tick_effect
         
 def initialise_items():
     return {
@@ -226,7 +228,7 @@ def initialise_items():
         "Signet of Cosmic Influence": Item("Signet of Cosmic Influence", "ring", 6100, "mythical", attack=17, defence=12),
 
         # Consumables
-                ## Healing Items (expanded with additional high-tier options)
+        ## Healing Items
         # Common
         "Minor Health Potion": Item("Minor Health Potion", "consumable", 15, "common", effect_type="healing", effect=20, cooldown=3),
         "Quick Heal Salve": Item("Quick Heal Salve", "consumable", 10, "common", effect_type="healing", effect=12, cooldown=1),
@@ -259,6 +261,14 @@ def initialise_items():
         "Cosmic Restoration Nectar": Item("Cosmic Restoration Nectar", "consumable", 6500, "mythical", effect_type="healing", effect=500, cooldown=20),
         "Starlight Healing Essence": Item("Starlight Healing Essence", "consumable", 5500, "mythical", effect_type="healing", effect=400, cooldown=15),
         "Void Mender's Elixir": Item("Void Mender's Elixir", "consumable", 4500, "mythical", effect_type="healing", effect=300, cooldown=10),
+        
+        # New Heal over Time Items
+        "Minor Regeneration Potion": Item("Minor Regeneration Potion", "consumable", 20, "common", effect_type="hot", effect=0, cooldown=5, duration=5, tick_effect=5),
+        "Regeneration Elixir": Item("Regeneration Elixir", "consumable", 40, "uncommon", effect_type="hot", effect=0, cooldown=6, duration=6, tick_effect=10),
+        "Greater Regeneration Tonic": Item("Greater Regeneration Tonic", "consumable", 80, "rare", effect_type="hot", effect=0, cooldown=7, duration=8, tick_effect=15),
+        "Supreme Vitality Brew": Item("Supreme Vitality Brew", "consumable", 400, "epic", effect_type="hot", effect=0, cooldown=8, duration=10, tick_effect=25),
+        "Legendary Life Essence": Item("Legendary Life Essence", "consumable", 1600, "legendary", effect_type="hot", effect=0, cooldown=10, duration=12, tick_effect=40),
+        "Mythical Fountain of Youth": Item("Mythical Fountain of Youth", "consumable", 8000, "mythical", effect_type="hot", effect=0, cooldown=15, duration=15, tick_effect=80),
 
         ## Damage Items
         # Common
@@ -301,48 +311,48 @@ def initialise_items():
         # Common
         "Minor Strength Tonic": Item("Minor Strength Tonic", "consumable", 20, "common", effect_type="buff", effect=("attack", 5), cooldown=5),
         "Minor Iron Skin Elixir": Item("Minor Iron Skin Elixir", "consumable", 20, "common", effect_type="buff", effect=("defence", 5), cooldown=5),
-        "Minor Warrior's Brew": Item("Minor Warrior's Brew", "consumable", 25, "common", effect_type="buff", effect=("all_stats", 2), cooldown=5),
+        "Minor Warrior's Brew": Item("Minor Warrior's Brew", "consumable", 25, "common", effect_type="buff", effect=("all stats", 2), cooldown=5),
         "Quick Strength Drop": Item("Quick Strength Drop", "consumable", 15, "common", effect_type="buff", effect=("attack", 3), cooldown=2),
         "Quick Iron Skin Drop": Item("Quick Iron Skin Drop", "consumable", 15, "common", effect_type="buff", effect=("defence", 3), cooldown=2),
-        "Quick Warrior's Drop": Item("Quick Warrior's Drop", "consumable", 18, "common", effect_type="buff", effect=("all_stats", 1), cooldown=2),
+        "Quick Warrior's Drop": Item("Quick Warrior's Drop", "consumable", 18, "common", effect_type="buff", effect=("all stats", 1), cooldown=2),
 
         # Uncommon
         "Strength Tonic": Item("Strength Tonic", "consumable", 40, "uncommon", effect_type="buff", effect=("attack", 10), cooldown=6),
         "Iron Skin Elixir": Item("Iron Skin Elixir", "consumable", 40, "uncommon", effect_type="buff", effect=("defence", 10), cooldown=6),
-        "Warrior's Brew": Item("Warrior's Brew", "consumable", 50, "uncommon", effect_type="buff", effect=("all_stats", 5), cooldown=6),
+        "Warrior's Brew": Item("Warrior's Brew", "consumable", 50, "uncommon", effect_type="buff", effect=("all stats", 5), cooldown=6),
         "Swift Strength Vial": Item("Swift Strength Vial", "consumable", 30, "uncommon", effect_type="buff", effect=("attack", 6), cooldown=3),
         "Swift Iron Skin Vial": Item("Swift Iron Skin Vial", "consumable", 30, "uncommon", effect_type="buff", effect=("defence", 6), cooldown=3),
-        "Swift Warrior's Vial": Item("Swift Warrior's Vial", "consumable", 35, "uncommon", effect_type="buff", effect=("all_stats", 3), cooldown=3),
+        "Swift Warrior's Vial": Item("Swift Warrior's Vial", "consumable", 35, "uncommon", effect_type="buff", effect=("all stats", 3), cooldown=3),
 
         # Rare
         "Greater Strength Tonic": Item("Greater Strength Tonic", "consumable", 80, "rare", effect_type="buff", effect=("attack", 20), cooldown=7),
         "Greater Iron Skin Elixir": Item("Greater Iron Skin Elixir", "consumable", 80, "rare", effect_type="buff", effect=("defence", 20), cooldown=7),
-        "Greater Warrior's Brew": Item("Greater Warrior's Brew", "consumable", 100, "rare", effect_type="buff", effect=("all_stats", 10), cooldown=7),
+        "Greater Warrior's Brew": Item("Greater Warrior's Brew", "consumable", 100, "rare", effect_type="buff", effect=("all stats", 10), cooldown=7),
         "Rapid Strength Essence": Item("Rapid Strength Essence", "consumable", 60, "rare", effect_type="buff", effect=("attack", 12), cooldown=3),
         "Rapid Iron Skin Essence": Item("Rapid Iron Skin Essence", "consumable", 60, "rare", effect_type="buff", effect=("defence", 12), cooldown=3),
-        "Rapid Warrior's Essence": Item("Rapid Warrior's Essence", "consumable", 75, "rare", effect_type="buff", effect=("all_stats", 6), cooldown=3),
+        "Rapid Warrior's Essence": Item("Rapid Warrior's Essence", "consumable", 75, "rare", effect_type="buff", effect=("all stats", 6), cooldown=3),
 
         # Epic
         "Epic Strength Tonic": Item("Epic Strength Tonic", "consumable", 400, "epic", effect_type="buff", effect=("attack", 40), cooldown=8),
         "Epic Iron Skin Elixir": Item("Epic Iron Skin Elixir", "consumable", 400, "epic", effect_type="buff", effect=("defence", 40), cooldown=8),
-        "Epic Warrior's Brew": Item("Epic Warrior's Brew", "consumable", 500, "epic", effect_type="buff", effect=("all_stats", 20), cooldown=8),
+        "Epic Warrior's Brew": Item("Epic Warrior's Brew", "consumable", 500, "epic", effect_type="buff", effect=("all stats", 20), cooldown=8),
         "Quicksilver Strength Philter": Item("Quicksilver Strength Philter", "consumable", 300, "epic", effect_type="buff", effect=("attack", 24), cooldown=4),
         "Quicksilver Iron Skin Philter": Item("Quicksilver Iron Skin Philter", "consumable", 300, "epic", effect_type="buff", effect=("defence", 24), cooldown=4),
-        "Quicksilver Warrior's Philter": Item("Quicksilver Warrior's Philter", "consumable", 375, "epic", effect_type="buff", effect=("all_stats", 12), cooldown=4),
+        "Quicksilver Warrior's Philter": Item("Quicksilver Warrior's Philter", "consumable", 375, "epic", effect_type="buff", effect=("all stats", 12), cooldown=4),
 
         # Legendary
         "Legendary Strength Tonic": Item("Legendary Strength Tonic", "consumable", 1600, "legendary", effect_type="buff", effect=("attack", 80), cooldown=10),
         "Legendary Iron Skin Elixir": Item("Legendary Iron Skin Elixir", "consumable", 1600, "legendary", effect_type="buff", effect=("defence", 80), cooldown=10),
-        "Legendary Warrior's Brew": Item("Legendary Warrior's Brew", "consumable", 2000, "legendary", effect_type="buff", effect=("all_stats", 40), cooldown=10),
+        "Legendary Warrior's Brew": Item("Legendary Warrior's Brew", "consumable", 2000, "legendary", effect_type="buff", effect=("all stats", 40), cooldown=10),
         "Celestial Strength Ampoule": Item("Celestial Strength Ampoule", "consumable", 1200, "legendary", effect_type="buff", effect=("attack", 48), cooldown=5),
         "Celestial Iron Skin Ampoule": Item("Celestial Iron Skin Ampoule", "consumable", 1200, "legendary", effect_type="buff", effect=("defence", 48), cooldown=5),
-        "Celestial Warrior's Ampoule": Item("Celestial Warrior's Ampoule", "consumable", 1500, "legendary", effect_type="buff", effect=("all_stats", 24), cooldown=5),
+        "Celestial Warrior's Ampoule": Item("Celestial Warrior's Ampoule", "consumable", 1500, "legendary", effect_type="buff", effect=("all stats", 24), cooldown=5),
 
         # Mythical
         "Godly Strength Tonic": Item("Godly Strength Tonic", "consumable", 8000, "mythical", effect_type="buff", effect=("attack", 160), cooldown=15),
         "Godly Iron Skin Elixir": Item("Godly Iron Skin Elixir", "consumable", 8000, "mythical", effect_type="buff", effect=("defence", 160), cooldown=15),
-        "Godly Warrior's Brew": Item("Godly Warrior's Brew", "consumable", 10000, "mythical", effect_type="buff", effect=("all_stats", 80), cooldown=15),
+        "Godly Warrior's Brew": Item("Godly Warrior's Brew", "consumable", 10000, "mythical", effect_type="buff", effect=("all stats", 80), cooldown=15),
         "Divine Strength Infusion": Item("Divine Strength Infusion", "consumable", 6000, "mythical", effect_type="buff", effect=("attack", 96), cooldown=7),
         "Divine Iron Skin Infusion": Item("Divine Iron Skin Infusion", "consumable", 6000, "mythical", effect_type="buff", effect=("attack", 96), cooldown=7),
-        "Divine Warrior's Infusion": Item("Divine Warrior's Infusion", "consumable", 7500, "mythical", effect_type="buff", effect=("all_stats", 48), cooldown=7),
+        "Divine Warrior's Infusion": Item("Divine Warrior's Infusion", "consumable", 7500, "mythical", effect_type="buff", effect=("all stats", 48), cooldown=7),
     }

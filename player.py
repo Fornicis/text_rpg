@@ -15,6 +15,10 @@ class Character:
         print(f"\n{self.name} (Level {self.level}):")
         print(f"HP: {self.hp}/{self.max_hp}, EXP: {self.exp}/{self.level*100}, Gold: {self.gold}, "
               f"Attack: {self.attack}, Defence: {self.defence}")
+        if self.active_hots:
+                print("\nActive Heal Over Time Effects:")
+                for hot_name, hot_info in self.active_hots.items():
+                    print(f"  {hot_name}: {hot_info['tick_effect']} HP/turn for {hot_info['duration']} more turns")
         print("\nEquipped Items:")
         for slot, item in self.equipped.items():
             if item:
@@ -33,6 +37,7 @@ class Character:
                         print(f"  Cooldown: {item.cooldown} turns")
             else:
                 print(f"{slot.capitalize()}: None")
+            
 
     def is_alive(self):
         # Check if character is still alive
@@ -71,6 +76,7 @@ class Player(Character):
         self.active_buffs = {}
         self.items = initialise_items()
         self.give_starter_items()
+        self.active_hots = {}
     
     def give_starter_items(self):
         #Gives starter items to the player
@@ -165,7 +171,7 @@ class Player(Character):
             self.attack += value
         elif stat == "defence":
             self.defence += value
-        elif stat == "all_stats":
+        elif stat == "all stats":
             self.defence += value
             self.attack += value
         self.active_buffs[stat] = value
@@ -178,7 +184,7 @@ class Player(Character):
                     self.attack -= value
                 elif stat == "defence":
                     self.defence -= value
-                elif stat == "all_stats":
+                elif stat == "all stats":
                     self.defence -= value
                     self.attack -= value
             buff_count = len(self.active_buffs)
@@ -205,6 +211,8 @@ class Player(Character):
                 stat, value = item.effect
                 self.apply_buff(stat, value)
                 message = f"You used {item.name} and gained a temporary {stat} buff of {value}."
+            elif item.effect_type == "hot":
+                return self.apply_hot(item)
             
             self.inventory.remove(item)
             self.cooldowns[item.name] = item.cooldown
@@ -253,7 +261,7 @@ class Player(Character):
             print("\nConsumable Items:")
             for item in consumables:
                 effect_description = self.get_effect_description(item)
-                print(f"- {item.name}: {effect_description}")
+                print(f"- {item.name}: {effect_description} (Cooldown: {item.cooldown} turns)")
         else:
             print("\nYou have no consumable items.")
 
@@ -261,6 +269,9 @@ class Player(Character):
         # Get description of item effect
         if item.effect_type == "healing":
             return f"Restores {item.effect} HP"
+        elif item.effect_type == "hot":
+            total_healing = item.tick_effect * item.duration
+            return f"Heals {item.tick_effect} HP per turn for {item.duration} turns (Total: {total_healing} HP)"
         elif item.effect_type == "damage":
             return f"Deals {item.effect} damage"
         elif item.effect_type == "buff":
@@ -284,3 +295,24 @@ class Player(Character):
             effect_description = self.get_effect_description(item)
             print(f"{i}. {item.name}: {effect_description}")
         return usable_items
+    
+    def apply_hot(self, item):
+        if item.effect_type == "hot":
+            self.active_hots[item.name] = {
+                "duration": item.duration,
+                "tick_effect": item.tick_effect
+            }
+            return True, f"Applied {item.name}. You will heal for {item.tick_effect} HP every turn for {item.duration} turns."
+        return False, "This item does not have a heal over time effect."
+
+    def update_hots(self):
+        for hot_name, hot_info in list(self.active_hots.items()):
+            heal_amount = min(hot_info["tick_effect"], self.max_hp - self.hp)
+            self.heal(heal_amount)
+            hot_info["duration"] -= 1
+            
+            if hot_info["duration"] > 0:
+                print(f"{hot_name} healed you for {heal_amount} HP. ({hot_info['duration']} turns remaining)")
+            else:
+                print(f"{hot_name} healed you for {heal_amount} HP and has worn off.")
+                del self.active_hots[hot_name]

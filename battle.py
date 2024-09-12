@@ -49,13 +49,28 @@ class Battle:
             print(f"You failed to run away and took {damage_taken} damage.")
             return False
 
+    def display_battle_status(self, enemy):
+        print(f"\n{self.player.name} HP: {self.player.hp}")
+        print(f"Attack: {self.player.attack}")
+        print(f"Defence: {self.player.defence}")
+        
+        if self.player.active_hots:
+            print("\nActive HoT Effects:")
+            for hot_name, hot_info in self.player.active_hots.items():
+                print(f"- {hot_name}: {hot_info['tick_effect']} HP/turn for {hot_info['duration']} more turns")
+        
+        print(f"\n{enemy.name} HP: {enemy.hp}")
+        print(f"Attack: {enemy.attack}")
+        print(f"Defence: {enemy.defence}")
+
     def battle(self, enemy):
         #Battle logic, displays player and enemy stats, updates the cooldowns of any items
         print(f"\nBattle start! {self.player.name} vs {enemy.name}")
         
         while self.player.is_alive() and enemy.is_alive():
             self.player.update_cooldowns()
-            print(f"\n{self.player.name} HP: {self.player.hp}\nAttack: {self.player.attack}\nDefence: {self.player.defence}\n\n{enemy.name} HP: {enemy.hp}\nAttack: {enemy.attack}\nDefence: {enemy.defence}\n")
+            self.player.update_hots()
+            self.display_battle_status(enemy)
             action = input("Do you want to:\n[a]ttack\n[u]se item\n[r]un?\n>").lower()
             
             if action == "a":
@@ -121,7 +136,7 @@ class Battle:
             if selected_item:
                 if selected_item.name in self.player.cooldowns and self.player.cooldowns[selected_item.name] > 0:
                     print(f"You can't use {selected_item.name} yet. Cooldown: {self.player.cooldowns[selected_item.name]} turns.")
-                elif selected_item.effect_type in ["healing", "damage", "buff"]:
+                elif selected_item.effect_type in ["healing", "damage", "buff", "hot"]:
                     return self.use_combat_item(selected_item, enemy)
                 else:
                     print(f"You can't use {selected_item.name} in combat.")
@@ -139,6 +154,9 @@ class Battle:
             self.player.inventory.remove(item)
             print(f"You used {item.name} and dealt {damage} damage to {enemy.name}.")
         elif item.effect_type == "buff":
+            success, message = self.player.use_item(item)
+            print(message)
+        elif item.effect_type == "hot":
             success, message = self.player.use_item(item)
             print(message)
         return item
