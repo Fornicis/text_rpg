@@ -26,6 +26,7 @@ class Battle:
             self.player.gain_exp(enemy.exp, enemy.level)
             self.player.gold += enemy.gold
             print(f"You gained {enemy.gold} gold.")
+            self.loot_drop(enemy.tier)
             return True
         
         enemy_damage = max(0, self.calculate_damage(enemy.attack) - self.player.defence)
@@ -53,6 +54,7 @@ class Battle:
         print(f"\n{self.player.name} HP: {self.player.hp}")
         print(f"Attack: {self.player.attack}")
         print(f"Defence: {self.player.defence}")
+        print(f"Level: {self.player.level}")
         
         if self.player.active_hots:
             print("\nActive HoT Effects:")
@@ -62,6 +64,7 @@ class Battle:
         print(f"\n{enemy.name} HP: {enemy.hp}")
         print(f"Attack: {enemy.attack}")
         print(f"Defence: {enemy.defence}")
+        print(f"Level: {enemy.level}")
 
     def battle(self, enemy):
         #Battle logic, displays player and enemy stats, updates the cooldowns of any items
@@ -104,6 +107,26 @@ class Battle:
         if self.player.is_alive() and not enemy.is_alive():
             #Removes all buffs from the player at the end of a battle
             self.player.remove_all_buffs()
+            
+    def loot_drop(self, enemy_tier):
+        #Handles loot drops after defeating an enemy.
+        if random.random() < 0.3:  # 30% chance of loot drop
+            loot_pool = [item for item in self.items.values() if item.tier in self.get_loot_tiers(enemy_tier)]
+            item = random.choice(loot_pool)
+            self.player.inventory.append(item)
+            print(f"You found a {item.name}!")
+
+    def get_loot_tiers(self, enemy_tier):
+        #Returns the appropriate loot tiers based on the enemy tier.
+        tiers = {
+            "low": ["common"],
+            "medium": ["uncommon"],
+            "medium-hard": ["uncommon", "rare"],
+            "hard": ["rare"],
+            "very-hard": ["epic"],
+            "extreme": ["legendary"],
+        }
+        return tiers.get(enemy_tier, ["mythical"])
 
     def use_item_menu(self, enemy):
         #Handles item usage inside battle, checks if player has the item, if so and not on cooldown, uses item by calling use_combat_item method

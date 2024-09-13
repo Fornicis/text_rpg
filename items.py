@@ -1,5 +1,5 @@
 class Item:
-    def __init__(self, name, item_type, value, tier, attack=0, defence=0, effect_type=None, effect=0, cooldown=0, duration=0, tick_effect=0):
+    def __init__(self, name, item_type, value, tier, attack=0, defence=0, effect_type=None, effect=0, cooldown=0, duration=0, tick_effect=0, weapon_type=None):
         self.name = name
         self.type = item_type
         self.value = value
@@ -11,6 +11,7 @@ class Item:
         self.cooldown = cooldown
         self.duration = duration
         self.tick_effect = tick_effect
+        self.weapon_type = weapon_type
         
 def initialise_items():
     return {
