@@ -48,7 +48,21 @@ class BaseShop:
         if item.defence > 0:
             print(f"   Defence: +{item.defence}")
         if item.effect_type:
-            print(f"   Effect: {item.effect_type.capitalize()} ({item.effect})")
+            if item.effect_type == "buff":
+                if isinstance(item.effect, tuple):
+                    stat, value = item.effect
+                    print(f"   Effect: {item.effect_type.capitalize()} ({stat.capitalize()} +{value})")
+                else:
+                    print(f"   Effect: {item.effect_type.capitalize()} (Attack +{item.effect})")
+            elif item.effect_type == "healing":
+                print(f"   Effect: {item.effect_type.capitalize()} ({item.effect} HP)")
+            elif item.effect_type == "hot":
+                print(f"   Effect: {item.effect_type.capitalize()} ({item.tick_effect} HP per turn) for {item.duration} turns. Total Healing: {item.tick_effect * item.duration} HP")
+            elif item.effect_type == "damage":
+                print(f"   Effect: {item.effect_type.capitalize()} ({item.effect})")
+            else:
+                print(f"   Effect: {item.effect_type.capitalize()} ({item.effect})")
+        if item.cooldown:
             print(f"   Cooldown: {item.cooldown} turns")
 
     def rotate_stock(self, player_level):
