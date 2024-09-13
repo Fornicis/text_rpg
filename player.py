@@ -14,7 +14,7 @@ class Character:
         #Shows the status and equipment of the player, 
         print(f"\n{self.name} (Level {self.level}):")
         print(f"HP: {self.hp}/{self.max_hp}, EXP: {self.exp}/{self.level*100}, Gold: {self.gold}, "
-              f"Attack: {self.attack}, Defence: {self.defence}")
+              f"Attack: {self.attack}, Defence: {self.defence}, Energy: {self.energy}/{self.max_energy}")
         if self.active_hots:
                 print("\nActive Heal Over Time Effects:")
                 for hot_name, hot_info in self.active_hots.items():
@@ -77,6 +77,9 @@ class Player(Character):
         self.items = initialise_items()
         self.give_starter_items()
         self.active_hots = {}
+        self.max_energy = 100
+        self.energy = self.max_energy
+        self.weapon_energy_cost = {"light": 1, "medium": 3, "heavy": 5}
     
     def give_starter_items(self):
         #Gives starter items to the player
@@ -306,6 +309,7 @@ class Player(Character):
         return False, "This item does not have a heal over time effect."
 
     def update_hots(self):
+        #Updates the duration of any hots aswell as displaying to the player how many turns are left and informing them they have worn off once duration is over
         for hot_name, hot_info in list(self.active_hots.items()):
             heal_amount = min(hot_info["tick_effect"], self.max_hp - self.hp)
             self.heal(heal_amount)
@@ -316,3 +320,17 @@ class Player(Character):
             else:
                 print(f"{hot_name} healed you for {heal_amount} HP and has worn off.")
                 del self.active_hots[hot_name]
+                
+    def use_energy(self, amount):
+        self.energy = max(0, self.energy - amount)
+
+    def restore_energy(self, amount):
+        self.energy = min(self.max_energy, self.energy + amount)
+
+    def get_weapon_energy_cost(self):
+        if self.equipped['weapon']:
+            return self.weapon_energy_cost.get(self.equipped['weapon'].weapon_type, 0)
+        return 0
+    
+    def can_attack(self):
+        return self.energy >= self.get_weapon_energy_cost()
