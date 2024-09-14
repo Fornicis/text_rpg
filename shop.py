@@ -40,28 +40,29 @@ class BaseShop:
                 self.display_item_stats(item)
                 
     def display_item_stats(self, item):
-        #Shows the stats and effect of different items
         print(f"   Type: {item.type.capitalize()}")
         print(f"   Tier: {item.tier.capitalize()}")
         if item.attack > 0:
             print(f"   Attack: +{item.attack}")
         if item.defence > 0:
             print(f"   Defence: +{item.defence}")
+        if item.energy_restore > 0:
+            print(f"   Energy Restore: {item.energy_restore}")
         if item.effect_type:
             if item.effect_type == "buff":
                 if isinstance(item.effect, tuple):
                     stat, value = item.effect
-                    print(f"   Effect: {item.effect_type.capitalize()} ({stat.capitalize()} +{value})")
+                    print(f"   Buff: {stat.capitalize()} +{value} for {item.duration} turns")
                 else:
-                    print(f"   Effect: {item.effect_type.capitalize()} (Attack +{item.effect})")
+                    print(f"   Buff: Attack +{item.effect} for {item.duration} turns")
             elif item.effect_type == "healing":
-                print(f"   Effect: {item.effect_type.capitalize()} ({item.effect} HP)")
+                print(f"   Effect: Healing ({item.effect} HP)")
             elif item.effect_type == "hot":
-                print(f"   Effect: {item.effect_type.capitalize()} ({item.tick_effect} HP per turn) for {item.duration} turns. Total Healing: {item.tick_effect * item.duration} HP")
+                print(f"   Effect: Heal over time ({item.tick_effect} HP per turn) for {item.duration} turns. Total Healing: {item.tick_effect * item.duration} HP")
             elif item.effect_type == "damage":
-                print(f"   Effect: {item.effect_type.capitalize()} ({item.effect})")
-            else:
-                print(f"   Effect: {item.effect_type.capitalize()} ({item.effect})")
+                print(f"   Effect: Damage ({item.effect})")
+            elif item.effect_type == "energy":
+                print(f"   Effect: Energy Restore ({item.energy_restore})")
         if item.cooldown:
             print(f"   Cooldown: {item.cooldown} turns")
 
@@ -246,3 +247,41 @@ class Alchemist(BaseShop):
     def can_sell_item(self, item):
         #Allows player to sell consumables
         return item.type == "consumable"
+
+class Inn(BaseShop):
+    def __init__(self, all_items):
+        super().__init__({k: v for k, v in all_items.items() if v.type == "food" or v.type == "drink"})
+
+    def can_sell_item(self, item):
+        return item.type == "food" or item.type == "drink"
+    
+    def inn_menu(self, player, game):
+        while True:
+            clear_screen()
+            print("\n--- Welcome to the Inn ---")
+            print(f"Your gold: {player.gold}")
+            print(f"Your energy: {player.energy}/{player.max_energy}")
+            print(f"\n1. Rest (Restore full HP and Energy) - {player.level * 10} gold")
+            print("2. Buy food and drinks")
+            print("3. Exit Inn")
+
+            choice = input("Enter your choice: ")
+
+            if choice == '1':
+                if player.gold >= (player.level * 10):
+                    player.gold -= (player.level * 10)
+                    player.hp = player.max_hp
+                    player.energy = player.max_energy
+                    game.days += 1
+                    print(f"You rest at the inn, fully restoring your HP and Energy.")
+                    print(f"It is now day {game.days}.")
+                else:
+                    print("You don't have enough gold to rest at the inn.")
+            elif choice == '2':
+                self.buy_items(player)
+            elif choice == '3':
+                break
+            else:
+                print("Invalid choice. Please try again.")
+
+            input("\nPress Enter to continue...")
