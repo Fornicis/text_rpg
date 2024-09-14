@@ -33,6 +33,7 @@ class Battle:
             self.player.gold += enemy.gold
             print(f"You gained {enemy.gold} gold.")
             self.loot_drop(enemy.tier)
+            self.player.remove_combat_buffs()
             return True
         
         enemy_damage = max(0, self.calculate_damage(enemy.attack) - self.player.defence)
@@ -121,10 +122,6 @@ class Battle:
             if not self.player.is_alive():
                 print("You have been defeated. Game over.")
                 return
-            
-        if self.player.is_alive() and not enemy.is_alive():
-            #Removes all buffs from the player at the end of a battle
-            self.player.remove_all_buffs()
             
     def loot_drop(self, enemy_tier):
         #Handles loot drops after defeating an enemy.

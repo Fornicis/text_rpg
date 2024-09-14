@@ -15,13 +15,15 @@ class Character:
         print(f"\n{self.name} (Level {self.level}):")
         print(f"HP: {self.hp}/{self.max_hp}, EXP: {self.exp}/{self.level*100}, Gold: {self.gold}, "
               f"Attack: {self.attack}, Defence: {self.defence}, Energy: {self.energy}/{self.max_energy}")
-        if hasattr(self, 'active_buffs') and self.active_buffs:
+        if self.active_buffs or self.combat_buffs:
             print("\nActive Buffs:")
             for stat, buff_info in self.active_buffs.items():
-                if isinstance(buff_info, dict) and 'value' in buff_info and 'duration' in buff_info:
+                if isinstance(buff_info, dict):
                     print(f"  {stat.capitalize()}: +{buff_info['value']} for {buff_info['duration']} more turns")
                 else:
-                    print(f"  {stat.capitalize()}: +{buff_info}")
+                    print(f"  {stat.capitalize()}: +{buff_info} (Permanent)")
+            for stat, buff_info in self.combat_buffs.items():
+                print(f"  {stat.capitalize()}: +{buff_info['value']} (Combat Only)")
         if self.active_hots:
                 print("\nActive Heal Over Time Effects:")
                 for hot_name, hot_info in self.active_hots.items():
@@ -81,6 +83,7 @@ class Player(Character):
         }
         self.cooldowns = {}
         self.active_buffs = {}
+        self.combat_buffs = {}
         self.items = initialise_items()
         self.give_starter_items()
         self.active_hots = {}
@@ -138,7 +141,8 @@ class Player(Character):
         self.attack += 1
         self.defence += 1
         self.max_energy += 5
-        self.energy += (self.max_energy // 4)
+        energy_restore = self.max_energy // 4
+        self.restore_energy(energy_restore)
         self.exp = self.exp // 2
         print(f"Congratulations! You reached level {self.level}!")
         print("Your stats have increased.")
@@ -177,7 +181,7 @@ class Player(Character):
             self.equipped[slot] = None
             print(f"You unequipped {item.name}.")
             
-    def apply_buff(self, stat, value, duration):
+    def apply_buff(self, stat, value, duration, combat_only=True):
         if stat == "attack":
             self.attack += value
         elif stat == "defence":
@@ -186,22 +190,24 @@ class Player(Character):
             self.attack += value
             self.defence += value
         
-        if stat in self.active_buffs:
-            if isinstance(self.active_buffs[stat], dict):
-                # If the buff is already a dictionary, update its value and duration
-                self.active_buffs[stat]['value'] += value
-                self.active_buffs[stat]['duration'] = max(self.active_buffs[stat]['duration'], duration)
+        if combat_only:
+            if stat in self.combat_buffs:
+                self.combat_buffs[stat]['value'] += value
             else:
-                # If the buff is an integer, convert it to a dictionary
-                current_value = self.active_buffs[stat]
-                self.active_buffs[stat] = {'value': current_value + value, 'duration': duration}
+                self.combat_buffs[stat] = {'value': value}
         else:
-            # If it's a new buff, add it to the active_buffs dictionary
-            self.active_buffs[stat] = {'value': value, 'duration': duration}
+            if stat in self.active_buffs:
+                if isinstance(self.active_buffs[stat], dict):
+                    self.active_buffs[stat]['value'] += value
+                    self.active_buffs[stat]['duration'] = max(self.active_buffs[stat]['duration'], duration)
+                else:
+                    self.active_buffs[stat] += value
+            else:
+                self.active_buffs[stat] = {'value': value, 'duration': duration} if duration > 0 else value
 
     def update_buffs(self):
         for stat, buff_info in list(self.active_buffs.items()):
-            if isinstance(buff_info, dict):
+            if isinstance(buff_info, dict) and 'duration' in buff_info:
                 buff_info['duration'] -= 1
                 if buff_info['duration'] <= 0:
                     if stat == "attack":
@@ -213,9 +219,18 @@ class Player(Character):
                         self.defence -= buff_info['value']
                     del self.active_buffs[stat]
                     print(f"Your {stat} buff has worn off.")
-            else:
-                # If buff_info is not a dictionary, it's a permanent buff, so we don't update it
-                pass
+                    
+    def remove_combat_buffs(self):
+        for stat, buff_info in self.combat_buffs.items():
+            if stat == "attack":
+                self.attack -= buff_info['value']
+            elif stat == "defence":
+                self.defence -= buff_info['value']
+            elif stat == "all stats":
+                self.attack -= buff_info['value']
+                self.defence -= buff_info['value']
+            print(f"Your combat {stat} buff has worn off.")
+        self.combat_buffs.clear()
 
     def use_item(self, item):
         # Use a consumable item if not on cooldown
@@ -235,9 +250,15 @@ class Player(Character):
                 message += f"You used {item.name} and restored {energy_restore} Energy. "
             elif item.effect_type == "buff":
                 stat, value = item.effect
-                duration = getattr(item, 'duration', 5)  # Default duration of 5 if not specified
-                self.apply_buff(stat, value, duration)
-                message += f"You used {item.name} and gained a temporary {stat} buff of {value} for {duration} turns. "
+                duration = getattr(item, 'duration', 0)
+                combat_only = getattr(item, 'combat_only', True)
+                self.apply_buff(stat, value, duration, combat_only)
+                if combat_only:
+                    message += f"You used {item.name} and gained a combat-only {stat} buff of {value}. "
+                elif duration > 0:
+                    message += f"You used {item.name} and gained a temporary {stat} buff of {value} for {duration} turns. "
+                else:
+                    message += f"You used {item.name} and gained a permanent {stat} buff of {value}. "
             elif item.effect_type == "hot":
                 return self.apply_hot(item)
             
@@ -288,7 +309,7 @@ class Player(Character):
             
     def show_consumables(self):
         # Display consumable items in inventory
-        consumables = [item for item in self.inventory if item.type in ["consumables", "food", "drink"]]
+        consumables = [item for item in self.inventory if item.type in ["consumables", "buff", "food", "drink"]]
         if consumables:
             print("\nConsumable Items:")
             for item in consumables:
