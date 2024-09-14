@@ -76,12 +76,24 @@ class BaseShop:
             self.stock_shop(player_level)
 
     def stock_shop(self, player_level=1):
-        #Function which restocks shop based on player level, random amount of items between 5 and 10, only stocks one of weapons and armour
-        num_items = random.randint(5, 10)
+        #Helper function to stack a random range of items which are available based on the player level
+        num_items = random.randint(8, 15)  # Increased range for more variety
         available_items = [item for item in self.all_items.values() if self.is_item_available(item, player_level)]
+        
+        # Ensure at least one item of each rarity (if available)
+        rarities = ['common', 'uncommon', 'rare', 'epic', 'legendary']
+        for rarity in rarities:
+            rarity_items = [item for item in available_items if item.tier == rarity]
+            if rarity_items:
+                item = random.choice(rarity_items)
+                quantity = random.randint(1, 3) if item.type in ["consumable", "food", "drink"] else 1
+                self.add_item(item, quantity)
+                num_items -= 1
+
+        # Fill the rest with random items
         for _ in range(num_items):
             item = random.choice(available_items)
-            quantity = random.randint(1, 5) if item.type == "consumable" else 1
+            quantity = random.randint(1, 5) if item.type in ["consumable", "food", "drink"] else 1
             self.add_item(item, quantity)
 
     def is_item_available(self, item, player_level):

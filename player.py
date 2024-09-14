@@ -133,10 +133,12 @@ class Player(Character):
     def level_up(self):
         # Increase player stats on level up
         self.level += 1
-        self.max_hp += 20
+        self.max_hp += 10
         self.hp = self.max_hp
-        self.attack += 3
+        self.attack += 1
         self.defence += 1
+        self.max_energy += 5
+        self.energy += (self.max_energy // 4)
         self.exp = self.exp // 2
         print(f"Congratulations! You reached level {self.level}!")
         print("Your stats have increased.")
@@ -286,7 +288,7 @@ class Player(Character):
             
     def show_consumables(self):
         # Display consumable items in inventory
-        consumables = [item for item in self.inventory if item.type == "consumable"]
+        consumables = [item for item in self.inventory if item.type in ["consumables", "food", "drink"]]
         if consumables:
             print("\nConsumable Items:")
             for item in consumables:
@@ -310,6 +312,8 @@ class Player(Character):
                 return f"Increases {stat} by {value}"
             else:
                 return f"Increases attack by {item.effect}"
+        elif item.effect_type == "energy":
+            return f"Restores {item.energy_restore} energy"
         else:
             return "Unknown effect"
         

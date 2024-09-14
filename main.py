@@ -398,6 +398,7 @@ class Game:
             self.show_status() #Ensures the status is shown after every action    
             self.armourer.rotate_stock(self.player.level)  # Check if it's time to rotate stock after each action
             self.alchemist.rotate_stock(self.player.level) #^
+            self.inn.rotate_stock(self.player.level)#^^
 
 if __name__ == "__main__":
     game = Game()

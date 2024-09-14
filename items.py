@@ -359,14 +359,28 @@ def initialise_items():
         # Food items
         "Bread": Item("Bread", "food", 25, "common", effect_type="energy", energy_restore=10),
         "Cheese": Item("Cheese", "food", 40, "common", effect_type="energy", energy_restore=15),
+        "Apple": Item("Apple", "food", 20, "common", effect_type="energy", energy_restore=5),
+        "Jerky": Item("Jerky", "food", 50, "common", effect_type="energy", energy_restore=20),
         "Meat Stew": Item("Meat Stew", "food", 80, "uncommon", effect_type="buff", effect=("attack", 2), energy_restore=25, duration=5),
         "Fruit Salad": Item("Fruit Salad", "food", 80, "uncommon", effect_type="buff", effect=("defence", 2), energy_restore=20, duration=5),
+        "Vegetable Soup": Item("Vegetable Soup", "food", 70, "uncommon", effect_type="healing", effect=15, energy_restore=15),
+        "Fish Fillet": Item("Fish Fillet", "food", 90, "uncommon", effect_type="buff", effect=("all stats", 1), energy_restore=30, duration=6),
         "Hearty Meal": Item("Hearty Meal", "food", 200, "rare", effect_type="buff", effect=("all stats", 3), energy_restore=40, duration=10),
+        "Elven Lembas": Item("Elven Lembas", "food", 300, "rare", effect_type="buff", effect=("all stats", 4), energy_restore=50, duration=15),
+        "Dragon Steak": Item("Dragon Steak", "food", 500, "epic", effect_type="buff", effect=("attack", 8), energy_restore=70, duration=20),
+        "Ambrosia": Item("Ambrosia", "food", 1000, "legendary", effect_type="buff", effect=("all stats", 10), energy_restore=100, duration=30),
 
         # Drink items
         "Water": Item("Water", "drink", 15, "common", effect_type="energy", energy_restore=5),
         "Ale": Item("Ale", "drink", 25, "common", effect_type="energy", energy_restore=10),
+        "Milk": Item("Milk", "drink", 20, "common", effect_type="healing", effect=5, energy_restore=5),
+        "Fruit Juice": Item("Fruit Juice", "drink", 30, "common", effect_type="energy", energy_restore=15),
         "Energy Potion": Item("Energy Potion", "drink", 120, "uncommon", effect_type="energy", energy_restore=50),
+        "Healing Tea": Item("Healing Tea", "drink", 75, "uncommon", effect_type="healing", effect=20, energy_restore=10),
         "Strength Brew": Item("Strength Brew", "drink", 100, "rare", effect_type="buff", effect=("attack", 5), energy_restore=30, duration=8),
         "Fortifying Tonic": Item("Fortifying Tonic", "drink", 100, "rare", effect_type="buff", effect=("defence", 5), energy_restore=30, duration=8),
+        "Mana Elixir": Item("Mana Elixir", "drink", 175, "rare", effect_type="energy", energy_restore=80),
+        "Giant's Strength Potion": Item("Giant's Strength Potion", "drink", 400, "epic", effect_type="buff", effect=("attack", 10), energy_restore=50, duration=15),
+        "Ethereal Essence": Item("Ethereal Essence", "drink", 600, "epic", effect_type="buff", effect=("all stats", 7), energy_restore=70, duration=20),
+        "Elixir of Immortality": Item("Elixir of Immortality", "drink", 1500, "legendary", effect_type="buff", effect=("all stats", 15), energy_restore=150, duration=40),
     }

@@ -88,6 +88,9 @@ class Battle:
         
         while self.player.is_alive() and enemy.is_alive():
             self.display_battle_status(enemy)
+            self.player.update_cooldowns()
+            self.player.update_hots()
+            self.player.update_buffs()
             
             action = input("Do you want to:\n[a]ttack\n[u]se item\n[r]un?\n>").lower()
             
@@ -115,10 +118,6 @@ class Battle:
             else:
                 print("Invalid action. You lose your turn.")
                 
-            self.player.update_cooldowns()
-            self.player.update_hots()
-            self.player.update_buffs()
-            
             if not self.player.is_alive():
                 print("You have been defeated. Game over.")
                 return
