@@ -57,6 +57,7 @@ class Battle:
             return False
 
     def display_battle_status(self, enemy):
+        #Shows the defined info below whenever player attacks, helps to keep track of info
         print(f"\n{self.player.name} HP: {self.player.hp}")
         print(f"Attack: {self.player.attack}")
         print(f"Defence: {self.player.defence}")
@@ -67,6 +68,14 @@ class Battle:
             print("\nActive HoT Effects:")
             for hot_name, hot_info in self.player.active_hots.items():
                 print(f"- {hot_name}: {hot_info['tick_effect']} HP/turn for {hot_info['duration']} more turns")
+                
+        if self.player.active_buffs:
+            print("\nActive Buffs:")
+            for buff_name, buff_info in self.player.active_buffs.items():
+                if isinstance(buff_info, dict):
+                    print(f"- {buff_name.capitalize()}: +{buff_info['value']} for {buff_info['duration']} more turns")
+                else:
+                    print(f"- {buff_name.capitalize()}: +{buff_info}")
         
         print(f"\n{enemy.name} HP: {enemy.hp}")
         print(f"Attack: {enemy.attack}")
@@ -78,8 +87,6 @@ class Battle:
         print(f"\nBattle start! {self.player.name} vs {enemy.name}")
         
         while self.player.is_alive() and enemy.is_alive():
-            self.player.update_cooldowns()
-            self.player.update_hots()
             self.display_battle_status(enemy)
             
             action = input("Do you want to:\n[a]ttack\n[u]se item\n[r]un?\n>").lower()
@@ -107,6 +114,10 @@ class Battle:
                     return
             else:
                 print("Invalid action. You lose your turn.")
+                
+            self.player.update_cooldowns()
+            self.player.update_hots()
+            self.player.update_buffs()
             
             if not self.player.is_alive():
                 print("You have been defeated. Game over.")

@@ -15,6 +15,13 @@ class Character:
         print(f"\n{self.name} (Level {self.level}):")
         print(f"HP: {self.hp}/{self.max_hp}, EXP: {self.exp}/{self.level*100}, Gold: {self.gold}, "
               f"Attack: {self.attack}, Defence: {self.defence}, Energy: {self.energy}/{self.max_energy}")
+        if hasattr(self, 'active_buffs') and self.active_buffs:
+            print("\nActive Buffs:")
+            for stat, buff_info in self.active_buffs.items():
+                if isinstance(buff_info, dict) and 'value' in buff_info and 'duration' in buff_info:
+                    print(f"  {stat.capitalize()}: +{buff_info['value']} for {buff_info['duration']} more turns")
+                else:
+                    print(f"  {stat.capitalize()}: +{buff_info}")
         if self.active_hots:
                 print("\nActive Heal Over Time Effects:")
                 for hot_name, hot_info in self.active_hots.items():
@@ -168,54 +175,74 @@ class Player(Character):
             self.equipped[slot] = None
             print(f"You unequipped {item.name}.")
             
-    def apply_buff(self, stat, value):
-        # Apply a temporary stat buff
+    def apply_buff(self, stat, value, duration):
         if stat == "attack":
             self.attack += value
         elif stat == "defence":
             self.defence += value
         elif stat == "all stats":
-            self.defence += value
             self.attack += value
-        self.active_buffs[stat] = value
+            self.defence += value
+        
+        if stat in self.active_buffs:
+            if isinstance(self.active_buffs[stat], dict):
+                # If the buff is already a dictionary, update its value and duration
+                self.active_buffs[stat]['value'] += value
+                self.active_buffs[stat]['duration'] = max(self.active_buffs[stat]['duration'], duration)
+            else:
+                # If the buff is an integer, convert it to a dictionary
+                current_value = self.active_buffs[stat]
+                self.active_buffs[stat] = {'value': current_value + value, 'duration': duration}
+        else:
+            # If it's a new buff, add it to the active_buffs dictionary
+            self.active_buffs[stat] = {'value': value, 'duration': duration}
 
-    def remove_all_buffs(self):
-    #Remove all active buffs from the player
-        if self.active_buffs:
-            for stat, value in self.active_buffs.items():
-                if stat == "attack":
-                    self.attack -= value
-                elif stat == "defence":
-                    self.defence -= value
-                elif stat == "all stats":
-                    self.defence -= value
-                    self.attack -= value
-            buff_count = len(self.active_buffs)
-            self.active_buffs.clear()
-            print(f"{buff_count} battle buff{'s' if buff_count > 1 else ''} removed.")
-        # If there are no active buffs, the method will silently do nothing
+    def update_buffs(self):
+        for stat, buff_info in list(self.active_buffs.items()):
+            if isinstance(buff_info, dict):
+                buff_info['duration'] -= 1
+                if buff_info['duration'] <= 0:
+                    if stat == "attack":
+                        self.attack -= buff_info['value']
+                    elif stat == "defence":
+                        self.defence -= buff_info['value']
+                    elif stat == "all stats":
+                        self.attack -= buff_info['value']
+                        self.defence -= buff_info['value']
+                    del self.active_buffs[stat]
+                    print(f"Your {stat} buff has worn off.")
+            else:
+                # If buff_info is not a dictionary, it's a permanent buff, so we don't update it
+                pass
 
     def use_item(self, item):
         # Use a consumable item if not on cooldown
         if item.name in self.cooldowns and self.cooldowns[item.name] > 0:
             print(f"You can't use {item.name} yet. Cooldown: {self.cooldowns[item.name]} turns.")
-            return False
+            return False, f"Couldn't use {item.name} due to cooldown!"
 
-        if item.type == "consumable":
-            #Ensures player can only use appropriate items outside of battle, no point damaging the environment with damaging effects
+        if item.type in ["consumable", "food", "drink"]:
+            message = ""
             if item.effect_type == "healing":
                 heal_amount = min(item.effect, self.max_hp - self.hp)
                 self.heal(heal_amount)
-                message = f"You used {item.name} and restored {heal_amount} HP."
-            elif item.effect_type == "damage":
-                message = f"You can't use {item.name} outside of battle."
-                return False, message
+                message += f"You used {item.name} and restored {heal_amount} HP. "
+            elif item.effect_type == "energy":
+                energy_restore = min(item.energy_restore, self.max_energy - self.energy)
+                self.restore_energy(energy_restore)
+                message += f"You used {item.name} and restored {energy_restore} Energy. "
             elif item.effect_type == "buff":
                 stat, value = item.effect
-                self.apply_buff(stat, value)
-                message = f"You used {item.name} and gained a temporary {stat} buff of {value}."
+                duration = getattr(item, 'duration', 5)  # Default duration of 5 if not specified
+                self.apply_buff(stat, value, duration)
+                message += f"You used {item.name} and gained a temporary {stat} buff of {value} for {duration} turns. "
             elif item.effect_type == "hot":
                 return self.apply_hot(item)
+            
+            if item.energy_restore > 0:
+                energy_restore = min(item.energy_restore, self.max_energy - self.energy)
+                self.restore_energy(energy_restore)
+                message += f"You restored {energy_restore} Energy. "
             
             self.inventory.remove(item)
             self.cooldowns[item.name] = item.cooldown
@@ -288,7 +315,7 @@ class Player(Character):
         
     def show_usable_items(self):
         #Shows a list of usable items if available, else prints that none are available
-        usable_items = [item for item in self.inventory if item.type == "consumable"]
+        usable_items = [item for item in self.inventory if item.type in ["consumable", "food", "drink"]]
         if not usable_items:
             print("You have no usable items.")
             return None

@@ -1,5 +1,5 @@
 class Item:
-    def __init__(self, name, item_type, value, tier, attack=0, defence=0, effect_type=None, effect=0, cooldown=0, duration=0, tick_effect=0, weapon_type=None):
+    def __init__(self, name, item_type, value, tier, attack=0, defence=0, effect_type=None, effect=0, cooldown=0, duration=0, tick_effect=0, weapon_type=None, energy_restore=0):
         self.name = name
         self.type = item_type
         self.value = value
@@ -12,86 +12,85 @@ class Item:
         self.duration = duration
         self.tick_effect = tick_effect
         self.weapon_type = weapon_type
+        self.energy_restore = energy_restore
         
 def initialise_items():
     return {
         # Starter items
         "Peasants Top": Item("Peasants Top", "chest", 0, "starter", defence=1),
         "Peasants Bottoms": Item("Peasants Bottoms", "legs", 0, "starter", defence=1),
-        "Wooden Sword": Item("Wooden Sword", "weapon", 0, "starter", attack=2),
+        "Wooden Sword": Item("Wooden Sword", "weapon", 0, "starter", attack=2, weapon_type="light"),
 
         # Weapons
-        # Common
-        "Leather Garrote": Item("Leather Garrote", "weapon", 14, "common", attack=3),
-        "Leather Knuckles": Item("Leather Knuckles", "weapon", 13, "common", attack=3),
-        "Leather Sling": Item("Leather Sling", "weapon", 15, "common", attack=4),
-        "Leather Sap": Item("Leather Sap", "weapon", 16, "common", attack=4),
-        "Wooden Blowgun": Item("Wooden Blowgun", "weapon", 18, "common", attack=4),
-        "Wooden Boomerang": Item("Wooden Boomerang", "weapon", 17, "common", attack=4),
-        "Leather Strap Mace": Item("Leather Strap Mace", "weapon", 19, "common", attack=5),
-        "Leather Whip": Item("Leather Whip", "weapon", 20, "common", attack=5),
-        "Leather Bound Axe": Item("Leather Bound Axe", "weapon", 21, "common", attack=5),
-        "Leather Bound Club": Item("Leather Bound Club", "weapon", 18, "common", attack=6),
-        "Wooden Javelin": Item("Wooden Javelin", "weapon", 24, "common", attack=6),
-        "Wooden Quarterstaff": Item("Wooden Quarterstaff", "weapon", 23, "common", attack=6),
-        "Wooden Spear": Item("Wooden Spear", "weapon", 22, "common", attack=6),
-        "Leather Flail": Item("Leather Flail", "weapon", 26, "common", attack=7),
-        "Wooden Bow": Item("Wooden Bow", "weapon", 25, "common", attack=7),
+        # Common (Bronze) Weapons
+        "Bronze Dagger": Item("Bronze Dagger", "weapon", 20, "common", attack=3, weapon_type="light"),
+        "Bronze Shortsword": Item("Bronze Shortsword", "weapon", 25, "common", attack=4, weapon_type="light"),
+        "Bronze Sword": Item("Bronze Sword", "weapon", 30, "common", attack=5, weapon_type="light"),
+        "Bronze Axe": Item("Bronze Axe", "weapon", 35, "common", attack=6, weapon_type="light"),
+        "Bronze Longsword": Item("Bronze Longsword", "weapon", 40, "common", attack=5, weapon_type="medium"),
+        "Bronze Mace": Item("Bronze Mace", "weapon", 45, "common", attack=6, weapon_type="medium"),
+        "Bronze Spear": Item("Bronze Spear", "weapon", 50, "common", attack=7, weapon_type="medium"),
+        "Bronze Hammer": Item("Bronze Hammer", "weapon", 55, "common", attack=8, weapon_type="medium"),
+        "Bronze Flail": Item("Bronze Flail", "weapon", 60, "common", attack=7, weapon_type="heavy"),
+        "Bronze Warhammer": Item("Bronze Warhammer", "weapon", 65, "common", attack=8, weapon_type="heavy"),
+        "Bronze Halberd": Item("Bronze Halberd", "weapon", 70, "common", attack=9, weapon_type="heavy"),
+        "Bronze Battleaxe": Item("Bronze Battleaxe", "weapon", 75, "common", attack=10, weapon_type="heavy"),
 
-        # Uncommon
-        "Bronze Falchion": Item("Bronze Falchion", "weapon", 34, "uncommon", attack=9),
-        "Bronze Shortsword": Item("Bronze Shortsword", "weapon", 33, "uncommon", attack=9),
-        "Bronze Kopis": Item("Bronze Kopis", "weapon", 35, "uncommon", attack=10),
-        "Bronze Scimitar": Item("Bronze Scimitar", "weapon", 36, "uncommon", attack=10),
-        "Bronze Sword": Item("Bronze Sword", "weapon", 35, "uncommon", attack=10),
-        "Bronze Xiphos": Item("Bronze Xiphos", "weapon", 36, "uncommon", attack=10),
-        "Bronze Rapier": Item("Bronze Rapier", "weapon", 37, "uncommon", attack=11),
-        "Iron Flail": Item("Iron Flail", "weapon", 39, "uncommon", attack=11),
-        "Iron Mace": Item("Iron Mace", "weapon", 40, "uncommon", attack=11),
-        "Bronze Khopesh": Item("Bronze Khopesh", "weapon", 39, "uncommon", attack=11),
-        "Bronze Halberd": Item("Bronze Halberd", "weapon", 41, "uncommon", attack=12),
-        "Bronze Spear": Item("Bronze Spear", "weapon", 38, "uncommon", attack=12),
-        "Iron Pike": Item("Iron Pike", "weapon", 40, "uncommon", attack=12),
-        "Iron Battleaxe": Item("Iron Battleaxe", "weapon", 42, "uncommon", attack=13),
-        "Iron Glaive": Item("Iron Glaive", "weapon", 43, "uncommon", attack=13),
-        "Iron Maul": Item("Iron Maul", "weapon", 44, "uncommon", attack=14),
-        "Iron Warhammer": Item("Iron Warhammer", "weapon", 45, "uncommon", attack=14),
-        "Iron War Scythe": Item("Iron War Scythe", "weapon", 45, "uncommon", attack=14),
-        "Iron Bardiche": Item("Iron Bardiche", "weapon", 46, "uncommon", attack=15),
-        "Iron Lucerne Hammer": Item("Iron Lucerne Hammer", "weapon", 47, "uncommon", attack=15),
+        # Uncommon (Iron) Weapons
+        "Iron Dagger": Item("Iron Dagger", "weapon", 80, "uncommon", attack=8, weapon_type="light"),
+        "Iron Shortsword": Item("Iron Shortsword", "weapon", 90, "uncommon", attack=10, weapon_type="light"),
+        "Iron Sword": Item("Iron Sword", "weapon", 100, "uncommon", attack=12, weapon_type="light"),
+        "Iron Axe": Item("Iron Axe", "weapon", 110, "uncommon", attack=14, weapon_type="light"),
+        "Iron Longsword": Item("Iron Longsword", "weapon", 120, "uncommon", attack=13, weapon_type="medium"),
+        "Iron Mace": Item("Iron Mace", "weapon", 130, "uncommon", attack=15, weapon_type="medium"),
+        "Iron Spear": Item("Iron Spear", "weapon", 140, "uncommon", attack=17, weapon_type="medium"),
+        "Iron Hammer": Item("Iron Hammer", "weapon", 150, "uncommon", attack=18, weapon_type="medium"),
+        "Iron Flail": Item("Iron Flail", "weapon", 160, "uncommon", attack=16, weapon_type="heavy"),
+        "Iron Warhammer": Item("Iron Warhammer", "weapon", 170, "uncommon", attack=18, weapon_type="heavy"),
+        "Iron Halberd": Item("Iron Halberd", "weapon", 180, "uncommon", attack=19, weapon_type="heavy"),
+        "Iron Battleaxe": Item("Iron Battleaxe", "weapon", 190, "uncommon", attack=20, weapon_type="heavy"),
 
-        # Rare
-        "Steel Chakram": Item("Steel Chakram", "weapon", 63, "rare", attack=15),
-        "Steel Longsword": Item("Steel Longsword", "weapon", 60, "rare", attack=15),
-        "Steel Battleaxe": Item("Steel Battleaxe", "weapon", 65, "rare", attack=16),
-        "Steel Katana": Item("Steel Katana", "weapon", 67, "rare", attack=16),
-        "Steel Bow": Item("Steel Bow", "weapon", 70, "rare", attack=17),
-        "Steel Halberd": Item("Steel Halberd", "weapon", 72, "rare", attack=17),
-        "Steel Warhammer": Item("Steel Warhammer", "weapon", 68, "rare", attack=18),
-        "Steel Crossbow": Item("Steel Crossbow", "weapon", 75, "rare", attack=18),
-        "Steel Claymore": Item("Steel Claymore", "weapon", 71, "rare", attack=19),
+        # Rare (Steel) Weapons
+        "Steel Dagger": Item("Steel Dagger", "weapon", 200, "rare", attack=15, weapon_type="light"),
+        "Steel Shortsword": Item("Steel Shortsword", "weapon", 220, "rare", attack=18, weapon_type="light"),
+        "Steel Sword": Item("Steel Sword", "weapon", 240, "rare", attack=21, weapon_type="light"),
+        "Steel Axe": Item("Steel Axe", "weapon", 260, "rare", attack=24, weapon_type="light"),
+        "Steel Longsword": Item("Steel Longsword", "weapon", 280, "rare", attack=23, weapon_type="medium"),
+        "Steel Mace": Item("Steel Mace", "weapon", 300, "rare", attack=26, weapon_type="medium"),
+        "Steel Spear": Item("Steel Spear", "weapon", 320, "rare", attack=29, weapon_type="medium"),
+        "Steel Hammer": Item("Steel Hammer", "weapon", 340, "rare", attack=31, weapon_type="medium"),
+        "Steel Flail": Item("Steel Flail", "weapon", 360, "rare", attack=28, weapon_type="heavy"),
+        "Steel Warhammer": Item("Steel Warhammer", "weapon", 380, "rare", attack=31, weapon_type="heavy"),
+        "Steel Halberd": Item("Steel Halberd", "weapon", 400, "rare", attack=33, weapon_type="heavy"),
+        "Steel Battleaxe": Item("Steel Battleaxe", "weapon", 420, "rare", attack=35, weapon_type="heavy"),
 
-        # Epic
-        "Mithril Chakram Pair": Item("Mithril Chakram Pair", "weapon", 258, "epic", attack=25),
-        "Mithril Greatsword": Item("Mithril Greatsword", "weapon", 250, "epic", attack=25),
-        "Mithril Trident": Item("Mithril Trident", "weapon", 255, "epic", attack=26),
-        "Mithril Warhammer": Item("Mithril Warhammer", "weapon", 260, "epic", attack=26),
-        "Mithril Longbow": Item("Mithril Longbow", "weapon", 270, "epic", attack=27),
-        "Mithril Nodachi": Item("Mithril Nodachi", "weapon", 268, "epic", attack=27),
-        "Mithril Dualblade": Item("Mithril Dualblade", "weapon", 265, "epic", attack=28),
-        "Mithril War Scythe": Item("Mithril War Scythe", "weapon", 272, "epic", attack=28),
-        "Mithril Repeating Crossbow": Item("Mithril Repeating Crossbow", "weapon", 275, "epic", attack=29),
+        # Epic (Mithril) Weapons
+        "Mithril Dagger": Item("Mithril Dagger", "weapon", 500, "epic", attack=30, weapon_type="light"),
+        "Mithril Shortsword": Item("Mithril Shortsword", "weapon", 550, "epic", attack=35, weapon_type="light"),
+        "Mithril Sword": Item("Mithril Sword", "weapon", 600, "epic", attack=40, weapon_type="light"),
+        "Mithril Axe": Item("Mithril Axe", "weapon", 650, "epic", attack=45, weapon_type="light"),
+        "Mithril Longsword": Item("Mithril Longsword", "weapon", 700, "epic", attack=43, weapon_type="medium"),
+        "Mithril Mace": Item("Mithril Mace", "weapon", 750, "epic", attack=48, weapon_type="medium"),
+        "Mithril Spear": Item("Mithril Spear", "weapon", 800, "epic", attack=53, weapon_type="medium"),
+        "Mithril Hammer": Item("Mithril Hammer", "weapon", 850, "epic", attack=55, weapon_type="medium"),
+        "Mithril Flail": Item("Mithril Flail", "weapon", 900, "epic", attack=50, weapon_type="heavy"),
+        "Mithril Warhammer": Item("Mithril Warhammer", "weapon", 950, "epic", attack=55, weapon_type="heavy"),
+        "Mithril Halberd": Item("Mithril Halberd", "weapon", 1000, "epic", attack=58, weapon_type="heavy"),
+        "Mithril Battleaxe": Item("Mithril Battleaxe", "weapon", 1050, "epic", attack=60, weapon_type="heavy"),
 
-        # Legendary
-        "Adamantite Runeblade": Item("Adamantite Runeblade", "weapon", 1000, "legendary", attack=40),
-        "Adamantite Storm Glaive": Item("Adamantite Storm Glaive", "weapon", 1030, "legendary", attack=41),
-        "Adamantite Whisperwind": Item("Adamantite Whisperwind", "weapon", 1040, "legendary", attack=41),
-        "Adamantite Void Blade": Item("Adamantite Void Blade", "weapon", 1070, "legendary", attack=42),
-        "Adamantite Worldbreaker": Item("Adamantite Worldbreaker", "weapon", 1050, "legendary", attack=42),
-        "Adamantite Soul Reaver": Item("Adamantite Soul Reaver", "weapon", 1080, "legendary", attack=43),
-        "Adamantite Titan's Fist": Item("Adamantite Titan's Fist", "weapon", 1090, "legendary", attack=44),
-        "Adamantite Skypierce": Item("Adamantite Skypierce", "weapon", 1100, "legendary", attack=44),
-        "Adamantite Ethereal Bow": Item("Adamantite Ethereal Bow", "weapon", 1120, "legendary", attack=45),
+        # Legendary (Adamantite) Weapons
+        "Adamantite Dagger": Item("Adamantite Dagger", "weapon", 2000, "legendary", attack=55, weapon_type="light"),
+        "Adamantite Shortsword": Item("Adamantite Shortsword", "weapon", 2200, "legendary", attack=65, weapon_type="light"),
+        "Adamantite Sword": Item("Adamantite Sword", "weapon", 2400, "legendary", attack=75, weapon_type="light"),
+        "Adamantite Axe": Item("Adamantite Axe", "weapon", 2600, "legendary", attack=80, weapon_type="light"),
+        "Adamantite Longsword": Item("Adamantite Longsword", "weapon", 2800, "legendary", attack=78, weapon_type="medium"),
+        "Adamantite Mace": Item("Adamantite Mace", "weapon", 3000, "legendary", attack=85, weapon_type="medium"),
+        "Adamantite Spear": Item("Adamantite Spear", "weapon", 3200, "legendary", attack=90, weapon_type="medium"),
+        "Adamantite Hammer": Item("Adamantite Hammer", "weapon", 3400, "legendary", attack=93, weapon_type="medium"),
+        "Adamantite Flail": Item("Adamantite Flail", "weapon", 3600, "legendary", attack=88, weapon_type="heavy"),
+        "Adamantite Warhammer": Item("Adamantite Warhammer", "weapon", 3800, "legendary", attack=95, weapon_type="heavy"),
+        "Adamantite Halberd": Item("Adamantite Halberd", "weapon", 4000, "legendary", attack=98, weapon_type="heavy"),
+        "Adamantite Battleaxe": Item("Adamantite Battleaxe", "weapon", 4200, "legendary", attack=100, weapon_type="heavy"),
 
         # Mythical
         "Worldsplitter": Item("Worldsplitter", "weapon", 5000, "mythical", attack=100),
@@ -356,4 +355,18 @@ def initialise_items():
         "Divine Strength Infusion": Item("Divine Strength Infusion", "consumable", 6000, "mythical", effect_type="buff", effect=("attack", 96), cooldown=7),
         "Divine Iron Skin Infusion": Item("Divine Iron Skin Infusion", "consumable", 6000, "mythical", effect_type="buff", effect=("attack", 96), cooldown=7),
         "Divine Warrior's Infusion": Item("Divine Warrior's Infusion", "consumable", 7500, "mythical", effect_type="buff", effect=("all stats", 48), cooldown=7),
+        
+        # Food items
+        "Bread": Item("Bread", "food", 25, "common", effect_type="energy", energy_restore=10),
+        "Cheese": Item("Cheese", "food", 40, "common", effect_type="energy", energy_restore=15),
+        "Meat Stew": Item("Meat Stew", "food", 80, "uncommon", effect_type="buff", effect=("attack", 2), energy_restore=25, duration=5),
+        "Fruit Salad": Item("Fruit Salad", "food", 80, "uncommon", effect_type="buff", effect=("defence", 2), energy_restore=20, duration=5),
+        "Hearty Meal": Item("Hearty Meal", "food", 200, "rare", effect_type="buff", effect=("all stats", 3), energy_restore=40, duration=10),
+
+        # Drink items
+        "Water": Item("Water", "drink", 15, "common", effect_type="energy", energy_restore=5),
+        "Ale": Item("Ale", "drink", 25, "common", effect_type="energy", energy_restore=10),
+        "Energy Potion": Item("Energy Potion", "drink", 120, "uncommon", effect_type="energy", energy_restore=50),
+        "Strength Brew": Item("Strength Brew", "drink", 100, "rare", effect_type="buff", effect=("attack", 5), energy_restore=30, duration=8),
+        "Fortifying Tonic": Item("Fortifying Tonic", "drink", 100, "rare", effect_type="buff", effect=("defence", 5), energy_restore=30, duration=8),
     }

@@ -3,7 +3,7 @@ from display import *
 from player import Player
 from enemies import initialise_enemies, Enemy
 from items import initialise_items
-from shop import Armourer, Alchemist
+from shop import Armourer, Alchemist, Inn
 from battle import Battle
 from world_map import WorldMap
 from save_system import save_game, load_game, get_save_files
@@ -20,7 +20,10 @@ class Game:
         self.armourer.stock_shop()
         self.alchemist = Alchemist(self.items)
         self.alchemist.stock_shop()
+        self.inn = Inn(self.items)
+        self.inn.stock_shop()
         self.battle = None
+        self.days = 1
 
     def create_character(self):
         #Creates a new player character.
@@ -38,7 +41,7 @@ class Game:
         #Displays the player's current status.
         clear_screen()
         self.player.show_status()
-        print(f"Current location: {self.current_location}")
+        print(f"Current location: {self.current_location}\nDay: {self.days}")
                 
     def move(self):
         #Handles player movement
@@ -135,14 +138,18 @@ class Game:
 
     def rest(self):
         clear_screen()
-        #Restores a portion of the player's health, only in the Village.
+        #Restores a portion of the player's health and energy, only in the Village.
         if self.current_location != "Village":
             print("You can only rest in the Village.")
             return
 
         heal_amount = self.player.max_hp // 4  # Heal 25% of max HP
+        energy_restore = self.player.max_energy // 2
         self.player.heal(heal_amount)
-        print(f"You rest and recover {heal_amount} HP.")
+        self.player.restore_energy(energy_restore)
+        self.days += 1
+        print(f"You rest and recover {heal_amount} HP and {energy_restore} energy.")
+        print(f"Itm is now day {self.days}")
 
     def equip_menu(self):
         #Shows the menu for equipping items, shows the stats for the items as long as they are above 0
@@ -317,11 +324,12 @@ class Game:
         
         while True:
             self.player.update_cooldowns() #Reduces the cooldown on items by 1 on every action (Might change to only occur during battles)
+            self.player.update_buffs() #Reduces the duration of buffs by 1
             self.show_status() #Ensures the player can see their status easily
             if self.current_location == "Village":
                 #Provides a set of options players can do if in the village, such as using shops and resting, otherwise prevents these actions
                 action = input("\nWhat do you want to do?\n[m]ove\n[i]nventory\n[c]onsumables\n[e]quip"
-                            "\n[u]se item\n[a]lchemist\n[ar]mourer\n[r]est\n[v]iew map\n[sa]ve game\n[q]uit\n>").lower()
+                            "\n[u]se item\n[a]lchemist\n[ar]mourer\n[in]n\n[r]est\n[v]iew map\n[sa]ve game\n[q]uit\n>").lower()
             else:
                 action = input("\nWhat do you want to do?\n[m]ove\n[i]nventory\n[c]onsumables\n[e]quip"
                             "\n[l]ocation actions\n[u]se item\n[v]iew map\n[sa]ve game\n[q]uit\n>").lower()
@@ -356,6 +364,9 @@ class Game:
                 #Rests the player restoring 25% health
                 self.rest()
                 pause()
+            elif action == "in":
+                #Accesses the inn
+                self.inn.inn_menu(self.player, self)
             elif action == "v":
                 #Opens the world map for the player
                 self.world_map.display_map(self.current_location, self.player.level)
