@@ -89,7 +89,7 @@ class Player(Character):
         self.active_hots = {}
         self.max_energy = 100
         self.energy = self.max_energy
-        self.weapon_energy_cost = {"light": 1, "medium": 3, "heavy": 5}
+        self.weapon_energy_cost = {"light": 3, "medium": 5, "heavy": 7}
     
     def give_starter_items(self):
         #Gives starter items to the player
