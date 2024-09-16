@@ -161,7 +161,8 @@ class Game:
                 if item:
                     print(f"{slot.capitalize()}: {item.name}")
                     if item.attack > 0:
-                        print(f"  Attack: +{item.attack}")
+                        energy_cost = self.player.get_weapon_energy_cost()
+                        print(f"  Attack: +{item.attack} Energy use: {energy_cost}")
                     if item.defence > 0:
                         print(f"  Defence: +{item.defence}")
                 else:
@@ -171,7 +172,13 @@ class Game:
             #Creates a list of equippable items and numbers them for ease of access
             equippable_items = [item for item in self.player.inventory if item.type in self.player.equipped]
             for i, item in enumerate(equippable_items, 1):
-                print(f"{i}. {item.name} (Type: {item.type.capitalize()})")
+                if item.type == "weapon":
+                    energy_cost = self.player.get_weapon_energy_cost()
+                    print(f"{i}. {item.name} (Type: {item.type.capitalize()}, Attack: +{item.attack}, Energy Cost: {energy_cost})")
+                elif item.type in ["helm", "chest", "waist", "legs", "boots", "gloves", "shield", "back"]:
+                    print(f"{i}. {item.name} (Type: {item.type.capitalize()}), Defence: +{item.defence})")
+                else:
+                    print(f"{i}. {item.name} (Type: {item.type.capitalize()}), Attack: {item.attack}, Defence: {item.defence})")
 
             choice = input("\nEnter the number of the item you want to equip (or 'q' to quit): ")
             #Allows the player to just enter the associated item number instead of typing full item name
