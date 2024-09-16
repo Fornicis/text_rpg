@@ -33,7 +33,7 @@ class Character:
             if item:
                 print(f"{slot.capitalize()}: {item.name} (Tier: {item.tier.capitalize()})")
                 if item.attack > 0:
-                    print(f"  Attack: +{item.attack}")
+                    print(f"  Attack: +{item.attack} ({item.weapon_type})")
                 if item.defence > 0:
                     print(f"  Defence: +{item.defence}")
                 if item.effect_type:
@@ -296,7 +296,8 @@ class Player(Character):
         print("\nInventory:")
         for i, item in enumerate(self.inventory, 1):
             if item.type == "weapon":
-                print(f"{i}. {item.name} (Attack: {item.attack}) (Value: {item.value} gold)")
+                energy_cost = self.get_weapon_energy_cost()
+                print(f"{i}. {item.name} (Attack: {item.attack}) (Energy use: {energy_cost}) (Value: {item.value} gold)")
             elif item.type == "ring":
                 print(f"{i}. {item.name} (Attack: {item.attack} Defence: {item.defence}) (Value: {item.value})")
             elif item.type in ["helm", "chest", "belt", "legs", "shield", "back", "gloves", "boots"]:
