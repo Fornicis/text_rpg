@@ -17,7 +17,9 @@ class Battle:
 
     def player_attack(self, enemy):
         #Handles the player attacking, if enemy dies, player gains exp and gold with a chance for loot, else the enemy attacks back
-        energy_cost = self.player.get_weapon_energy_cost()
+        equipped_weapon = self.player.equipped.get("weapon")
+        weapon_type = equipped_weapon.weapon_type if equipped_weapon else "light"
+        energy_cost = self.player.get_weapon_energy_cost(weapon_type)
         if not self.player.can_attack():
             print("Not enough energy to attack!")
             return False

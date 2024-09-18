@@ -162,8 +162,11 @@ class Game:
                 if item:
                     print(f"{slot.capitalize()}: {item.name}")
                     if item.attack > 0:
-                        energy_cost = self.player.get_weapon_energy_cost()
-                        print(f"  Attack: +{item.attack} Energy use: {energy_cost}")
+                        energy_cost = self.player.get_weapon_energy_cost(item.weapon_type)
+                        if slot == "weapon":
+                            print(f"  Attack: +{item.attack} Energy use: {energy_cost}")
+                        else:
+                            print(f"  Attack: +{item.attack}")
                     if item.defence > 0:
                         print(f"  Defence: +{item.defence}")
                 else:
@@ -174,7 +177,7 @@ class Game:
             equippable_items = [item for item in self.player.inventory if item.type in self.player.equipped]
             for i, item in enumerate(equippable_items, 1):
                 if item.type == "weapon":
-                    energy_cost = self.player.get_weapon_energy_cost()
+                    energy_cost = self.player.get_weapon_energy_cost(item.weapon_type)
                     print(f"{i}. {item.name} (Type: {item.type.capitalize()}, Attack: +{item.attack}, Energy Cost: {energy_cost})")
                 elif item.type in ["helm", "chest", "waist", "legs", "boots", "gloves", "shield", "back"]:
                     print(f"{i}. {item.name} (Type: {item.type.capitalize()}), Defence: +{item.defence})")
@@ -199,12 +202,18 @@ class Game:
                         print(f"{current_item.name}")
                         print(f"  Attack: +{current_item.attack}")
                         print(f"  Defence: +{current_item.defence}")
+                        if current_item.type == "weapon":
+                            current_energy_cost = self.player.get_weapon_energy_cost(current_item.weapon_type)
+                            print(f"  Energy Cost: {current_energy_cost}")
                     else:
                         print("None")
 
                     print(f"New {selected_item.type.capitalize()}: {selected_item.name}")
                     print(f"  Attack: +{selected_item.attack}")
                     print(f"  Defence: +{selected_item.defence}")
+                    if selected_item.type == "weapon":
+                        new_energy_cost = self.player.get_weapon_energy_cost(selected_item.weapon_type)
+                        print(f"  Energy Cost: {new_energy_cost}")
 
                     if current_item:
                         attack_change = selected_item.attack - current_item.attack
@@ -216,6 +225,12 @@ class Game:
                     print(f"\nChanges if equipped:")
                     print(f"  Attack: {attack_change:+d}")
                     print(f"  Defence: {defence_change:+d}")
+                    if selected_item.type == "weapon":
+                        if current_item and current_item.type == "weapon":
+                            energy_cost_change = new_energy_cost - current_energy_cost
+                        else:
+                            energy_cost_change = new_energy_cost
+                        print(f"  Energy Cost: {energy_cost_change:+d}")
 
                     confirm = input("\nDo you want to equip this item? (y/n): ")
                     #Ensures the player really wants to equip the item

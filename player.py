@@ -362,7 +362,13 @@ class Player(Character):
         elif item.effect_type == "buff":
             if isinstance(item.effect, tuple):
                 stat, value = item.effect
-                return f"Increases {stat} by {value}"
+                if item.duration > 0:
+                    if item.energy_restore > 0:
+                        return f"Increases {stat} by {value} for {item.duration} turns and restores {item.energy_restore} energy."
+                    else:
+                        return f"Increases {stat} by {value} for {item.duration} turns."
+                else:
+                    return f"Increases {stat} by {value} until end of combat."
             else:
                 return f"Increases attack by {item.effect}"
         elif item.effect_type == "energy":
@@ -413,10 +419,15 @@ class Player(Character):
     def restore_energy(self, amount):
         self.energy = min(self.max_energy, self.energy + amount)
 
-    def get_weapon_energy_cost(self):
-        if self.equipped['weapon']:
-            return self.weapon_energy_cost.get(self.equipped['weapon'].weapon_type, 0)
-        return 0
+    def get_weapon_energy_cost(self, weapon_type):
+        return self.weapon_energy_cost.get(weapon_type, 0)
     
     def can_attack(self):
-        return self.energy >= self.get_weapon_energy_cost()
+        equipped_weapon = self.equipped.get('weapon')
+        if equipped_weapon:
+            weapon_type = equipped_weapon.weapon_type
+        else:
+            weapon_type = 'light'  # Default to light weapon if no weapon is equipped
+        
+        energy_cost = self.get_weapon_energy_cost(weapon_type)
+        return self.energy >= energy_cost
