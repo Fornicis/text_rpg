@@ -384,4 +384,7 @@ def initialise_items():
         "Giant's Strength Potion": Item("Giant's Strength Potion", "drink", 400, "epic", effect_type="buff", effect=("attack", 10), energy_restore=50, duration=15),
         "Ethereal Essence": Item("Ethereal Essence", "drink", 600, "epic", effect_type="buff", effect=("all stats", 7), energy_restore=70, duration=20),
         "Elixir of Immortality": Item("Elixir of Immortality", "drink", 1500, "legendary", effect_type="buff", effect=("all stats", 15), energy_restore=150, duration=40),
+        
+        #Teleport Scroll
+        "Scroll of Teleportation": Item("Scroll of Teleportation", "consumable", 500, "rare", effect_type="teleport", effect=0, cooldown=0),
     }

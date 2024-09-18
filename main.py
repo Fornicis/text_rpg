@@ -86,6 +86,7 @@ class Game:
         min_level = self.world_map.get_min_level(destination)
         if self.player.level >= min_level:
             self.current_location = destination
+            self.player.add_visited_location(destination)
             print(f"You have arrived at {self.current_location}.")
             if self.current_location == "Village":
                 print("Welcome to the Village! You can rest, shop, or prepare for your next adventure here.")
@@ -267,7 +268,7 @@ class Game:
                     else:
                         print(f"You can't use {selected_item.name} in combat.")
                 else:
-                    success, message = self.player.use_item(selected_item)
+                    success, message = self.player.use_item(selected_item, self)
                     print(message)
                     return selected_item if success else None
             else:
@@ -367,6 +368,7 @@ class Game:
                 #Opens the item usage menu
                 clear_screen()
                 self.use_item_menu()
+                self.player.show_cooldowns()
             elif action == "r":
                 #Rests the player restoring 25% health
                 self.rest()

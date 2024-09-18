@@ -90,6 +90,7 @@ class Player(Character):
         self.max_energy = 100
         self.energy = self.max_energy
         self.weapon_energy_cost = {"light": 3, "medium": 5, "heavy": 7}
+        self.visited_locations = set(["Village"])
     
     def give_starter_items(self):
         #Gives starter items to the player
@@ -231,8 +232,11 @@ class Player(Character):
                 self.defence -= buff_info['value']
             print(f"Your combat {stat} buff has worn off.")
         self.combat_buffs.clear()
+        
+    def add_visited_location(self, location):
+        self.visited_locations.add(location)
 
-    def use_item(self, item):
+    def use_item(self, item, game=None):
         # Use a consumable item if not on cooldown
         if item.name in self.cooldowns and self.cooldowns[item.name] > 0:
             print(f"You can't use {item.name} yet. Cooldown: {self.cooldowns[item.name]} turns.")
@@ -261,6 +265,11 @@ class Player(Character):
                     message += f"You used {item.name} and gained a permanent {stat} buff of {value}. "
             elif item.effect_type == "hot":
                 return self.apply_hot(item)
+            elif item.effect_type == "teleport":
+                if game:
+                    return self.use_teleport_scroll(game)
+                else:
+                    return False, "Cannot use teleport scroll outside of game context!"
             
             if item.energy_restore > 0:
                 energy_restore = min(item.energy_restore, self.max_energy - self.energy)
@@ -273,6 +282,28 @@ class Player(Character):
         else:
             message = f"You can't use {item.name}."
             return False, message
+        
+    def use_teleport_scroll(self, game):
+        print("\nVisited locations:")
+        for i, location in enumerate(sorted(self.visited_locations), 1):
+            print(f"{i}. {location}")
+        
+        while True:
+            choice = input("\nEnter the number of the location you want to teleport to (or 'c' to cancel): ")
+            if choice.lower() == 'c':
+                return False, "Teleportation cancelled."
+            
+            try:
+                index = int(choice) - 1
+                locations = sorted(self.visited_locations)
+                if 0 <= index < len(locations):
+                    destination = locations[index]
+                    game.current_location = destination
+                    return True, f"You have teleported to {destination}."
+                else:
+                    print("Invalid choice. Please try again.")
+            except ValueError:
+                print("Invalid input. Please enter a number or 'c' to cancel.")
 
     def update_cooldowns(self):
         # Decrease cooldowns each turn
@@ -310,7 +341,7 @@ class Player(Character):
             
     def show_consumables(self):
         # Display consumable items in inventory
-        consumables = [item for item in self.inventory if item.type in ["consumables", "buff", "food", "drink"]]
+        consumables = [item for item in self.inventory if item.type in ["consumable", "buff", "food", "drink"]]
         if consumables:
             print("\nConsumable Items:")
             for item in consumables:
@@ -336,6 +367,8 @@ class Player(Character):
                 return f"Increases attack by {item.effect}"
         elif item.effect_type == "energy":
             return f"Restores {item.energy_restore} energy"
+        elif item.effect_type == "teleport":
+            return f"Teleports player to previously visited location of choice."
         else:
             return "Unknown effect"
         
