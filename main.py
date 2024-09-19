@@ -88,6 +88,7 @@ class Game:
             self.current_location = destination
             self.player.add_visited_location(destination)
             print(f"You have arrived at {self.current_location}.")
+            self.player.use_energy(5)
             if self.current_location == "Village":
                 print("Welcome to the Village! You can rest, shop, or prepare for your next adventure here.")
                 return False  # Indicate that we should not run location actions
