@@ -19,12 +19,12 @@ class Battle:
         #Handles the player attacking, if enemy dies, player gains exp and gold with a chance for loot, else the enemy attacks back
         equipped_weapon = self.player.equipped.get("weapon")
         weapon_type = equipped_weapon.weapon_type if equipped_weapon else "light"
-        energy_cost = self.player.get_weapon_energy_cost(weapon_type)
+        stamina_cost = self.player.get_weapon_stamina_cost(weapon_type)
         if not self.player.can_attack():
-            print("Not enough energy to attack!")
+            print("Not enough stamina to attack!")
             return False
 
-        self.player.use_energy(energy_cost)
+        self.player.use_stamina(stamina_cost)
         player_damage = max(0, self.calculate_damage(self.player.attack) - enemy.defence)
         enemy.take_damage(player_damage)
         print(f"You dealt {player_damage} damage to {enemy.name}.")
@@ -64,7 +64,7 @@ class Battle:
         print(f"\n{self.player.name} HP: {self.player.hp}")
         print(f"Attack: {self.player.attack}")
         print(f"Defence: {self.player.defence}")
-        print(f"Energy: {self.player.energy}/{self.player.max_energy}")
+        print(f"Stamina: {self.player.stamina}/{self.player.max_stamina}")
         print(f"Level: {self.player.level}")
         
         if self.player.active_hots:

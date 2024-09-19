@@ -46,8 +46,8 @@ class BaseShop:
             print(f"   Attack: +{item.attack}")
         if item.defence > 0:
             print(f"   Defence: +{item.defence}")
-        if item.energy_restore > 0:
-            print(f"   Energy Restore: {item.energy_restore}")
+        if item.stamina_restore > 0:
+            print(f"   Stamina Restore: {item.stamina_restore}")
         if item.effect_type:
             if item.effect_type == "buff":
                 if isinstance(item.effect, tuple):
@@ -61,8 +61,8 @@ class BaseShop:
                 print(f"   Effect: Heal over time ({item.tick_effect} HP per turn) for {item.duration} turns. Total Healing: {item.tick_effect * item.duration} HP")
             elif item.effect_type == "damage":
                 print(f"   Effect: Damage ({item.effect})")
-            elif item.effect_type == "energy":
-                print(f"   Effect: Energy Restore ({item.energy_restore})")
+            elif item.effect_type == "stamina":
+                print(f"   Effect: Stamina Restore ({item.stamina_restore})")
         if item.cooldown:
             print(f"   Cooldown: {item.cooldown} turns")
 
@@ -272,8 +272,8 @@ class Inn(BaseShop):
             clear_screen()
             print("\n--- Welcome to the Inn ---")
             print(f"Your gold: {player.gold}")
-            print(f"Your energy: {player.energy}/{player.max_energy}")
-            print(f"\n1. Rest (Restore full HP and Energy) - {player.level * 10} gold")
+            print(f"Your stamina: {player.stamina}/{player.max_stamina}")
+            print(f"\n1. Rest (Restore full HP and Stamina) - {player.level * 10} gold")
             print("2. Buy food and drinks")
             print("3. Exit Inn")
 
@@ -283,9 +283,9 @@ class Inn(BaseShop):
                 if player.gold >= (player.level * 10):
                     player.gold -= (player.level * 10)
                     player.hp = player.max_hp
-                    player.energy = player.max_energy
+                    player.stamina = player.max_stamina
                     game.days += 1
-                    print(f"You rest at the inn, fully restoring your HP and Energy.")
+                    print(f"You rest at the inn, fully restoring your HP and Stamina.")
                     print(f"It is now day {game.days}.")
                 else:
                     print("You don't have enough gold to rest at the inn.")

@@ -14,7 +14,7 @@ class Character:
         #Shows the status and equipment of the player, 
         print(f"\n{self.name} (Level {self.level}):")
         print(f"HP: {self.hp}/{self.max_hp}, EXP: {self.exp}/{self.level*100}, Gold: {self.gold}, "
-              f"Attack: {self.attack}, Defence: {self.defence}, Energy: {self.energy}/{self.max_energy}")
+              f"Attack: {self.attack}, Defence: {self.defence}, Stamina: {self.stamina}/{self.max_stamina}")
         if self.active_buffs or self.combat_buffs:
             print("\nActive Buffs:")
             for stat, buff_info in self.active_buffs.items():
@@ -87,9 +87,9 @@ class Player(Character):
         self.items = initialise_items()
         self.give_starter_items()
         self.active_hots = {}
-        self.max_energy = 100
-        self.energy = self.max_energy
-        self.weapon_energy_cost = {"light": 3, "medium": 5, "heavy": 7}
+        self.max_stamina = 100
+        self.stamina = self.max_stamina
+        self.weapon_stamina_cost = {"light": 3, "medium": 5, "heavy": 7}
         self.visited_locations = set(["Village"])
     
     def give_starter_items(self):
@@ -141,9 +141,9 @@ class Player(Character):
         self.hp = self.max_hp
         self.attack += 1
         self.defence += 1
-        self.max_energy += 5
-        energy_restore = self.max_energy // 4
-        self.restore_energy(energy_restore)
+        self.max_stamina += 5
+        stamina_restore = self.max_stamina // 4
+        self.restore_stamina(stamina_restore)
         self.exp = self.exp // 2
         print(f"Congratulations! You reached level {self.level}!")
         print("Your stats have increased.")
@@ -248,10 +248,10 @@ class Player(Character):
                 heal_amount = min(item.effect, self.max_hp - self.hp)
                 self.heal(heal_amount)
                 message += f"You used {item.name} and restored {heal_amount} HP. "
-            elif item.effect_type == "energy":
-                energy_restore = min(item.energy_restore, self.max_energy - self.energy)
-                self.restore_energy(energy_restore)
-                message += f"You used {item.name} and restored {energy_restore} Energy. "
+            elif item.effect_type == "stamina":
+                stamina_restore = min(item.stamina_restore, self.max_stamina - self.stamina)
+                self.restore_stamina(stamina_restore)
+                message += f"You used {item.name} and restored {stamina_restore} Stamina. "
             elif item.effect_type == "buff":
                 stat, value = item.effect
                 duration = getattr(item, 'duration', 0)
@@ -271,10 +271,10 @@ class Player(Character):
                 else:
                     return False, "Cannot use teleport scroll outside of game context!"
             
-            if item.energy_restore > 0:
-                energy_restore = min(item.energy_restore, self.max_energy - self.energy)
-                self.restore_energy(energy_restore)
-                message += f"You restored {energy_restore} Energy. "
+            if item.stamina_restore > 0:
+                stamina_restore = min(item.stamina_restore, self.max_stamina - self.stamina)
+                self.restore_stamina(stamina_restore)
+                message += f"You restored {stamina_restore} Stamina. "
             
             self.inventory.remove(item)
             self.cooldowns[item.name] = item.cooldown
@@ -327,8 +327,8 @@ class Player(Character):
         print("\nInventory:")
         for i, item in enumerate(self.inventory, 1):
             if item.type == "weapon":
-                energy_cost = self.get_weapon_energy_cost()
-                print(f"{i}. {item.name} (Attack: {item.attack}) (Energy use: {energy_cost}) (Value: {item.value} gold)")
+                stamina_cost = self.get_weapon_stamina_cost()
+                print(f"{i}. {item.name} (Attack: {item.attack}) (Stamina use: {stamina_cost}) (Value: {item.value} gold)")
             elif item.type == "ring":
                 print(f"{i}. {item.name} (Attack: {item.attack} Defence: {item.defence}) (Value: {item.value})")
             elif item.type in ["helm", "chest", "belt", "legs", "shield", "back", "gloves", "boots"]:
@@ -363,16 +363,16 @@ class Player(Character):
             if isinstance(item.effect, tuple):
                 stat, value = item.effect
                 if item.duration > 0:
-                    if item.energy_restore > 0:
-                        return f"Increases {stat} by {value} for {item.duration} turns and restores {item.energy_restore} energy."
+                    if item.stamina_restore > 0:
+                        return f"Increases {stat} by {value} for {item.duration} turns and restores {item.stamina_restore} stamina."
                     else:
                         return f"Increases {stat} by {value} for {item.duration} turns."
                 else:
                     return f"Increases {stat} by {value} until end of combat."
             else:
                 return f"Increases attack by {item.effect}"
-        elif item.effect_type == "energy":
-            return f"Restores {item.energy_restore} energy"
+        elif item.effect_type == "stamina":
+            return f"Restores {item.stamina_restore} stamina"
         elif item.effect_type == "teleport":
             return f"Teleports player to previously visited location of choice."
         else:
@@ -413,14 +413,14 @@ class Player(Character):
                 print(f"{hot_name} healed you for {heal_amount} HP and has worn off.")
                 del self.active_hots[hot_name]
                 
-    def use_energy(self, amount):
-        self.energy = max(0, self.energy - amount)
+    def use_stamina(self, amount):
+        self.stamina = max(0, self.stamina - amount)
 
-    def restore_energy(self, amount):
-        self.energy = min(self.max_energy, self.energy + amount)
+    def restore_stamina(self, amount):
+        self.stamina = min(self.max_stamina, self.stamina + amount)
 
-    def get_weapon_energy_cost(self, weapon_type):
-        return self.weapon_energy_cost.get(weapon_type, 0)
+    def get_weapon_stamina_cost(self, weapon_type):
+        return self.weapon_stamina_cost.get(weapon_type, 0)
     
     def can_attack(self):
         equipped_weapon = self.equipped.get('weapon')
@@ -429,5 +429,5 @@ class Player(Character):
         else:
             weapon_type = 'light'  # Default to light weapon if no weapon is equipped
         
-        energy_cost = self.get_weapon_energy_cost(weapon_type)
-        return self.energy >= energy_cost
+        stamina_cost = self.get_weapon_stamina_cost(weapon_type)
+        return self.stamina >= stamina_cost

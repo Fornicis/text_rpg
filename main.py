@@ -88,7 +88,7 @@ class Game:
             self.current_location = destination
             self.player.add_visited_location(destination)
             print(f"You have arrived at {self.current_location}.")
-            self.player.use_energy(5)
+            self.player.use_stamina(5)
             if self.current_location == "Village":
                 print("Welcome to the Village! You can rest, shop, or prepare for your next adventure here.")
                 return False  # Indicate that we should not run location actions
@@ -102,13 +102,16 @@ class Game:
     def location_actions(self):
         #Handles actions available at the current location.
         while True:
-            action = input("\nWhat would you like to do?\n[e]xplore\n[u]se item\n[l]eave\n>").lower()
+            action = input("\nWhat would you like to do?\n[e]xplore\n[u]se item\n[r]est\n[l]eave\n>").lower()
             if action == 'e':
                 clear_screen()
                 self.encounter()
             elif action == 'u':
                 clear_screen()
                 self.use_item_menu()
+            elif action == 'r':
+                clear_screen()
+                self.rest()
             elif action == 'l':
                 break
             else:
@@ -140,18 +143,14 @@ class Game:
 
     def rest(self):
         clear_screen()
-        #Restores a portion of the player's health and energy, only in the Village.
-        if self.current_location != "Village":
-            print("You can only rest in the Village.")
-            return
-
+        #Restores a portion of the player's health and stamina
         heal_amount = self.player.max_hp // 4  # Heal 25% of max HP
-        energy_restore = self.player.max_energy // 2
+        stamina_restore = self.player.max_stamina // 2
         self.player.heal(heal_amount)
-        self.player.restore_energy(energy_restore)
+        self.player.restore_stamina(stamina_restore)
         self.days += 1
-        print(f"You rest and recover {heal_amount} HP and {energy_restore} energy.")
-        print(f"Itm is now day {self.days}")
+        print(f"You rest and recover {heal_amount} HP and {stamina_restore} stamina.")
+        print(f"It is now day {self.days}")
 
     def equip_menu(self):
         #Shows the menu for equipping items, shows the stats for the items as long as they are above 0
@@ -163,9 +162,9 @@ class Game:
                 if item:
                     print(f"{slot.capitalize()}: {item.name}")
                     if item.attack > 0:
-                        energy_cost = self.player.get_weapon_energy_cost(item.weapon_type)
+                        stamina_cost = self.player.get_weapon_stamina_cost(item.weapon_type)
                         if slot == "weapon":
-                            print(f"  Attack: +{item.attack} Energy use: {energy_cost}")
+                            print(f"  Attack: +{item.attack} Stamina use: {stamina_cost}")
                         else:
                             print(f"  Attack: +{item.attack}")
                     if item.defence > 0:
@@ -178,8 +177,8 @@ class Game:
             equippable_items = [item for item in self.player.inventory if item.type in self.player.equipped]
             for i, item in enumerate(equippable_items, 1):
                 if item.type == "weapon":
-                    energy_cost = self.player.get_weapon_energy_cost(item.weapon_type)
-                    print(f"{i}. {item.name} (Type: {item.type.capitalize()}, Attack: +{item.attack}, Energy Cost: {energy_cost})")
+                    stamina_cost = self.player.get_weapon_stamina_cost(item.weapon_type)
+                    print(f"{i}. {item.name} (Type: {item.type.capitalize()}, Attack: +{item.attack}, Stamina Cost: {stamina_cost})")
                 elif item.type in ["helm", "chest", "waist", "legs", "boots", "gloves", "shield", "back"]:
                     print(f"{i}. {item.name} (Type: {item.type.capitalize()}), Defence: +{item.defence})")
                 else:
@@ -204,8 +203,8 @@ class Game:
                         print(f"  Attack: +{current_item.attack}")
                         print(f"  Defence: +{current_item.defence}")
                         if current_item.type == "weapon":
-                            current_energy_cost = self.player.get_weapon_energy_cost(current_item.weapon_type)
-                            print(f"  Energy Cost: {current_energy_cost}")
+                            current_stamina_cost = self.player.get_weapon_stamina_cost(current_item.weapon_type)
+                            print(f"  Stamina Cost: {current_stamina_cost}")
                     else:
                         print("None")
 
@@ -213,8 +212,8 @@ class Game:
                     print(f"  Attack: +{selected_item.attack}")
                     print(f"  Defence: +{selected_item.defence}")
                     if selected_item.type == "weapon":
-                        new_energy_cost = self.player.get_weapon_energy_cost(selected_item.weapon_type)
-                        print(f"  Energy Cost: {new_energy_cost}")
+                        new_stamina_cost = self.player.get_weapon_stamina_cost(selected_item.weapon_type)
+                        print(f"  Stamina Cost: {new_stamina_cost}")
 
                     if current_item:
                         attack_change = selected_item.attack - current_item.attack
@@ -228,10 +227,10 @@ class Game:
                     print(f"  Defence: {defence_change:+d}")
                     if selected_item.type == "weapon":
                         if current_item and current_item.type == "weapon":
-                            energy_cost_change = new_energy_cost - current_energy_cost
+                            stamina_cost_change = new_stamina_cost - current_stamina_cost
                         else:
-                            energy_cost_change = new_energy_cost
-                        print(f"  Energy Cost: {energy_cost_change:+d}")
+                            stamina_cost_change = new_stamina_cost
+                        print(f"  Stamina Cost: {stamina_cost_change:+d}")
 
                     confirm = input("\nDo you want to equip this item? (y/n): ")
                     #Ensures the player really wants to equip the item
