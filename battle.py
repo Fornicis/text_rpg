@@ -108,9 +108,9 @@ class Battle:
                 if used_item:
                     if used_item.effect_type == "damage" and not enemy.is_alive():
                         print(f"{enemy.name} has been defeated!")
-                        self.player.gain_exp(enemy.exp)
+                        self.player.gain_exp(enemy.exp, enemy.level)
                         self.player.gold += enemy.gold
-                        print(f"You gained {enemy.exp} EXP and {enemy.gold} gold.")
+                        print(f"You gained {enemy.gold} gold.")
                         return
                 else:
                     print("No item used. You lose your turn.")
