@@ -331,10 +331,11 @@ class Game:
                 save_file = self.choose_save_file(for_loading=True)
                 if save_file:
                     #If save file is selected sets the current player and location to the data saved, if it fails automatically starts new character creation
-                    loaded_player, loaded_location = load_game(save_file)
-                    if loaded_player and loaded_location:
+                    loaded_player, loaded_location, loaded_days = load_game(save_file)
+                    if loaded_player and loaded_location and loaded_days:
                         self.player = loaded_player
                         self.current_location = loaded_location
+                        self.days = loaded_days
                         self.initialise_battle()
                         break
                     else:
@@ -415,7 +416,7 @@ class Game:
             elif action == "sa":
                 #Allows the player to save at any point in case of unexpected crashes, will look into making an autosave feature
                 save_file = self.choose_save_file()
-                save_game(self.player, self.current_location, save_file)
+                save_game(self.player, self.current_location, self.days, save_file)
             else:
                 print("Invalid action. Try again.")
             

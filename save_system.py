@@ -6,17 +6,14 @@ from items import Item, initialise_items
 SAVE_DIRECTORY = "saves"
 
 def ensure_save_directory():
-    #Makes a folder called saves if one does not exist in the path
     if not os.path.exists(SAVE_DIRECTORY):
         os.makedirs(SAVE_DIRECTORY)
 
 def get_save_files():
-    #Shows a list of save_files in the saves folder as long as they end with .json
     ensure_save_directory()
     return [f for f in os.listdir(SAVE_DIRECTORY) if f.endswith('.json')]
 
-def save_game(player, current_location, filename):
-    #Saves all stats, items, equipment and location of the player to chosen save file, makes a new save if requested to do so
+def save_game(player, current_location, days, filename):
     ensure_save_directory()
     save_data = {
         "player": {
@@ -31,9 +28,13 @@ def save_game(player, current_location, filename):
             "inventory": [item.name for item in player.inventory],
             "equipped": {slot: (item.name if item else None) for slot, item in player.equipped.items()},
             "cooldowns": player.cooldowns,
-            "active_buffs": player.active_buffs
+            "active_buffs": player.active_buffs,
+            "combat_buffs": player.combat_buffs,  # New: Save combat buffs
+            "active_hots": player.active_hots,  # New: Save active HoTs
+            "visited_locations": list(player.visited_locations)  # New: Save visited locations
         },
-        "current_location": current_location
+        "current_location": current_location,
+        "days": days  # New: Save the current day count
     }
     
     filepath = os.path.join(SAVE_DIRECTORY, filename)
@@ -42,11 +43,10 @@ def save_game(player, current_location, filename):
     print(f"Game saved successfully to {filepath}")
 
 def load_game(filename):
-    #Pulls data from specified save file and loads that into the game parsing information to relevant sections
     filepath = os.path.join(SAVE_DIRECTORY, filename)
     if not os.path.exists(filepath):
         print(f"Save file {filename} not found.")
-        return None, None
+        return None, None, None  # Return None for player, location, and days
 
     with open(filepath, 'r') as f:
         save_data = json.load(f)
@@ -66,8 +66,12 @@ def load_game(filename):
     player.equipped = {slot: (all_items[item_name] if item_name else None) for slot, item_name in player_data["equipped"].items()}
     player.cooldowns = player_data["cooldowns"]
     player.active_buffs = player_data["active_buffs"]
+    player.combat_buffs = player_data["combat_buffs"]  # New: Load combat buffs
+    player.active_hots = player_data["active_hots"]  # New: Load active HoTs
+    player.visited_locations = set(player_data["visited_locations"])  # New: Load visited locations
 
     current_location = save_data["current_location"]
+    days = save_data["days"]  # New: Load the current day count
     
     print(f"Game loaded successfully from {filepath}")
-    return player, current_location
+    return player, current_location, days  # Return player, location, and days
