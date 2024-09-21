@@ -270,12 +270,7 @@ class Player(Character):
                     return self.use_teleport_scroll(game)
                 else:
                     return False, "Cannot use teleport scroll outside of game context!"
-            
-            if item.stamina_restore > 0:
-                stamina_restore = min(item.stamina_restore, self.max_stamina - self.stamina)
-                self.restore_stamina(stamina_restore)
-                message += f"You restored {stamina_restore} Stamina. "
-            
+   
             self.inventory.remove(item)
             self.cooldowns[item.name] = item.cooldown
             return True, message
@@ -327,7 +322,8 @@ class Player(Character):
         print("\nInventory:")
         for i, item in enumerate(self.inventory, 1):
             if item.type == "weapon":
-                stamina_cost = self.get_weapon_stamina_cost()
+                weapon_type = getattr(item, 'weapon_type', 'light')
+                stamina_cost = self.get_weapon_stamina_cost(weapon_type)
                 print(f"{i}. {item.name} (Attack: {item.attack}) (Stamina use: {stamina_cost}) (Value: {item.value} gold)")
             elif item.type == "ring":
                 print(f"{i}. {item.name} (Attack: {item.attack} Defence: {item.defence}) (Value: {item.value})")
@@ -335,9 +331,6 @@ class Player(Character):
                 print(f"{i}. {item.name} (Defence: {item.defence})(Value: {item.value} gold)")
             else:
                 print(f"{i}. {item.name} (Value: {item.value} gold)")
-        print("\nEquipped:")
-        for slot, item in self.equipped.items():
-            print(f"{slot.capitalize()}: {item.name if item else 'None'}")
             
     def show_consumables(self):
         # Display consumable items in inventory
