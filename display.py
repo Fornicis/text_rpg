@@ -38,11 +38,11 @@ def display_help():
 
     COMBAT:
     - Battles are turn-based. Your options are:
-      [a]ttack: Deal damage to the enemy (costs energy based on weapon type)
+      [a]ttack: Deal damage to the enemy (costs stamina based on weapon type)
       [u]se item: Use a consumable from your inventory
       [r]un: Attempt to flee (not always successful)
     - Defeating enemies grants EXP, gold, and sometimes loot.
-    - Your energy replenishes over time and is used for attacks.
+    - Your stamina replenishes on level up and resting, it is used for attacks.
 
     INVENTORY AND EQUIPMENT:
     - Access your [i]nventory to see all your items.
@@ -54,7 +54,7 @@ def display_help():
     - Visit shops in the Village to buy and sell items:
       - [ar]mourer: Buy and sell weapons and armor
       - [a]lchemist: Buy and sell potions and consumables
-      - [in]n: Rest to restore HP and energy, buy food and drinks
+      - [in]n: Rest to restore HP and stamina, buy food and drinks
     - Shop inventories change periodically, so check back often.
 
     CHARACTER PROGRESSION:
@@ -64,14 +64,14 @@ def display_help():
     CONSUMABLES AND BUFFS:
     - Use healing potions to restore HP during and outside of combat.
     - Buff items can temporarily increase your stats.
-    - Food and drinks can restore energy and provide various effects.
+    - Food and drinks can restore stamina and provide various effects.
 
     SAVING AND LOADING:
     - Use the [sa]ve game command to save your progress.
     - Load your game from the main menu when starting the game.
 
     TIPS:
-    - Rest at the Inn or use the [r]est command in the Village to restore HP and energy.
+    - Rest at the Inn or use the [r]est command in the Village to restore HP and stamina.
     - Upgrade your equipment regularly to stay competitive.
     - Use the right weapon type for your playstyle (light, medium, or heavy).
     - Always carry healing items for tough battles.
