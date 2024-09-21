@@ -84,7 +84,10 @@ class Game:
             print("Invalid choice. Please try again.")
         
         min_level = self.world_map.get_min_level(destination)
-        if self.player.level >= min_level:
+        if self.player.stamina < 5:
+            print("You do not have enough energy to move, please rest up!")
+            pause()
+        elif self.player.level >= min_level:
             self.current_location = destination
             self.player.add_visited_location(destination)
             print(f"You have arrived at {self.current_location}.")
@@ -145,7 +148,7 @@ class Game:
         clear_screen()
         #Restores a portion of the player's health and stamina
         heal_amount = self.player.max_hp // 4  # Heal 25% of max HP
-        stamina_restore = self.player.max_stamina // 2
+        stamina_restore = self.player.max_stamina // 4
         self.player.heal(heal_amount)
         self.player.restore_stamina(stamina_restore)
         self.days += 1
@@ -362,8 +365,8 @@ class Game:
                 #Moves the palyer to different location if level requirements met
                 clear_screen()
                 self.world_map.display_map(self.current_location, self.player.level)
-                run_location_actions = self.move()
-                if run_location_actions:
+                self.move()
+                if self.current_location != "Village":
                     self.location_actions()
             elif action == "i":
                 #Open the player inventory
@@ -400,7 +403,7 @@ class Game:
                 save_option = input("Do you want to save before quitting? (y/n): ").lower()
                 if save_option == "y":
                     save_file = self.choose_save_file()
-                    save_game(self.player, self.current_location, save_file)
+                    save_game(self.player, self.current_location, self.days, save_file)
                 print("Thanks for playing!")
                 title_screen()
             elif action == "l" and self.current_location != "Village":
