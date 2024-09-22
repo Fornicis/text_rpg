@@ -44,25 +44,45 @@ class BaseShop:
         print(f"   Tier: {item.tier.capitalize()}")
         if item.attack > 0:
             print(f"   Attack: +{item.attack}")
+            
         if item.defence > 0:
             print(f"   Defence: +{item.defence}")
+            
         if item.stamina_restore > 0:
             print(f"   Stamina Restore: {item.stamina_restore}")
-        if item.effect_type:
+            
+        if item.type == "consumable":
             if item.effect_type == "buff":
                 if isinstance(item.effect, tuple):
                     stat, value = item.effect
-                    print(f"   Buff: {stat.capitalize()} +{value} for {item.duration} turns")
+                    print(f"   Buff: {stat.capitalize()} +{value} until end of next combat.")
                 else:
-                    print(f"   Buff: Attack +{item.effect} for {item.duration} turns")
+                    print(f"   Buff: Attack +{item.effect} until end of next combat.")
             elif item.effect_type == "healing":
                 print(f"   Effect: Healing ({item.effect} HP)")
             elif item.effect_type == "hot":
                 print(f"   Effect: Heal over time ({item.tick_effect} HP per turn) for {item.duration} turns. Total Healing: {item.tick_effect * item.duration} HP")
             elif item.effect_type == "damage":
                 print(f"   Effect: Damage ({item.effect})")
-            elif item.effect_type == "stamina":
-                print(f"   Effect: Stamina Restore ({item.stamina_restore})")
+            """elif item.effect_type == "stamina":
+                print(f"   Effect: Stamina Restore ({item.stamina_restore})")"""
+                
+        elif item.type in ["food", "drink"]:
+            if item.effect_type == "buff":
+                if isinstance(item.effect, tuple):
+                    stat, value = item.effect
+                    print(f"   Buff: {stat.capitalize()} +{value} for {item.duration} turns")
+                else:
+                    print(f"   Buff: Attack +{item.effect} for {item.duration} turns")
+            if item.effect_type == "healing":
+                print(f"   Effect: Healing ({item.effect} HP)")
+            if item.effect_type == "hot":
+                print(f"   Effect: Heal over time ({item.tick_effect} HP per turn) for {item.duration} turns. Total Healing: {item.tick_effect * item.duration} HP")
+            if item.effect_type == "damage":
+                print(f"   Effect: Damage ({item.effect})")
+            """if item.effect_type == "stamina":
+                print(f"   Effect: Stamina Restore ({item.stamina_restore})")"""
+            
         if item.cooldown:
             print(f"   Cooldown: {item.cooldown} turns")
 
