@@ -237,7 +237,6 @@ class Player(Character):
         self.visited_locations.add(location)
 
     def use_item(self, item, game=None):
-        # Use a consumable item if not on cooldown
         if item.name in self.cooldowns and self.cooldowns[item.name] > 0:
             print(f"You can't use {item.name} yet. Cooldown: {self.cooldowns[item.name]} turns.")
             return False, f"Couldn't use {item.name} due to cooldown!"
@@ -264,14 +263,18 @@ class Player(Character):
                 else:
                     message += f"You used {item.name} and gained a permanent {stat} buff of {value}. "
             elif item.effect_type == "hot":
-                return self.apply_hot(item)
+                success, hot_message = self.apply_hot(item)
+                if success:
+                    message += hot_message
+                else:
+                    return False, hot_message
             elif item.effect_type == "teleport":
                 if game:
                     return self.use_teleport_scroll(game)
                 else:
                     return False, "Cannot use teleport scroll outside of game context!"
-   
-            self.inventory.remove(item)
+
+            self.inventory.remove(item)  # Remove the item from inventory after use
             self.cooldowns[item.name] = item.cooldown
             return True, message
         else:
