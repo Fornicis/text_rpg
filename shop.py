@@ -25,7 +25,7 @@ class BaseShop:
             if self.inventory[item_name]['quantity'] <= 0:
                 del self.inventory[item_name]
 
-    def display_inventory(self, player_level):
+    def display_inventory(self, player):
         #Displays the shop inventory, sorted in descending value, with each item assigned a number for each of buying
         print(f"\n{self.__class__.__name__} Inventory:")
         sorted_inventory = sorted(
@@ -34,16 +34,19 @@ class BaseShop:
             reverse=False
         )
         for i, (item_name, info) in enumerate(sorted_inventory, 1):
-            if self.is_item_available(info['item'], player_level):
+            if self.is_item_available(info['item'], player.level):
                 item = info['item']
                 print(f"{i}. {item_name}: {info['quantity']} available (Price: {info['item'].value} gold)")
-                self.display_item_stats(item)
+                self.display_item_stats(item, player)
                 
-    def display_item_stats(self, item):
+    def display_item_stats(self, item, player):
         print(f"   Type: {item.type.capitalize()}")
         print(f"   Tier: {item.tier.capitalize()}")
         if item.attack > 0:
             print(f"   Attack: +{item.attack}")
+            if item.type == "weapon":
+                stamina_cost = player.get_weapon_stamina_cost(item.weapon_type)
+                print(f"   Stamina Cost: {stamina_cost}")
             
         if item.defence > 0:
             print(f"   Defence: +{item.defence}")
@@ -133,7 +136,7 @@ class BaseShop:
         #Allows the player to buy items from the shop
         while True:
             clear_screen()
-            self.display_inventory(player.level)
+            self.display_inventory(player)
             print(f"\nYour gold: {player.gold}")
             #Allows player to buy multiple items by typing the related item numbers
             print("\nEnter the numbers of the items you want to buy, separated by spaces.")

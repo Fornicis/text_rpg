@@ -54,11 +54,11 @@ class Character:
 
     def take_damage(self, damage):
         # Reduce HP when taking damage, minimum 0
-        self.hp = max(0, self.hp - damage)
+        self.hp = max(0, self.hp - int(damage))
 
     def heal(self, amount):
         # Heal character, not exceeding max HP
-        self.hp = min(self.max_hp, self.hp + amount)
+        self.hp = min(self.max_hp, self.hp + int(amount))
 
 class Player(Character):
     def __init__(self, name):
@@ -89,7 +89,7 @@ class Player(Character):
         self.active_hots = {}
         self.max_stamina = 100
         self.stamina = self.max_stamina
-        self.weapon_stamina_cost = {"light": 3, "medium": 5, "heavy": 7}
+        self.weapon_stamina_cost = {"light": 2, "medium": 4, "heavy": 6}
         self.visited_locations = set(["Village"])
     
     def give_starter_items(self):
