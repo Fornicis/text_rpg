@@ -7,13 +7,14 @@ class Battle:
         self.player = player
         self.items = items
 
-    def calculate_damage(self, base_attack):
-        #Calculates player and enemy damage within a range of 50% less to 50% more
-        damage = random.randint(max(1, base_attack // 2), int(base_attack * 1.5))
-        if random.random() < 0.1:  # Critical hit chance 10%
-            damage *= 2
-            print("Critical hit!")
-        return damage
+    def calculate_damage(self, base_attack, attacker_name):
+        #Calculates player and enemy damage within a range of 80% to 120% of base attack
+        damage = random.randint(int(base_attack * 0.8), int(base_attack * 1.2))
+        is_critical = random.random() < 0.1  # Critical hit chance 10%
+        if is_critical:
+            damage = int(damage * 1.5)
+            print(f"Critical hit by {attacker_name}!")
+        return damage, is_critical
 
     def player_attack(self, enemy):
         #Handles the player attacking, if enemy dies, player gains exp and gold with a chance for loot, else the enemy attacks back
@@ -25,7 +26,8 @@ class Battle:
             return False
 
         self.player.use_stamina(stamina_cost)
-        player_damage = max(0, self.calculate_damage(self.player.attack) - enemy.defence)
+        player_damage, player_crit = self.calculate_damage(self.player.attack, self.player.name)
+        player_damage = max(0, player_damage - enemy.defence)
         enemy.take_damage(player_damage)
         print(f"You dealt {player_damage} damage to {enemy.name}.")
         
@@ -38,7 +40,8 @@ class Battle:
             self.player.remove_combat_buffs()
             return True
         
-        enemy_damage = max(0, self.calculate_damage(enemy.attack) - self.player.defence)
+        enemy_damage, enemy_crit = self.calculate_damage(enemy.attack, enemy.name)
+        enemy_damage = max(0, enemy_damage - self.player.defence)
         self.player.take_damage(enemy_damage)
         print(f"{enemy.name} dealt {enemy_damage} damage to you.")
         
