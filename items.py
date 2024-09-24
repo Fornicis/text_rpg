@@ -23,7 +23,7 @@ def initialise_items():
         "Wooden Sword": Item("Wooden Sword", "weapon", 0, "starter", attack=2, weapon_type="light"),
 
         #Weapons
-        # Common (Bronze) Weapons
+        # Common (Bronze) Weapons level 1-3
         "Bronze Dagger": Item("Bronze Dagger", "weapon", 20, "common", attack=5, weapon_type="light"),
         "Bronze Shortsword": Item("Bronze Shortsword", "weapon", 25, "common", attack=6, weapon_type="light"),
         "Bronze Sword": Item("Bronze Sword", "weapon", 30, "common", attack=7, weapon_type="light"),
@@ -37,7 +37,7 @@ def initialise_items():
         "Bronze Halberd": Item("Bronze Halberd", "weapon", 70, "common", attack=11, weapon_type="heavy"),
         "Bronze Battleaxe": Item("Bronze Battleaxe", "weapon", 75, "common", attack=12, weapon_type="heavy"),
 
-        # Uncommon (Iron) Weapons
+        # Uncommon (Iron) Weapons level 4-6
         "Iron Dagger": Item("Iron Dagger", "weapon", 80, "uncommon", attack=12, weapon_type="light"),
         "Iron Shortsword": Item("Iron Shortsword", "weapon", 90, "uncommon", attack=14, weapon_type="light"),
         "Iron Sword": Item("Iron Sword", "weapon", 100, "uncommon", attack=16, weapon_type="light"),
@@ -51,7 +51,7 @@ def initialise_items():
         "Iron Halberd": Item("Iron Halberd", "weapon", 180, "uncommon", attack=23, weapon_type="heavy"),
         "Iron Battleaxe": Item("Iron Battleaxe", "weapon", 190, "uncommon", attack=24, weapon_type="heavy"),
 
-        # Rare (Steel) Weapons
+        # Rare (Steel) Weapons level 7-14
         "Steel Dagger": Item("Steel Dagger", "weapon", 200, "rare", attack=22, weapon_type="light"),
         "Steel Shortsword": Item("Steel Shortsword", "weapon", 220, "rare", attack=25, weapon_type="light"),
         "Steel Sword": Item("Steel Sword", "weapon", 240, "rare", attack=28, weapon_type="light"),
@@ -65,7 +65,7 @@ def initialise_items():
         "Steel Halberd": Item("Steel Halberd", "weapon", 400, "rare", attack=40, weapon_type="heavy"),
         "Steel Battleaxe": Item("Steel Battleaxe", "weapon", 420, "rare", attack=42, weapon_type="heavy"),
 
-        # Epic (Mithril) Weapons
+        # Epic (Mithril) Weapons level 15-19
         "Mithril Dagger": Item("Mithril Dagger", "weapon", 500, "epic", attack=40, weapon_type="light"),
         "Mithril Shortsword": Item("Mithril Shortsword", "weapon", 550, "epic", attack=45, weapon_type="light"),
         "Mithril Sword": Item("Mithril Sword", "weapon", 600, "epic", attack=50, weapon_type="light"),
@@ -79,7 +79,7 @@ def initialise_items():
         "Mithril Halberd": Item("Mithril Halberd", "weapon", 1000, "epic", attack=68, weapon_type="heavy"),
         "Mithril Battleaxe": Item("Mithril Battleaxe", "weapon", 1050, "epic", attack=70, weapon_type="heavy"),
 
-        # Legendary (Adamantite) Weapons
+        # Legendary (Adamantite) Weapons level 20-24
         "Adamantite Dagger": Item("Adamantite Dagger", "weapon", 2000, "legendary", attack=70, weapon_type="light"),
         "Adamantite Shortsword": Item("Adamantite Shortsword", "weapon", 2200, "legendary", attack=80, weapon_type="light"),
         "Adamantite Sword": Item("Adamantite Sword", "weapon", 2400, "legendary", attack=90, weapon_type="light"),
@@ -93,7 +93,7 @@ def initialise_items():
         "Adamantite Halberd": Item("Adamantite Halberd", "weapon", 4000, "legendary", attack=113, weapon_type="heavy"),
         "Adamantite Battleaxe": Item("Adamantite Battleaxe", "weapon", 4200, "legendary", attack=115, weapon_type="heavy"),
 
-        # Mythical Weapons
+        # Mythical Weapons level 25+
         "Worldsplitter": Item("Worldsplitter", "weapon", 5000, "mythical", attack=120, weapon_type="heavy"),
         "Whisper of the Void": Item("Whisper of the Void", "weapon", 5100, "mythical", attack=123, weapon_type="light"),
         "Destiny's Call": Item("Destiny's Call", "weapon", 5200, "mythical", attack=125, weapon_type="medium"),
