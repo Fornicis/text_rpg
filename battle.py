@@ -142,9 +142,9 @@ class Battle:
             "low": ["common"],
             "medium": ["uncommon"],
             "medium-hard": ["uncommon", "rare"],
-            "hard": ["rare"],
-            "very-hard": ["epic"],
-            "extreme": ["legendary"],
+            "hard": ["rare, epic"],
+            "very-hard": ["epic, masterwork"],
+            "extreme": ["masterwork, legendary"],
         }
         return tiers.get(enemy_tier, ["mythical"])
 
