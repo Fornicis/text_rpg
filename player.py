@@ -123,8 +123,8 @@ class Player(Character):
         if level_difference <= 0:
             scaling_factor = 1 #Full exp if player is equal or lower level
         else:
-            #Reduce exp by 10% for every level above enemy level, minimum 10%
-            scaling_factor = max(0.1, 1 - (level_difference * 0.1))
+            #Reduce exp by 30% for every level above enemy level, minimum 10%
+            scaling_factor = max(0.1, 1 - (level_difference * 0.3))
         #Applies scaling factor    
         scaled_exp = int(amount * scaling_factor)
         #Gain exp based on scaled exp
