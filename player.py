@@ -120,11 +120,15 @@ class Player(Character):
         # Gain experience and level up if threshold reached, scales down with overlevelling
         level_difference = self.level - enemy_level
         #Define the scaling factor
-        if level_difference <= 0:
-            scaling_factor = 1 #Full exp if player is equal or lower level
+        if level_difference == 0:
+            scaling_factor = 1 #Full exp if player is equal level
+        elif level_difference == -1:
+            scaling_factor = 1.5 #50% extra exp for enemy one level above
+        elif level_difference <= -2:
+            scaling_factor = 2.0 #100% extra exp for enemy two or more levels above
         else:
             #Reduce exp by 30% for every level above enemy level, minimum 10%
-            scaling_factor = max(0.1, 1 - (level_difference * 0.3))
+            scaling_factor = max(0.1, 1 - (level_difference * 0.1))
         #Applies scaling factor    
         scaled_exp = int(amount * scaling_factor)
         #Gain exp based on scaled exp
