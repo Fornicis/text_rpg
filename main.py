@@ -105,6 +105,7 @@ class Game:
     def location_actions(self):
         #Handles actions available at the current location.
         while True:
+            self.player.show_status()
             action = input("\nWhat would you like to do?\n[e]xplore\n[u]se item\n[r]est\n[l]eave\n>").lower()
             if action == 'e':
                 clear_screen()
