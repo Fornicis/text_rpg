@@ -124,9 +124,10 @@ class BaseShop:
         tier_levels = {
             "starter": 1,
             "common": 1,
-            "uncommon": 5,
-            "rare": 10,
-            "epic": 15,
+            "uncommon": 3,
+            "rare": 6,
+            "epic": 10,
+            "masterwork": 15,
             "legendary": 20,
             "mythical": 25
         }
