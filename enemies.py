@@ -64,7 +64,7 @@ def initialise_enemies():
             # Medium-Hard Enemies (Levels 10-14)
             "Canyon Cougar": Enemy("Canyon Cougar", 111, 60, 50, 70, random.randrange(65, 81), "medium-hard", 10),
             "Twisted Mesquite": Enemy("Twisted Mesquite", 136, 57, 52, 75, random.randrange(70, 86), "medium-hard", 12),
-            "Dust Devil": Enemy("Dust Devil", 123, 61, 49, 80, random.randrange(75, 91), "medium-hard", 11),
+            "Dustier Devil": Enemy("Dustier Devil", 123, 61, 49, 80, random.randrange(75, 91), "medium-hard", 11),
             "Petrified Warrior": Enemy("Petrified Warrior", 119, 60, 48, 85, random.randrange(80, 96), "medium-hard", 10),
             "Thunderbird": Enemy("Thunderbird", 132, 63, 49, 90, random.randrange(85, 101), "medium-hard", 11),
             
