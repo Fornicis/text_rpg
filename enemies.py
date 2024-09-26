@@ -59,7 +59,7 @@ def initialise_enemies():
             "Dried Mummy": Enemy("Dried Mummy", 85, 43, 31, 40, random.randrange(35, 46), "medium", 5),
             "Dust Devil": Enemy("Dust Devil", 64, 49, 28, 45, random.randrange(40, 51), "medium", 4),
             "Desert Bandit": Enemy("Desert Bandit", 77, 47, 30, 50, random.randrange(45, 56), "medium", 5),
-            "Leopard": Enemy("Leopard", 68, 48, 27, 35, random.randrange(30, 41), "medium", 3),
+            "Leopard": Enemy("Leopard", 68, 40, 27, 35, random.randrange(30, 41), "medium", 3),
             
             # Medium-Hard Enemies (Levels 10-14)
             "Canyon Cougar": Enemy("Canyon Cougar", 111, 60, 50, 70, random.randrange(65, 81), "medium-hard", 10),

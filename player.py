@@ -24,6 +24,8 @@ class Character:
                     print(f"  {stat.capitalize()}: +{buff_info} (Permanent)")
             for stat, buff_info in self.combat_buffs.items():
                 print(f"  {stat.capitalize()}: +{buff_info['value']} (Combat Only)")
+        if self.weapon_buff['duration'] > 0:
+            print(f"Weapon buff: +{self.weapon_buff['value']} attack for {self.weapon_buff['duration']} more turns")
         if self.active_hots:
                 print("\nActive Heal Over Time Effects:")
                 for hot_name, hot_info in self.active_hots.items():
@@ -84,6 +86,7 @@ class Player(Character):
         self.cooldowns = {}
         self.active_buffs = {}
         self.combat_buffs = {}
+        self.weapon_buff = {'value': 0, 'duration': 0}
         self.items = initialise_items()
         self.give_starter_items()
         self.active_hots = {}
@@ -100,7 +103,8 @@ class Player(Character):
             "Peasants Bottoms",
             "Minor Health Potion",
             "Small Bomb",
-            "Quick Warrior's Drop"
+            "Quick Warrior's Drop",
+            "Basic Sharpening Stone"
         ]
         
         for item_name in starter_items:
@@ -224,6 +228,12 @@ class Player(Character):
                         self.defence -= buff_info['value']
                     del self.active_buffs[stat]
                     print(f"Your {stat} buff has worn off.")
+        if self.weapon_buff['duration'] > 0:
+            self.weapon_buff['duration'] -= 1
+            if self.weapon_buff['duration'] <= 0:
+                self.attack -= self.weapon_buff['value']
+                print(f"Your weapon's sharpening effect has worn off")
+                self.weapon_buff = {'value': 0, 'duration': 0}
                     
     def remove_combat_buffs(self):
         for stat, buff_info in self.combat_buffs.items():
@@ -266,6 +276,15 @@ class Player(Character):
                     message += f"You used {item.name} and gained a temporary {stat} buff of {value} for {duration} turns. "
                 else:
                     message += f"You used {item.name} and gained a permanent {stat} buff of {value}. "
+            elif item.effect_type == "weapon_buff":
+                if self.equipped['weapon']:
+                    stat, value = item.effect
+                    self.weapon_buff['value'] = value
+                    self.weapon_buff['duration'] = item.duration
+                    self.attack += value
+                    message += f"You used {item.name} on your {self.equipped['weapon'].name}. It's attack is increased by {value} for {item.duration} turns"
+                else:
+                    return False, "You don't have a weapon equipped to use this item on."
             elif item.effect_type == "hot":
                 success, hot_message = self.apply_hot(item)
                 if success:
@@ -371,6 +390,10 @@ class Player(Character):
                     return f"Increases {stat} by {value} until end of combat."
             else:
                 return f"Increases attack by {item.effect}"
+        elif item.effect_type == "weapon_buff":
+            if isinstance(item.effect, tuple):
+                stat, value = item.effect
+                return f"Increases weapon {stat} by {value} for {item.duration} turns"
         elif item.effect_type == "stamina":
             return f"Restores {item.stamina_restore} stamina"
         elif item.effect_type == "teleport":

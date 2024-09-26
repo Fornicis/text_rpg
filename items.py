@@ -347,6 +347,12 @@ def initialise_items():
         "Divine Iron Skin Infusion": Item("Divine Iron Skin Infusion", "consumable", 6000, "mythical", effect_type="buff", effect=("attack", 96), cooldown=7, combat_only=True),
         "Divine Warrior's Infusion": Item("Divine Warrior's Infusion", "consumable", 7500, "mythical", effect_type="buff", effect=("all stats", 48), cooldown=7, combat_only=True),
         
+        #Sharpening Stones
+        "Basic Sharpening Stone": Item("Basic Sharpening Stone", "consumable", 100, "common", effect_type="weapon_buff", effect=("attack", 5), cooldown=0, duration=150),
+        "Quality Sharpening Stone": Item("Quality Sharpening Stone", "consumable", 250, "uncommon", effect_type="weapon_buff", effect=("attack", 10), cooldown=0, duration=150),
+        "Superior Sharpening Stone": Item("Superior Sharpening Stone", "consumable", 500, "rare", effect_type="weapon_buff", effect=("attack", 15), cooldown=0, duration=150),
+        "Master Sharpening Stone": Item("Master Sharpening Stone", "consumable", 1000, "epic", effect_type="weapon_buff", effect=("attack", 20), cooldown=0, duration=150),
+        
         # Food items
         "Bread": Item("Bread", "food", 25, "common", effect_type="stamina", stamina_restore=10),
         "Cheese": Item("Cheese", "food", 40, "common", effect_type="stamina", stamina_restore=15),

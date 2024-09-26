@@ -67,8 +67,10 @@ class BaseShop:
                 print(f"   Effect: Heal over time ({item.tick_effect} HP per turn) for {item.duration} turns. Total Healing: {item.tick_effect * item.duration} HP")
             elif item.effect_type == "damage":
                 print(f"   Effect: Damage ({item.effect})")
-            """elif item.effect_type == "stamina":
-                print(f"   Effect: Stamina Restore ({item.stamina_restore})")"""
+            elif item.effect_type == "weapon_buff":
+                if isinstance(item.effect, tuple):
+                    stat, value = item.effect
+                    print(f"   Effect: Increases weapon {stat} by {value} for {item.duration} turns")
                 
         elif item.type in ["food", "drink"]:
             if item.effect_type == "buff":
@@ -83,8 +85,6 @@ class BaseShop:
                 print(f"   Effect: Heal over time ({item.tick_effect} HP per turn) for {item.duration} turns. Total Healing: {item.tick_effect * item.duration} HP")
             if item.effect_type == "damage":
                 print(f"   Effect: Damage ({item.effect})")
-            """if item.effect_type == "stamina":
-                print(f"   Effect: Stamina Restore ({item.stamina_restore})")"""
             
         if item.cooldown:
             print(f"   Cooldown: {item.cooldown} turns")
@@ -273,7 +273,7 @@ class Armourer(BaseShop):
 
     def can_sell_item(self, item):
         #Allows player to sell armour and weapons
-        return item.type in ["weapon", "shield", "helm", "chest", "boots", "gloves", "back", "legs", "belt", "ring"]
+        return item.type in ["weapon", "shield", "helm", "chest", "boots", "gloves", "back", "legs", "belt", "ring"] or "Sharpening Stone" in item.name
 
 class Alchemist(BaseShop):
     #Child class of Shop called Alchemist, sells potions
