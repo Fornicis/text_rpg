@@ -35,7 +35,7 @@ class Game:
     def initialise_battle(self):
         #Ensures that battles are enabled even on reload
         if self.player is not None:
-            self.battle = Battle(self.player, self.items)
+            self.battle = Battle(self.player, self.items, self)
 
     def show_status(self):
         #Displays the player's current status.
@@ -142,6 +142,10 @@ class Game:
             
             print(f"You encountered a {enemy.name}!")
             self.battle.battle(enemy)
+            
+            if self.current_location == "Village":
+                print("You find yourself back in the Village after your defeat.")
+                return
         else:
             print("You explored the area but found nothing of interest.")
 
@@ -406,7 +410,7 @@ class Game:
                     save_file = self.choose_save_file()
                     save_game(self.player, self.current_location, self.days, save_file)
                 print("Thanks for playing!")
-                title_screen()
+                return
             elif action == "l" and self.current_location != "Village":
                 #Opens the location actions if the player is not in the village
                 clear_screen()

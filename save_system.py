@@ -21,6 +21,7 @@ def save_game(player, current_location, days, filename):
             "level": player.level,
             "exp": player.exp,
             "hp": player.hp,
+            "respawn_counter": player.respawn_counter,
             "max_hp": player.max_hp,
             "stamina": player.stamina,
             "max_stamina": player.max_stamina,
@@ -60,6 +61,7 @@ def load_game(filename):
     player.exp = player_data["exp"]
     player.hp = player_data["hp"]
     player.max_hp = player_data["max_hp"]
+    player.respawn_counter = player_data["respawn_counter"]
     player.stamina = player_data["stamina"]
     player.max_stamina = player_data["max_stamina"]
     player.weapon_stamina_cost = player_data.get("weapon_stamina_cost", {"light": 3, "medium": 5, "heavy": 7})
