@@ -291,7 +291,7 @@ class Inn(BaseShop):
     def can_sell_item(self, item):
         return item.type == "food" or item.type == "drink"
     
-    def inn_menu(self, player, game):
+    def inn_menu(self, player):
         while True:
             clear_screen()
             print("\n--- Welcome to the Inn ---")
@@ -308,9 +308,9 @@ class Inn(BaseShop):
                     player.gold -= (player.level * 10)
                     player.hp = player.max_hp
                     player.stamina = player.max_stamina
-                    game.days += 1
+                    player.days += 1
                     print(f"You rest at the inn, fully restoring your HP and Stamina.")
-                    print(f"It is now day {game.days}.")
+                    print(f"It is now day {player.days}.")
                 else:
                     print("You don't have enough gold to rest at the inn.")
             elif choice == '2':

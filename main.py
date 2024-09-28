@@ -23,7 +23,6 @@ class Game:
         self.inn = Inn(self.items)
         self.inn.stock_shop()
         self.battle = None
-        self.days = 1
 
     def create_character(self):
         #Creates a new player character.
@@ -41,7 +40,7 @@ class Game:
         #Displays the player's current status.
         clear_screen()
         self.player.show_status()
-        print(f"Current location: {self.current_location}\nDay: {self.days}")
+        print(f"Current location: {self.current_location}\nDay: {self.player.days}")
                 
     def move(self):
         #Handles player movement
@@ -156,9 +155,9 @@ class Game:
         stamina_restore = self.player.max_stamina // 4
         self.player.heal(heal_amount)
         self.player.restore_stamina(stamina_restore)
-        self.days += 1
+        self.player.days += 1
         print(f"You rest and recover {heal_amount} HP and {stamina_restore} stamina.")
-        print(f"It is now day {self.days}")
+        print(f"It is now day {self.player.days}")
 
     def equip_menu(self):
         #Shows the menu for equipping items, shows the stats for the items as long as they are above 0
@@ -339,11 +338,11 @@ class Game:
                 save_file = self.choose_save_file(for_loading=True)
                 if save_file:
                     #If save file is selected sets the current player and location to the data saved, if it fails automatically starts new character creation
-                    loaded_player, loaded_location, loaded_days = load_game(save_file)
-                    if loaded_player and loaded_location and loaded_days:
+                    loaded_player, loaded_location= load_game(save_file)
+                    if loaded_player and loaded_location:
                         self.player = loaded_player
                         self.current_location = loaded_location
-                        self.days = loaded_days
+                        #self.player.days = loaded_days
                         self.initialise_battle()
                         break
                     else:
@@ -399,7 +398,7 @@ class Game:
                 pause()
             elif action == "in":
                 #Accesses the inn
-                self.inn.inn_menu(self.player, self)
+                self.inn.inn_menu(self.player)
             elif action == "v":
                 #Opens the world map for the player
                 self.world_map.display_map(self.current_location, self.player.level)
@@ -408,7 +407,7 @@ class Game:
                 save_option = input("Do you want to save before quitting? (y/n): ").lower()
                 if save_option == "y":
                     save_file = self.choose_save_file()
-                    save_game(self.player, self.current_location, self.days, save_file)
+                    save_game(self.player, self.current_location, self.player.days, save_file)
                 print("Thanks for playing!")
                 return
             elif action == "l" and self.current_location != "Village":
@@ -424,7 +423,7 @@ class Game:
             elif action == "sa":
                 #Allows the player to save at any point in case of unexpected crashes, will look into making an autosave feature
                 save_file = self.choose_save_file()
-                save_game(self.player, self.current_location, self.days, save_file)
+                save_game(self.player, self.current_location, self.player.days, save_file)
             else:
                 print("Invalid action. Try again.")
             

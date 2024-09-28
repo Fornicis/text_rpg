@@ -21,6 +21,7 @@ def save_game(player, current_location, days, filename):
             "level": player.level,
             "exp": player.exp,
             "hp": player.hp,
+            "days": player.days,
             "respawn_counter": player.respawn_counter,
             "max_hp": player.max_hp,
             "stamina": player.stamina,
@@ -38,7 +39,7 @@ def save_game(player, current_location, days, filename):
             "visited_locations": list(player.visited_locations)  # New: Save visited locations
         },
         "current_location": current_location,
-        "days": days  # New: Save the current day count
+        #"days": days  # New: Save the current day count
     }
     
     filepath = os.path.join(SAVE_DIRECTORY, filename)
@@ -59,6 +60,7 @@ def load_game(filename):
     player = Player(player_data["name"])
     player.level = player_data["level"]
     player.exp = player_data["exp"]
+    player.days = player_data["days"]
     player.hp = player_data["hp"]
     player.max_hp = player_data["max_hp"]
     player.respawn_counter = player_data["respawn_counter"]
@@ -79,7 +81,7 @@ def load_game(filename):
     player.visited_locations = set(player_data["visited_locations"])  # New: Load visited locations
 
     current_location = save_data["current_location"]
-    days = save_data["days"]  # New: Load the current day count
+    #days = save_data["days"]  # New: Load the current day count
     
     print(f"Game loaded successfully from {filepath}")
-    return player, current_location, days  # Return player, location, and days
+    return player, current_location  # Return player, location, and days
