@@ -3,9 +3,10 @@ from player import Player
 from enemies import Enemy
 
 class Battle:
-    def __init__(self, player, items):
+    def __init__(self, player, items, game):
         self.player = player
         self.items = items
+        self.game = game
 
     def calculate_damage(self, base_attack, attacker_name):
         #Calculates player and enemy damage within a range of 80% to 120% of base attack
@@ -46,7 +47,7 @@ class Battle:
         print(f"{enemy.name} dealt {enemy_damage} damage to you.")
         
         if not self.player.is_alive():
-            print("You have been defeated. Game over.")
+            self.handle_player_defeat()
             return True
         
         return False
@@ -69,6 +70,7 @@ class Battle:
         print(f"Defence: {self.player.defence}")
         print(f"Stamina: {self.player.stamina}/{self.player.max_stamina}")
         print(f"Level: {self.player.level}")
+        print(f"Exp: {self.player.exp}/{self.player.level * 100}")
         
         if self.player.active_hots:
             print("\nActive HoT Effects:")
@@ -125,9 +127,21 @@ class Battle:
                 print("Invalid action. You lose your turn.")
                 
             if not self.player.is_alive():
-                print("You have been defeated. Game over.")
-                return
-            
+                self.handle_player_defeat()
+                return True
+    
+    def handle_player_defeat(self):
+        if self.player.respawn_counter >= 1:
+            print("You have been defeated...")
+            print("As your conciousness fades away, you feel a divine presence gazing upon you...")
+            print("A benevolent deity takes pity on you and grants you another chance at life.")
+            self.player.lose_level()
+            self.player.lose_gold()
+            self.player.respawn()
+            self.game.current_location = "Village"
+        else:
+            self.player.game_over()
+    
     def loot_drop(self, enemy_tier):
         #Handles loot drops after defeating an enemy.
         if random.random() < 0.3:  # 30% chance of loot drop

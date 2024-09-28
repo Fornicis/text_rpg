@@ -1,5 +1,6 @@
 import random
 from items import Item, initialise_items
+from display import pause, title_screen
 
 class Character:
     def __init__(self, name, hp, attack, defence):
@@ -9,6 +10,8 @@ class Character:
         self.max_hp = hp
         self.attack = attack
         self.defence = defence
+        self.pause = pause
+        self.title_screen = title_screen
         
     def show_status(self):
         #Shows the status and equipment of the player, 
@@ -48,8 +51,7 @@ class Character:
                         print(f"  Cooldown: {item.cooldown} turns")
             else:
                 print(f"{slot.capitalize()}: None")
-            
-
+    
     def is_alive(self):
         # Check if character is still alive
         return self.hp > 0
@@ -69,6 +71,10 @@ class Player(Character):
         self.level = 1
         self.exp = 0
         self.gold = 0
+        self.base_attack = 10
+        self.base_defence = 5
+        self.respawn_counter = 5
+        self.days = 1
         self.inventory = []
         # Initialise equipment slots
         self.equipped = {
@@ -155,7 +161,72 @@ class Player(Character):
         self.exp = self.exp // 2
         print(f"Congratulations! You reached level {self.level}!")
         print("Your stats have increased.")
+    
+    def lose_level(self):
+        #Players lose a level and all related stats if they lose a battle, can not go below level 1 or lose more than base stats
+        if self.level > 1:
+            self.level -= 1
+            self.max_hp -= 10
+            self.attack = max(self.base_attack, self.attack - 1)
+            self.defence = max(self.base_defence, self.defence - 1)
+            self.max_stamina -= 5
+            print(f"You've lost a level. You are now {self.level}")
+        else:
+            print("You're only a puny level 1. We won't take any levels from you...peasant.")
+            
+    def lose_gold(self):
+        #Players lose half their gold
+        lost_gold = self.gold // 2
+        self.gold -= lost_gold
+        print(f"You've lost {lost_gold} gold. You now have {self.gold} remaining.")
+        
+    def respawn(self):
+        #Player respawns back with half their max HP and stamina, lose one respawn chance
+        self.hp = self.max_hp // 2
+        self.stamina = self.max_stamina // 2
+        self.respawn_counter -= 1
+        if self.respawn_counter >= 1:
+            print(f"You've been resurrected with {self.hp} HP and {self.stamina} stamina. Do not take this opportunity likely, you only have {self.respawn_counter} chances left.")
+        elif self.respawn_counter == 0:
+            print(f"You've been resurrected with {self.hp} HP and {self.stamina} stamina. Do not take this opportunity likely, this is your final chance, lose again and you lose forever.")
+        else:
+            self.game_over()
 
+    def game_over(self):
+        print("You have been defeated for the final time, the deities have given up on you and you have met the forever death.")
+        print("Your final stats are:")
+        self.final_stats()
+        self.pause()
+        print("Now it's time to try again, appease the deities through prowess this time.")
+        self.pause()
+        self.title_screen()
+        
+    def final_stats(self):
+        # Prepare the stats
+        stats = [
+            f"The final stats of the adventurer {self.name}",
+            f"You managed to reach the lofty level of {self.level}",
+            f"Your vitality was massive at a powerful {self.max_hp}",
+            f"You had a mighty attack power of {self.attack}",
+            f"You were a bulwark of defence with {self.defence}",
+            f"With your mighty reserves of energy at {self.max_stamina}",
+            f"Your adventure lasted for {self.days} days"
+        ]
+
+        # Find the longest line to determine box width
+        max_length = max(len(line) for line in stats)
+        box_width = max_length + 4  # Add 4 for padding
+
+        # Create the box
+        horizontal_border = "═" * (box_width + 2)
+        print(f"╔{horizontal_border}╗")
+
+        for stat in stats:
+            padded_stat = stat.center(box_width)
+            print(f"║ {padded_stat} ║")
+
+        print(f"╚{horizontal_border}╝")
+    
     def equip_item(self, item):
         # Equip an item and apply its stats
         if item.type in self.equipped:
