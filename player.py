@@ -186,9 +186,9 @@ class Player(Character):
         self.stamina = self.max_stamina // 2
         self.respawn_counter -= 1
         if self.respawn_counter >= 1:
-            print(f"You've been resurrected with {self.hp} HP and {self.stamina} stamina. Do not take this opportunity likely, you only have {self.respawn_counter} chances left.")
+            print(f"You've been resurrected with {self.hp} HP and {self.stamina} stamina. Do not take this opportunity lightly, you only have {self.respawn_counter} chances left.")
         elif self.respawn_counter == 0:
-            print(f"You've been resurrected with {self.hp} HP and {self.stamina} stamina. Do not take this opportunity likely, this is your final chance, lose again and you lose forever.")
+            print(f"You've been resurrected with {self.hp} HP and {self.stamina} stamina. Do not take this opportunity lightly, this is your final chance, lose again and you lose forever.")
         else:
             self.game_over()
 
