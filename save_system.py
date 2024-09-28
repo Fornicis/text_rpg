@@ -36,7 +36,8 @@ def save_game(player, current_location, days, filename):
             "active_buffs": player.active_buffs,
             "combat_buffs": player.combat_buffs,  # New: Save combat buffs
             "active_hots": player.active_hots,  # New: Save active HoTs
-            "visited_locations": list(player.visited_locations)  # New: Save visited locations
+            "visited_locations": list(player.visited_locations), # New: Save visited locations
+            "kill_tracker": player.kill_tracker
         },
         "current_location": current_location,
         #"days": days  # New: Save the current day count
@@ -79,6 +80,7 @@ def load_game(filename):
     player.combat_buffs = player_data["combat_buffs"]  # New: Load combat buffs
     player.active_hots = player_data["active_hots"]  # New: Load active HoTs
     player.visited_locations = set(player_data["visited_locations"])  # New: Load visited locations
+    player.kill_tracker = player_data.get("kill_tracker", {})
 
     current_location = save_data["current_location"]
     #days = save_data["days"]  # New: Load the current day count

@@ -52,6 +52,27 @@ class Character:
             else:
                 print(f"{slot.capitalize()}: None")
     
+    def show_stats(self):
+        #Shows the status of the player, 
+        print(f"\n{self.name} (Level {self.level}):")
+        print(f"HP: {self.hp}/{self.max_hp}, EXP: {self.exp}/{self.level*100}, Gold: {self.gold}, "
+              f"Attack: {self.attack}, Defence: {self.defence}, Stamina: {self.stamina}/{self.max_stamina}")
+        if self.active_buffs or self.combat_buffs:
+            print("\nActive Buffs:")
+            for stat, buff_info in self.active_buffs.items():
+                if isinstance(buff_info, dict):
+                    print(f"  {stat.capitalize()}: +{buff_info['value']} for {buff_info['duration']} more turns")
+                else:
+                    print(f"  {stat.capitalize()}: +{buff_info} (Permanent)")
+            for stat, buff_info in self.combat_buffs.items():
+                print(f"  {stat.capitalize()}: +{buff_info['value']} (Combat Only)")
+        if self.weapon_buff['duration'] > 0:
+            print(f"Weapon buff: +{self.weapon_buff['value']} attack for {self.weapon_buff['duration']} more turns")
+        if self.active_hots:
+                print("\nActive Heal Over Time Effects:")
+                for hot_name, hot_info in self.active_hots.items():
+                    print(f"  {hot_name}: {hot_info['tick_effect']} HP/turn for {hot_info['duration']} more turns")
+    
     def is_alive(self):
         # Check if character is still alive
         return self.hp > 0
@@ -100,6 +121,7 @@ class Player(Character):
         self.stamina = self.max_stamina
         self.weapon_stamina_cost = {"light": 2, "medium": 4, "heavy": 6}
         self.visited_locations = set(["Village"])
+        self.kill_tracker = {}
     
     def give_starter_items(self):
         #Gives starter items to the player
@@ -226,6 +248,16 @@ class Player(Character):
             print(f"║ {padded_stat} ║")
 
         print(f"╚{horizontal_border}╝")
+        
+        print("\nEnemy Kill Statistics:")
+        if not self.kill_tracker:
+            print("You didn't manage to defeat any enemies.")
+        else:
+            total_kills = sum(self.kill_tracker.values())
+            print(f"Total enemies defeated: {total_kills}")
+            print("Top 5 most defeated enemies:")
+            for enemy, count in sorted(self.kill_tracker.items(), key=lambda x: x[1], reverse=True)[:5]:
+                print(f"  {enemy}: {count}")
     
     def equip_item(self, item):
         # Equip an item and apply its stats
@@ -525,3 +557,21 @@ class Player(Character):
         
         stamina_cost = self.get_weapon_stamina_cost(weapon_type)
         return self.stamina >= stamina_cost
+    
+    def record_kill(self, enemy_name):
+        #Records a kill for a given enemy type
+        if enemy_name in self.kill_tracker:
+            self.kill_tracker[enemy_name] += 1
+        else:
+            self.kill_tracker[enemy_name] = 1
+            
+    def display_kill_stats(self):
+        #Displays all the enemies the player has killed
+        print("\n=== Enemy Kill Statistics ===")
+        if not self.kill_tracker:
+            print("You haven't defeated any enemies yet.")
+        else:
+            for enemy, count in sorted(self.kill_tracker.items(), key = lambda x: x[1], reverse=True):
+                print(f"{enemy}: {count}")
+    
+    

@@ -34,6 +34,7 @@ class Battle:
         
         if not enemy.is_alive():
             print(f"You defeated the {enemy.name}!")
+            self.player.record_kill(enemy.name)
             self.player.gain_exp(enemy.exp, enemy.level)
             self.player.gold += enemy.gold
             print(f"You gained {enemy.gold} gold.")
