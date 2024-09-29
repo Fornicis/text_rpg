@@ -104,7 +104,7 @@ class BaseShop:
         available_items = [item for item in self.all_items.values() if self.is_item_available(item, player_level)]
         
         # Ensure at least one item of each rarity (if available)
-        rarities = ['common', 'uncommon', 'rare', 'epic', 'legendary']
+        rarities = ['common', 'uncommon', 'rare', 'epic', 'mastwork', 'legendary', 'mythical']
         for rarity in rarities:
             rarity_items = [item for item in available_items if item.tier == rarity]
             if rarity_items:
@@ -244,7 +244,7 @@ class BaseShop:
         return [item for item in player.inventory if self.can_sell_item(item)]
 
     def can_sell_item(self, item):
-        # This method should be overridden in child classes
+        # Check if item can be sold, to be overwritten in child classes
         return True
 
     def shop_menu(self, player):
@@ -269,7 +269,7 @@ class BaseShop:
 class Armourer(BaseShop):
     #Child class of shop called Armour, sells weapons and armour
     def __init__(self, all_items):
-        super().__init__({k: v for k, v in all_items.items() if v.type in ["weapon", "shield", "helm", "chest", "boots", "gloves", "back", "legs", "belt", "ring"]})
+        super().__init__({k: v for k, v in all_items.items() if v.type in ["weapon", "shield", "helm", "chest", "boots", "gloves", "back", "legs", "belt", "ring"] or "Sharpening Stone" in v.name})
 
     def can_sell_item(self, item):
         #Allows player to sell armour and weapons
@@ -278,20 +278,23 @@ class Armourer(BaseShop):
 class Alchemist(BaseShop):
     #Child class of Shop called Alchemist, sells potions
     def __init__(self, all_items):
-        super().__init__({k: v for k, v in all_items.items() if v.type == "consumable"})
+        super().__init__({k: v for k, v in all_items.items() if v.type == "consumable" and "Sharpening Stone" not in v.name})
 
     def can_sell_item(self, item):
         #Allows player to sell consumables
-        return item.type == "consumable"
+        return item.type == "consumable" and "Sharpening Stone" not in item.name
 
 class Inn(BaseShop):
+    #Shop class for inn selling food and drink and offering improved rest functions
     def __init__(self, all_items):
         super().__init__({k: v for k, v in all_items.items() if v.type == "food" or v.type == "drink"})
 
     def can_sell_item(self, item):
-        return item.type == "food" or item.type == "drink"
+        #Checks if item can be solde to the inn
+        return item.type in ["food", "drink"]
     
     def inn_menu(self, player):
+        #Displays the menu for the inn with numerical choices
         while True:
             clear_screen()
             print("\n--- Welcome to the Inn ---")

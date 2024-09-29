@@ -59,7 +59,7 @@ class Battle:
             print("You successfully ran away!")
             return True
         else:
-            damage_taken = max(0, (enemy.attack * 2) - self.player.defence)
+            damage_taken = max(0, (enemy.attack - self.player.defence) * 2)
             self.player.take_damage(damage_taken)
             print(f"You failed to run away and took {damage_taken} damage.")
             return False
@@ -92,7 +92,7 @@ class Battle:
         print(f"Level: {enemy.level}")
 
     def battle(self, enemy):
-        #Battle logic, displays player and enemy stats, updates the cooldowns of any items
+        #Battle logic, displays player and enemy stats, updates the cooldowns of any items and buffs
         print(f"\nBattle start! {self.player.name} vs {enemy.name}")
         
         while self.player.is_alive() and enemy.is_alive():

@@ -17,12 +17,14 @@ class Game:
         self.items = initialise_items()
         self.enemies = initialise_enemies()
         self.armourer = Armourer(self.items)
-        self.armourer.stock_shop()
         self.alchemist = Alchemist(self.items)
-        self.alchemist.stock_shop()
         self.inn = Inn(self.items)
-        self.inn.stock_shop()
         self.battle = None
+        
+        #Stocks the shops initially
+        self.armourer.stock_shop()
+        self.alchemist.stock_shop()
+        self.inn.stock_shop()
 
     def create_character(self):
         #Creates a new player character.
@@ -46,9 +48,10 @@ class Game:
     def show_stats(self):
         clear_screen()
         self.player.show_stats()
+        print(f"Current location: {self.current_location}\nDay: {self.player.days}")
                 
     def move(self):
-        #Handles player movement
+        #Handles player movement between locations
         clear_screen()
         print("\nConnected locations:")
         #Shows locations connected to current location using helper function
@@ -157,7 +160,7 @@ class Game:
         clear_screen()
         #Restores a portion of the player's health and stamina
         heal_amount = self.player.max_hp // 4  # Heal 25% of max HP
-        stamina_restore = self.player.max_stamina // 4
+        stamina_restore = self.player.max_stamina // 4 # Restores 25% of max stamina
         self.player.heal(heal_amount)
         self.player.restore_stamina(stamina_restore)
         self.player.days += 1
@@ -290,7 +293,7 @@ class Game:
                 if selected_item.name in self.player.cooldowns and self.player.cooldowns[selected_item.name] > 0:
                     print(f"You can't use {selected_item.name} yet. Cooldown: {self.player.cooldowns[selected_item.name]} turns.")
                 elif in_combat:
-                    if selected_item.effect_type in ["healing", "damage", "buff"]:
+                    if selected_item.effect_type in ["healing", "damage", "buff", "stamina"]:
                         return self.use_combat_item(selected_item, enemy)
                     else:
                         print(f"You can't use {selected_item.name} in combat.")

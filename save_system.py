@@ -83,7 +83,6 @@ def load_game(filename):
     player.kill_tracker = player_data.get("kill_tracker", {})
 
     current_location = save_data["current_location"]
-    #days = save_data["days"]  # New: Load the current day count
     
     print(f"Game loaded successfully from {filepath}")
-    return player, current_location  # Return player, location, and days
+    return player, current_location  # Return player and location

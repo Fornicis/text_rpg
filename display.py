@@ -10,6 +10,7 @@ def pause():
     input("\nPress Enter to continue...")
     
 def display_title():
+    #Displays the games title screen
     clear_screen()
     print("""
     ╔═══════════════════════════════════════════╗
@@ -20,6 +21,7 @@ def display_title():
     """)
 
 def display_help():
+    #Displays the help menu with game instructions
     clear_screen()
     print("""
     === TEXT RPG ADVENTURE HELP ===
@@ -30,6 +32,7 @@ def display_help():
     - Your adventure begins in the Village, your home base.
     - Explore various locations, battle monsters, and collect loot to level up.
     - Your goal is to become strong enough to face the ultimate challenges in the Heavens.
+    - You have 5 respawns granted by the deities in the Heavens, after your fifth one, it's game over.
 
     NAVIGATION:
     - Use the [m]ove command to travel between connected areas.
@@ -71,7 +74,7 @@ def display_help():
     - Load your game from the main menu when starting the game.
 
     TIPS:
-    - Rest at the Inn or use the [r]est command in the Village to restore HP and stamina.
+    - Rest at the Inn or use the [r]est command anywhere (reduced effectiveness) to restore HP and stamina.
     - Upgrade your equipment regularly to stay competitive.
     - Use the right weapon type for your playstyle (light, medium, or heavy).
     - Always carry healing items for tough battles.
@@ -85,6 +88,7 @@ def display_help():
     input("Press Enter to return to the main menu...")
     
 def title_screen():
+    #Displays the title screen and handles main menu options
     while True:
         display_title()
         print("\n    1. Play")
@@ -106,3 +110,4 @@ def title_screen():
         else:
             print("Invalid choice. Please try again.")
             input("Press Enter to continue...")
+            

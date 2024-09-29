@@ -215,6 +215,7 @@ class Player(Character):
             self.game_over()
 
     def game_over(self):
+        #Tells the player their final stats after their last death, brings player back to the title_screen
         print("You have been defeated for the final time, the deities have given up on you and you have met the forever death.")
         print("Your final stats are:")
         self.final_stats()
@@ -294,6 +295,7 @@ class Player(Character):
             print(f"You unequipped {item.name}.")
             
     def apply_buff(self, stat, value, duration, combat_only=True):
+        #Applies the buff of a given item, places them in the appropriate area if they are a combat_only item
         if stat == "attack":
             self.attack += value
         elif stat == "defence":
@@ -318,6 +320,7 @@ class Player(Character):
                 self.active_buffs[stat] = {'value': value, 'duration': duration} if duration > 0 else value
 
     def update_buffs(self):
+        #Reduces the duration of any duration based buffs (Such as HoTs or sharpening stones)
         for stat, buff_info in list(self.active_buffs.items()):
             if isinstance(buff_info, dict) and 'duration' in buff_info:
                 buff_info['duration'] -= 1
@@ -339,6 +342,7 @@ class Player(Character):
                 self.weapon_buff = {'value': 0, 'duration': 0}
                     
     def remove_combat_buffs(self):
+        #Removes any combat related buffs at the end of the battle
         for stat, buff_info in self.combat_buffs.items():
             if stat == "attack":
                 self.attack -= buff_info['value']
@@ -351,9 +355,11 @@ class Player(Character):
         self.combat_buffs.clear()
         
     def add_visited_location(self, location):
+        #Adds the current location to the visited_locations to help work with teleport scrolls
         self.visited_locations.add(location)
 
     def use_item(self, item, game=None):
+        #Allows the player to use an item based on current state, be that cooldown, combat_only items, teleport scrolls etc.
         if item.name in self.cooldowns and self.cooldowns[item.name] > 0:
             print(f"You can't use {item.name} yet. Cooldown: {self.cooldowns[item.name]} turns.")
             return False, f"Couldn't use {item.name} due to cooldown!"
@@ -408,6 +414,7 @@ class Player(Character):
             return False, message
         
     def use_teleport_scroll(self, game):
+        #Allows the use of the teleport scroll to move to any previously visited location
         print("\nVisited locations:")
         for i, location in enumerate(sorted(self.visited_locations), 1):
             print(f"{i}. {location}")
@@ -518,6 +525,7 @@ class Player(Character):
         return usable_items
     
     def apply_hot(self, item):
+        #Applies any HoT items and displays the length of the effect
         if item.effect_type == "hot":
             self.active_hots[item.name] = {
                 "duration": item.duration,
@@ -540,15 +548,19 @@ class Player(Character):
                 del self.active_hots[hot_name]
                 
     def use_stamina(self, amount):
+        #Reduces the stamina by the given amount
         self.stamina = max(0, self.stamina - amount)
 
     def restore_stamina(self, amount):
+        #Restores the player stamina by the given amount
         self.stamina = min(self.max_stamina, self.stamina + amount)
 
     def get_weapon_stamina_cost(self, weapon_type):
+        #Returns the stamina cost of the given weapon, based on its type
         return self.weapon_stamina_cost.get(weapon_type, 0)
     
     def can_attack(self):
+        #Checks to see if the player has enough stamina to attack
         equipped_weapon = self.equipped.get('weapon')
         if equipped_weapon:
             weapon_type = equipped_weapon.weapon_type
