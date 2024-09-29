@@ -1,6 +1,6 @@
 import random
 from player import Player
-from enemies import Enemy
+from enemies import Enemy, ENEMY_ATTACK_TYPES
 
 class Battle:
     def __init__(self, player, items, game):
@@ -14,20 +14,31 @@ class Battle:
             "defensive": {"name": "Defensive Stance", "stamina_modifier": 2, "damage_modifier": 0, "defence_boost_percentage": 25, "duration": 5}
         }
         self.defensive_stance = {"boost": 0, "duration": 0}
+        self.player_stunned = False
 
-    def calculate_damage(self, base_attack, attacker_name, attack_type = "normal"):
+    def calculate_damage(self, base_attack, attacker, attack_type = "normal"):
         #Calculates player and enemy damage within a range of 80% to 120% of base attack
-        attack_info = self.attack_types[attack_type]
+        #attack_info = self.attack_types[attack_type]
+        if isinstance(attacker, Enemy):
+            attack_info = ENEMY_ATTACK_TYPES[attack_type]
+        else:
+            attack_info = self.attack_types[attack_type]
+            
         modified_attack = base_attack * attack_info["damage_modifier"]
         damage = random.randint(int(modified_attack * 0.8), int(modified_attack * 1.2))
         is_critical = random.random() < 0.1  # Critical hit chance 10%
         if is_critical:
             damage = int(damage * 1.5)
-            print(f"Critical hit by {attacker_name}!")
+            print(f"Critical hit by {attacker.name if isinstance(attacker, Enemy) else attacker}!")
         return damage, is_critical
 
     def player_attack(self, enemy):
         #Handles the player attacking, if enemy dies, player gains exp and gold with a chance for loot, else the enemy attacks back
+        if self.player_stunned:
+            print("You're stunned and lose your turn.")
+            self.player_stunned = False
+            return False
+        
         print("\nChoose your attack type:")
         for key, value in self.attack_types.items():
             weapon_type = self.player.equipped.get("weapon", {"weapon_type": "light"}).weapon_type
@@ -85,16 +96,57 @@ class Battle:
             return True
         
         # Enemy attack remains the same
-        enemy_damage, enemy_crit = self.calculate_damage(enemy.attack, enemy.name)
+        """enemy_damage, enemy_crit = self.calculate_damage(enemy.attack, enemy.name)
         enemy_damage = max(0, enemy_damage - self.player.defence)
         self.player.take_damage(enemy_damage)
-        print(f"{enemy.name} dealt {enemy_damage} damage to you.")
+        print(f"{enemy.name} dealt {enemy_damage} damage to you.")"""
+        
+        self.enemy_attack(enemy)
         
         if not self.player.is_alive():
             self.handle_player_defeat()
             return True
         
         return False
+    
+    def enemy_attack(self, enemy):
+        attack_type = enemy.choose_attack()
+        print(f"DEBUG: Enemy chose attack type: {attack_type}")
+        enemy_damage, enemy_crit = self.calculate_damage(enemy.attack, enemy, attack_type)
+        enemy_damage = max(0, enemy_damage - self.player.defence)
+        self.player.take_damage(enemy_damage)
+        
+        attack_name = ENEMY_ATTACK_TYPES[attack_type]["name"]
+        print(f"{enemy.name} used {attack_name} and dealt {enemy_damage} damage to you.")
+        
+        effect = ENEMY_ATTACK_TYPES[attack_type].get("effect")
+        if effect:
+            self.apply_enemy_effect(effect, enemy, enemy_damage)
+
+        if attack_type == "quick":
+            print(f"{enemy.name} attacks again with Quick Attack!")
+            second_damage, _= self.calculate_damage(enemy.attack, enemy, "quick")
+            second_damage = max(0, second_damage - self.player.defence)
+            self.player.take_damage(second_damage)
+            print(f"{enemy.name} dealt an additional {second_damage} damage to you.")
+    
+    def apply_enemy_effect(self, effect, enemy, damage):
+        if effect == "lifesteal":
+            heal_amount = int(damage * 0.5)
+            enemy.heal(heal_amount)
+            print(f"{enemy.name} healed for {heal_amount} HP!")
+        elif effect == "self_damage":
+            self_damage = int(damage * 0.2)
+            enemy.take_damage(self_damage)
+            print(f"{enemy.name} took {self_damage} self-damage from its reckless attack!")
+        elif effect == "stamina_drain":
+            stamina_loss = min(20, self.player.stamina)
+            self.player.use_stamina(stamina_loss)
+            print(f"You lost {stamina_loss} stamina from the draining attack!")
+        elif effect == "stun":
+            if random.random() < 0.3:  # 30% chance to stun
+                self.player_stunned = True
+                print("You've been stunned and will lose your next turn!")
     
     def update_defensive_stance(self):
         #Update the defensive stance effect.
@@ -129,6 +181,9 @@ class Battle:
         
         if self.defensive_stance["duration"] > 0:
             print(f"Defensive Stance: +{self.defensive_stance['boost']} defence for {self.defensive_stance['duration']} more turns.")
+        
+        if self.player_stunned:
+            print("You are stunned and will lose your next turn.")
         
         if self.player.active_hots:
             print("\nActive HoT Effects:")

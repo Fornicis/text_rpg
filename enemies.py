@@ -2,21 +2,27 @@ from player import Character
 import random
 
 class Enemy(Character):
-    def __init__(self, name, hp, attack, defence, exp, gold, tier, level=0):
+    def __init__(self, name, hp, attack, defence, exp, gold, tier, level=0, attack_types=None):
         super().__init__(name, hp, attack, defence)
         self.exp = exp
         self.gold = gold
         self.tier = tier
         self.level = level
+        self.attack_types = attack_types if attack_types is not None else ["normal"]
+        
+    def choose_attack(self):
+        chosen_attack = random.choice(self.attack_types)
+        print(f"DEBUG: {self.name} chose attack: {chosen_attack}")
+        return chosen_attack
         
 def initialise_enemies():
     return {
             # Easy Enemies (Levels 1-4)
-            "Rat": Enemy("Rat", 21, 21, 5, 10, random.randrange(3, 10), "low", 1),
-            "Boar": Enemy("Boar", 30, 24, 7, 15, random.randrange(5, 15), "low", 2),
-            "Plains Hawk": Enemy("Plains Hawk", 19, 26, 4, 20, random.randrange(8, 18), "low", 1),
-            "Strider": Enemy("Strider", 34, 25, 8, 25, random.randrange(10, 20), "low", 2),
-            "Bull": Enemy("Bull", 43, 27, 10, 30, random.randrange(12, 24), "low", 3),
+            "Rat": Enemy("Rat", 21, 21, 5, 10, random.randrange(3, 10), "low", 1, ["normal", "power", "quick"]),
+            "Boar": Enemy("Boar", 30, 24, 7, 15, random.randrange(5, 15), "low", 2, ["normal", "power", "quick"]),
+            "Plains Hawk": Enemy("Plains Hawk", 19, 26, 4, 20, random.randrange(8, 18), "low", 1, ["normal", "power", "quick"]),
+            "Strider": Enemy("Strider", 34, 25, 8, 25, random.randrange(10, 20), "low", 2, ["normal", "power", "quick"]),
+            "Bull": Enemy("Bull", 43, 27, 10, 30, random.randrange(12, 24), "low", 3, ["normal", "power", "quick"]),
             
             "Bat": Enemy("Bat", 24, 23, 6, 10, random.randrange(3, 10), "low", 1),
             "Goblin": Enemy("Goblin", 27, 25, 8, 15, random.randrange(5, 15), "low", 2),
@@ -49,11 +55,11 @@ def initialise_enemies():
             "Animated Statue": Enemy("Animated Statue", 85, 43, 32, 50, random.randrange(45, 56), "medium", 5),
             "Temple Guardian": Enemy("Temple Guardian", 94, 43, 33, 55, random.randrange(50, 61), "medium", 6),
             
-            "Mountain Lion": Enemy("Mountain Lion", 72, 48, 29, 40, random.randrange(35, 46), "medium", 4),
-            "Rock Elemental": Enemy("Rock Elemental", 98, 41, 35, 50, random.randrange(45, 56), "medium", 6),
-            "Harpy": Enemy("Harpy", 68, 48, 27, 45, random.randrange(40, 51), "medium", 4),
-            "Yeti": Enemy("Yeti", 89, 45, 33, 50, random.randrange(45, 56), "medium", 6),
-            "Orc": Enemy("Orc", 81, 46, 30, 40, random.randrange(35, 46), "medium", 5),
+            "Mountain Lion": Enemy("Mountain Lion", 72, 48, 29, 40, random.randrange(35, 46), "medium", 4, ["quick"]),
+            "Rock Elemental": Enemy("Rock Elemental", 98, 41, 35, 50, random.randrange(45, 56), "medium", 6, ["quick"]),
+            "Harpy": Enemy("Harpy", 68, 48, 27, 45, random.randrange(40, 51), "medium", 4, ["quick"]),
+            "Yeti": Enemy("Yeti", 89, 45, 33, 50, random.randrange(45, 56), "medium", 6, ["quick"]),
+            "Orc": Enemy("Orc", 81, 46, 30, 40, random.randrange(35, 46), "medium", 5, ["quick"]),
             
             "Sand Wurm": Enemy("Sand Wurm", 94, 44, 34, 45, random.randrange(40, 51), "medium", 6),
             "Dried Mummy": Enemy("Dried Mummy", 85, 43, 31, 40, random.randrange(35, 46), "medium", 5),
@@ -141,3 +147,13 @@ def initialise_enemies():
             "Ethereal Leviathan": Enemy("Ethereal Leviathan", 1047, 145, 126, 1300, random.randrange(1250, 1351), "boss", 25),
             "Divine Architect": Enemy("Divine Architect", 1113, 138, 132, 1500, random.randrange(1450, 1551), "boss", 25),
     }
+    
+ENEMY_ATTACK_TYPES = {
+    "normal": {"name": "Normal Attack", "damage_modifier": 1, "effect": None},
+    "power": {"name": "Power Attack", "damage_modifier": 1.5, "effect": None},
+    "quick": {"name": "Quick Attack", "damage_modifier": 0.85, "effect": "double_attack"},
+    "vampiric": {"name": "Vampiric Strike", "damage_modifier": 0.8, "effect": "lifesteal"},
+    "reckless": {"name": "Reckless Assault", "damage_modifier": 2, "effect": "self_damage"},
+    "draining": {"name": "Draining Touch", "damage_modifier": 0.9, "effect": "stamina_drain"},
+    "stunning": {"name": "Stunning Blow", "damage_modifier": 0.7, "effect": "stun"},
+}
