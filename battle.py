@@ -7,10 +7,19 @@ class Battle:
         self.player = player
         self.items = items
         self.game = game
+        self.attack_types = {
+            "normal": {"name": "Normal Attack", "stamina_modifier": 0, "damage_modifier": 1},
+            "power": {"name": "Power Attack", "stamina_modifier": 3, "damage_modifier": 1.5},
+            "quick": {"name": "Quick Attack", "stamina_modifier": 1, "damage_modifier": 0.8, "extra_attacks": 1},
+            "defensive": {"name": "Defensive Stance", "stamina_modifier": 2, "damage_modifier": 0, "defence_boost_percentage": 25, "duration": 5}
+        }
+        self.defensive_stance = {"boost": 0, "duration": 0}
 
-    def calculate_damage(self, base_attack, attacker_name):
+    def calculate_damage(self, base_attack, attacker_name, attack_type = "normal"):
         #Calculates player and enemy damage within a range of 80% to 120% of base attack
-        damage = random.randint(int(base_attack * 0.8), int(base_attack * 1.2))
+        attack_info = self.attack_types[attack_type]
+        modified_attack = base_attack * attack_info["damage_modifier"]
+        damage = random.randint(int(modified_attack * 0.8), int(modified_attack * 1.2))
         is_critical = random.random() < 0.1  # Critical hit chance 10%
         if is_critical:
             damage = int(damage * 1.5)
@@ -19,18 +28,51 @@ class Battle:
 
     def player_attack(self, enemy):
         #Handles the player attacking, if enemy dies, player gains exp and gold with a chance for loot, else the enemy attacks back
-        equipped_weapon = self.player.equipped.get("weapon")
-        weapon_type = equipped_weapon.weapon_type if equipped_weapon else "light"
-        stamina_cost = self.player.get_weapon_stamina_cost(weapon_type)
-        if not self.player.can_attack():
-            print("Not enough stamina to attack!")
+        print("\nChoose your attack type:")
+        for key, value in self.attack_types.items():
+            weapon_type = self.player.equipped.get("weapon", {"weapon_type": "light"}).weapon_type
+            base_stamina_cost = self.player.get_weapon_stamina_cost(weapon_type)
+            total_stamina_cost = base_stamina_cost + value['stamina_modifier']
+            print(f"[{key[0]}] {value['name']} (Stamina cost: {total_stamina_cost})")
+        
+        while True:
+            choice = input("\nEnter your choice: \n").lower()
+            if choice in [k[0] for k in self.attack_types.keys()]:
+                attack_type = [k for k in self.attack_types.keys() if k.startswith(choice)][0]
+                break
+            else:
+                print("Invalid choice. Please try again.")
+
+        attack_info = self.attack_types[attack_type]
+        weapon_type = self.player.equipped.get("weapon", {"weapon_type": "light"}).weapon_type
+        base_stamina_cost = self.player.get_weapon_stamina_cost(weapon_type)
+        total_stamina_cost = base_stamina_cost + attack_info['stamina_modifier']
+
+        if self.player.stamina < total_stamina_cost:
+            print(f"Not enough stamina for {attack_info['name']}!")
             return False
 
-        self.player.use_stamina(stamina_cost)
-        player_damage, player_crit = self.calculate_damage(self.player.attack, self.player.name)
-        player_damage = max(0, player_damage - enemy.defence)
-        enemy.take_damage(player_damage)
-        print(f"You dealt {player_damage} damage to {enemy.name}.")
+        self.player.use_stamina(total_stamina_cost)
+        
+        total_damage = 0
+        attacks = 1 + attack_info.get("extra_attacks", 0)
+        
+        for _ in range(attacks):
+            player_damage, player_crit = self.calculate_damage(self.player.attack, self.player.name, attack_type)
+            player_damage = max(0, player_damage - enemy.defence)
+            enemy.take_damage(player_damage)
+            total_damage += player_damage
+        
+        print(f"You used {attack_info['name']} and dealt a total of {total_damage} damage to {enemy.name}.")
+        
+        if attack_type == "defensive":
+            defence_boost = int(self.player.defence * attack_info["defence_boost_percentage"] / 100)
+            self.defensive_stance = {
+                "boost": defence_boost,
+                "duration": attack_info["duration"]
+            }
+            self.player.defence += self.defensive_stance["boost"]
+            print(f"Your defence increased by {self.defensive_stance['boost']} ({attack_info['defence_boost_percentage']}%) for the next {self.defensive_stance['duration']} turns.")
         
         if not enemy.is_alive():
             print(f"You defeated the {enemy.name}!")
@@ -42,6 +84,7 @@ class Battle:
             self.player.remove_combat_buffs()
             return True
         
+        # Enemy attack remains the same
         enemy_damage, enemy_crit = self.calculate_damage(enemy.attack, enemy.name)
         enemy_damage = max(0, enemy_damage - self.player.defence)
         self.player.take_damage(enemy_damage)
@@ -52,6 +95,17 @@ class Battle:
             return True
         
         return False
+    
+    def update_defensive_stance(self):
+        #Update the defensive stance effect.
+        if self.defensive_stance["duration"] > 0:
+            self.defensive_stance["duration"] -= 1
+            if self.defensive_stance["duration"] == 0:
+                self.player.defence -= self.defensive_stance["boost"]
+                print(f"Your defence boost from Defensive Stance has worn off.")
+                self.defensive_stance = {"boost": 0, "duration": 0}
+            else:
+                print(f"\nDefensive Stance remains active for {self.defensive_stance['duration']} more turns.\n")
 
     def run_away(self, enemy):
         #Gives the player a 50% chance to run away from the enemy, if they fail, the enemy attacks, damage is set based on difference between enemy attack and player defence * 2
@@ -72,6 +126,9 @@ class Battle:
         print(f"Stamina: {self.player.stamina}/{self.player.max_stamina}")
         print(f"Level: {self.player.level}")
         print(f"Exp: {self.player.exp}/{self.player.level * 100}")
+        
+        if self.defensive_stance["duration"] > 0:
+            print(f"Defensive Stance: +{self.defensive_stance['boost']} defence for {self.defensive_stance['duration']} more turns.")
         
         if self.player.active_hots:
             print("\nActive HoT Effects:")
@@ -100,6 +157,7 @@ class Battle:
             self.player.update_cooldowns()
             self.player.update_hots()
             self.player.update_buffs()
+            self.update_defensive_stance()
             
             action = input("Do you want to:\n[a]ttack\n[u]se item\n[r]un?\n>").lower()
             
