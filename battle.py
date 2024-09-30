@@ -111,7 +111,6 @@ class Battle:
     
     def enemy_attack(self, enemy):
         attack_type = enemy.choose_attack()
-        print(f"DEBUG: Enemy chose attack type: {attack_type}")
         enemy_damage, enemy_crit = self.calculate_damage(enemy.attack, enemy, attack_type)
         enemy_damage = max(0, enemy_damage - self.player.defence)
         self.player.take_damage(enemy_damage)

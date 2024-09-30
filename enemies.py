@@ -12,7 +12,6 @@ class Enemy(Character):
         
     def choose_attack(self):
         chosen_attack = random.choice(self.attack_types)
-        print(f"DEBUG: {self.name} chose attack: {chosen_attack}")
         return chosen_attack
         
 def initialise_enemies():
