@@ -1,7 +1,7 @@
 import random
 from player import Player
 from enemies import Enemy, ENEMY_ATTACK_TYPES
-
+import time
 class Battle:
     def __init__(self, player, items, game):
         self.player = player
@@ -113,9 +113,12 @@ class Battle:
         attack_type = enemy.choose_attack()
         enemy_damage, enemy_crit = self.calculate_damage(enemy.attack, enemy, attack_type)
         enemy_damage = max(0, enemy_damage - self.player.defence)
-        self.player.take_damage(enemy_damage)
         
         attack_name = ENEMY_ATTACK_TYPES[attack_type]["name"]
+        
+        self.display_attack_animation(enemy.name, attack_name)
+        self.player.take_damage(enemy_damage)
+        
         print(f"{enemy.name} used {attack_name} and dealt {enemy_damage} damage to you.")
         
         effect = ENEMY_ATTACK_TYPES[attack_type].get("effect")
@@ -128,6 +131,13 @@ class Battle:
             second_damage = max(0, second_damage - self.player.defence)
             self.player.take_damage(second_damage)
             print(f"{enemy.name} dealt an additional {second_damage} damage to you.")
+    
+    def display_attack_animation(self, attacker_name, attack_name):
+        #Shows the enemy attacking in a dramatic way!
+        print(f"\n{attacker_name} is preparing to attack...")
+        time.sleep(1)  # Pause for dramatic effect
+        print(f">>> {attack_name.upper()} <<<")
+        time.sleep(0.5)
     
     def apply_enemy_effect(self, effect, enemy, damage):
         if effect == "lifesteal":
