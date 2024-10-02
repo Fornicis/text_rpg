@@ -14,6 +14,56 @@ class Enemy(Character):
         chosen_attack = random.choice(self.attack_types)
         return chosen_attack
         
+    def apply_effect(self, effect, player, damage):
+        effect_descriptions = {
+            "lifesteal": f"{self.name} healed for {int(damage * 0.5)} HP!",
+            "self_damage": f"{self.name} took {int(damage * 0.2)} self-damage from its reckless attack!",
+            "stamina_drain": f"{player.name} lost {min(20, player.stamina)} stamina from the draining attack!",
+            "stun": f"{player.name} has been stunned and will lose their next turn!",
+            "poison": f"{player.name} has been poisoned! They'll take damage over time.",
+            "freeze": f"{player.name} has been frozen! They might skip their next turn.",
+            "burn": f"{player.name} is on fire! They'll take additional damage each turn.",
+            "confusion": f"{player.name} is confused! They might hurt themselves on their next turn.",
+            "defense_break": f"{player.name}'s armor is shattered! Their defense is temporarily lowered.",
+            "double_attack": f"{self.name} strikes one more time!",
+            "triple_attack": f"{self.name} strikes two more times!",
+            "execute_low_health": f"The attack deals extra damage due to {player.name}'s low health!",
+            "damage_share": f"{player.name} is linked with {self.name}! They'll share some of the damage they deal.",
+            "mana_drain": f"{player.name}'s energy is drained! They lose some stamina.",
+            "weaken": f"{player.name} has been cursed! Their attacks will be weaker for a few turns.",
+            "damage_reflect": f"{self.name} is surrounded by a reflective barrier!",
+            "absorb_buff": f"{self.name} absorbs some of {player.name}'s power, growing stronger!",
+            "random_effect": "A chaotic energy surges through the battlefield!",
+            # Add descriptions for boss-specific effects
+            "divine_smite": "Divine energy rains down, dealing massive damage!",
+            "random_debuff": "Reality shifts around you, applying random negative effects!",
+            "ignore_defense": "The cosmic energy bypasses your defenses completely!",
+            "heal_damage": f"{self.name} consumes the void, healing itself!",
+            "alter_stats": "The fabric of reality changes, altering your stats!",
+            "invulnerability": f"{self.name} is surrounded by an impenetrable divine shield!",
+            "ultimate_damage": "Cosmic forces converge to deal devastating damage!"
+        }
+
+        if effect in effect_descriptions:
+            print(effect_descriptions[effect])
+            self._apply_effect_logic(effect, player, damage)
+        else:
+            print(f"Unknown effect: {effect}")
+
+    def _apply_effect_logic(self, effect, player, damage):
+        if effect == "lifesteal":
+            heal_amount = int(damage * 0.5)
+            self.heal(heal_amount)
+        elif effect == "self_damage":
+            self_damage = int(damage * 0.2)
+            self.take_damage(self_damage)
+        elif effect == "stamina_drain":
+            stamina_loss = min(20, player.stamina)
+            player.use_stamina(stamina_loss)
+        elif effect == "stun":
+            if random.random() < 1.0:  # 30% chance to stun
+                player.player_stunned = True
+    
 def initialise_enemies():
     return {
             # Easy Enemies (Levels 1-4)
@@ -147,7 +197,7 @@ ENEMY_ATTACK_TYPES = {
     "normal": {"name": "Normal Attack", "damage_modifier": 1, "effect": None},
     "power": {"name": "Power Attack", "damage_modifier": 1.5, "effect": None},
     "quick": {"name": "Quick Attack", "damage_modifier": 0.85, "effect": "double_attack"},
-    "vampiric": {"name": "Vampiric Strike", "damage_modifier": 0.8, "effect": "lifesteal"},
+    "vampiric": {"name": "Vampiric Strike", "damage_modifier": 0.9, "effect": "lifesteal"},
     "reckless": {"name": "Reckless Assault", "damage_modifier": 2, "effect": "self_damage"},
     "draining": {"name": "Draining Touch", "damage_modifier": 0.9, "effect": "stamina_drain"},
     "stunning": {"name": "Stunning Blow", "damage_modifier": 0.7, "effect": "stun"},
