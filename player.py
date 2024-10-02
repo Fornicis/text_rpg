@@ -122,6 +122,7 @@ class Player(Character):
         self.weapon_stamina_cost = {"light": 2, "medium": 4, "heavy": 6}
         self.visited_locations = set(["Village"])
         self.kill_tracker = {}
+        self.player_stunned = False
     
     def give_starter_items(self):
         #Gives starter items to the player
