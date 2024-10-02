@@ -2,27 +2,20 @@ import random
 from player import Player
 from enemies import Enemy, ENEMY_ATTACK_TYPES
 import time
+
 class Battle:
     def __init__(self, player, items, game):
         self.player = player
         self.items = items
         self.game = game
         self.turn_counter = 0
-        self.attack_types = {
-            "normal": {"name": "Normal Attack", "stamina_modifier": 0, "damage_modifier": 1},
-            "power": {"name": "Power Attack", "stamina_modifier": 3, "damage_modifier": 1.5},
-            "quick": {"name": "Quick Attack", "stamina_modifier": 1, "damage_modifier": 0.8, "extra_attacks": 1},
-            "defensive": {"name": "Defensive Stance", "stamina_modifier": 2, "damage_modifier": 0, "defence_boost_percentage": 25, "duration": 5}
-        }
-        self.defensive_stance = {"boost": 0, "duration": 0}
 
     def calculate_damage(self, base_attack, attacker, attack_type = "normal"):
         #Calculates player and enemy damage within a range of 80% to 120% of base attack
-        #attack_info = self.attack_types[attack_type]
         if isinstance(attacker, Enemy):
             attack_info = ENEMY_ATTACK_TYPES[attack_type]
         else:
-            attack_info = self.attack_types[attack_type]
+            attack_info = self.player.attack_types[attack_type]
             
         modified_attack = base_attack * attack_info["damage_modifier"]
         damage = random.randint(int(modified_attack * 0.8), int(modified_attack * 1.2))
@@ -39,22 +32,17 @@ class Battle:
             self.player.player_stunned = False
             return False
         
-        print("\nChoose your attack type:")
-        for key, value in self.attack_types.items():
-            weapon_type = self.player.equipped.get("weapon", {"weapon_type": "light"}).weapon_type
-            base_stamina_cost = self.player.get_weapon_stamina_cost(weapon_type)
-            total_stamina_cost = base_stamina_cost + value['stamina_modifier']
-            print(f"[{key[0]}] {value['name']} (Stamina cost: {total_stamina_cost})")
+        self.player.display_attack_options()
         
         while True:
             choice = input("\nEnter your choice: \n").lower()
-            if choice in [k[0] for k in self.attack_types.keys()]:
-                attack_type = [k for k in self.attack_types.keys() if k.startswith(choice)][0]
+            if choice in [k[0] for k in self.player.attack_types.keys()]:
+                attack_type = [k for k in self.player.attack_types.keys() if k.startswith(choice)][0]
                 break
             else:
                 print("Invalid choice. Please try again.")
 
-        attack_info = self.attack_types[attack_type]
+        attack_info = self.player.attack_types[attack_type]
         weapon_type = self.player.equipped.get("weapon", {"weapon_type": "light"}).weapon_type
         base_stamina_cost = self.player.get_weapon_stamina_cost(weapon_type)
         total_stamina_cost = base_stamina_cost + attack_info['stamina_modifier']
@@ -68,22 +56,27 @@ class Battle:
         total_damage = 0
         attacks = 1 + attack_info.get("extra_attacks", 0)
         
-        for _ in range(attacks):
+        self.display_attack_animation(self.player.name, attack_info['name'])
+        
+        for i in range(attacks):
+            if i > 0 and attack_type == "quick":
+                self.display_attack_animation(self.player.name, "Quick Follow-up")
+                
             player_damage, player_crit = self.calculate_damage(self.player.attack, self.player.name, attack_type)
             player_damage = max(0, player_damage - enemy.defence)
             enemy.take_damage(player_damage)
             total_damage += player_damage
+            
+            if i == 0:
+                print(f"{self.player.name} dealt {player_damage} damage to {enemy.name}.")
+            else:
+                print(f"{self.player.name} dealt an additional {player_damage} damage to {enemy.name}.")
         
-        print(f"You used {attack_info['name']} and dealt a total of {total_damage} damage to {enemy.name}.")
+        if attacks > 1:
+            print(f"Total damage dealt: {total_damage}")
         
         if attack_type == "defensive":
-            defence_boost = int(self.player.defence * attack_info["defence_boost_percentage"] / 100)
-            self.defensive_stance = {
-                "boost": defence_boost,
-                "duration": attack_info["duration"]
-            }
-            self.player.defence += self.defensive_stance["boost"]
-            print(f"Your defence increased by {self.defensive_stance['boost']} ({attack_info['defence_boost_percentage']}%) for the next {self.defensive_stance['duration']} turns.")
+            self.player.apply_defensive_stance()
         
         if not enemy.is_alive():
             print(f"You defeated the {enemy.name}!")
@@ -94,12 +87,6 @@ class Battle:
             self.loot_drop(enemy.tier)
             self.player.remove_combat_buffs()
             return True
-        
-        # Enemy attack remains the same
-        """enemy_damage, enemy_crit = self.calculate_damage(enemy.attack, enemy.name)
-        enemy_damage = max(0, enemy_damage - self.player.defence)
-        self.player.take_damage(enemy_damage)
-        print(f"{enemy.name} dealt {enemy_damage} damage to you.")"""
         
         self.enemy_attack(enemy)
         
@@ -140,19 +127,6 @@ class Battle:
         time.sleep(1)  # Pause for dramatic effect
         print(f">>> {attack_name.upper()} <<<")
         time.sleep(0.5)
-    
-
-    
-    def update_defensive_stance(self):
-        #Update the defensive stance effect.
-        if self.defensive_stance["duration"] > 0:
-            self.defensive_stance["duration"] -= 1
-            if self.defensive_stance["duration"] == 0:
-                self.player.defence -= self.defensive_stance["boost"]
-                print(f"Your defence boost from Defensive Stance has worn off.")
-                self.defensive_stance = {"boost": 0, "duration": 0}
-            else:
-                print(f"\nDefensive Stance remains active for {self.defensive_stance['duration']} more turns.\n")
 
     def run_away(self, enemy):
         #Gives the player a 50% chance to run away from the enemy, if they fail, the enemy attacks, damage is set based on difference between enemy attack and player defence * 2
@@ -167,31 +141,13 @@ class Battle:
 
     def display_battle_status(self, enemy):
         #Shows the defined info below whenever player attacks, helps to keep track of info
-        print(f"\n{self.player.name} HP: {self.player.hp}")
-        print(f"Attack: {self.player.attack}")
-        print(f"Defence: {self.player.defence}")
-        print(f"Stamina: {self.player.stamina}/{self.player.max_stamina}")
-        print(f"Level: {self.player.level}")
-        print(f"Exp: {self.player.exp}/{self.player.level * 100}")
+        self.player.show_stats()
         
-        if self.defensive_stance["duration"] > 0:
-            print(f"Defensive Stance: +{self.defensive_stance['boost']} defence for {self.defensive_stance['duration']} more turns.")
+        if self.player.defensive_stance["duration"] > 0:
+            print(f"Defensive Stance: +{self.player.defensive_stance['boost']} defence for {self.player.defensive_stance['duration']} more turns.")
         
         if self.player.player_stunned:
             print("You are stunned and will lose your next turn.")
-        
-        if self.player.active_hots:
-            print("\nActive HoT Effects:")
-            for hot_name, hot_info in self.player.active_hots.items():
-                print(f"- {hot_name}: {hot_info['tick_effect']} HP/turn for {hot_info['duration']} more turns")
-                
-        if self.player.active_buffs:
-            print("\nActive Buffs:")
-            for buff_name, buff_info in self.player.active_buffs.items():
-                if isinstance(buff_info, dict):
-                    print(f"- {buff_name.capitalize()}: +{buff_info['value']} for {buff_info['duration']} more turns")
-                else:
-                    print(f"- {buff_name.capitalize()}: +{buff_info}")
         
         print(f"\n{enemy.name} HP: {enemy.hp}")
         print(f"Attack: {enemy.attack}")
@@ -208,13 +164,13 @@ class Battle:
             self.player.update_cooldowns()
             self.player.update_hots()
             self.player.update_buffs()
-            self.update_defensive_stance()
+            self.player.update_defensive_stance()
             
             if self.player.player_stunned:
-                    print("You're stunned and lose your turn.")
-                    self.player.player_stunned = False
-                    self.enemy_attack(enemy)
-                    continue
+                print("You're stunned and lose your turn.")
+                self.player.player_stunned = False
+                self.enemy_attack(enemy)
+                continue
             
             action = input("Do you want to:\n[a]ttack\n[u]se item\n[r]un?\n>").lower()
             

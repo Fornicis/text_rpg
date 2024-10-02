@@ -94,6 +94,8 @@ class Player(Character):
         self.gold = 0
         self.base_attack = 10
         self.base_defence = 5
+        self.max_stamina = 100
+        self.stamina = self.max_stamina
         self.respawn_counter = 5
         self.days = 1
         self.inventory = []
@@ -117,12 +119,17 @@ class Player(Character):
         self.items = initialise_items()
         self.give_starter_items()
         self.active_hots = {}
-        self.max_stamina = 100
-        self.stamina = self.max_stamina
-        self.weapon_stamina_cost = {"light": 2, "medium": 4, "heavy": 6}
         self.visited_locations = set(["Village"])
         self.kill_tracker = {}
         self.player_stunned = False
+        self.weapon_stamina_cost = {"light": 2, "medium": 4, "heavy": 6}
+        self.attack_types = {
+            "normal": {"name": "Normal Attack", "stamina_modifier": 0, "damage_modifier": 1},
+            "power": {"name": "Power Attack", "stamina_modifier": 3, "damage_modifier": 1.5},
+            "quick": {"name": "Quick Attack", "stamina_modifier": 1, "damage_modifier": 0.8, "extra_attacks": 1},
+            "defensive": {"name": "Defensive Stance", "stamina_modifier": 2, "damage_modifier": 0, "defence_boost_percentage": 25, "duration": 5}
+        }
+        self.defensive_stance = {"boost": 0, "duration": 0}
     
     def give_starter_items(self):
         #Gives starter items to the player
@@ -570,6 +577,34 @@ class Player(Character):
         
         stamina_cost = self.get_weapon_stamina_cost(weapon_type)
         return self.stamina >= stamina_cost
+    
+    def apply_defensive_stance(self):
+        attack_info = self.attack_types["defensive"]
+        defence_boost = int(self.defence * attack_info["defence_boost_percentage"] / 100)
+        self.defensive_stance = {
+            "boost": defence_boost,
+            "duration": attack_info["duration"]
+        }
+        self.defence += self.defensive_stance["boost"]
+        print(f"Your defence increased by {self.defensive_stance['boost']} ({attack_info['defence_boost_percentage']}%) for the next {self.defensive_stance['duration']} turns.")
+
+    def update_defensive_stance(self):
+        if self.defensive_stance["duration"] > 0:
+            self.defensive_stance["duration"] -= 1
+            if self.defensive_stance["duration"] == 0:
+                self.defence -= self.defensive_stance["boost"]
+                print(f"Your defence boost from Defensive Stance has worn off.")
+                self.defensive_stance = {"boost": 0, "duration": 0}
+            else:
+                print(f"\nDefensive Stance remains active for {self.defensive_stance['duration']} more turns.\n")
+
+    def display_attack_options(self):
+        print("\nChoose your attack type:")
+        for key, value in self.attack_types.items():
+            weapon_type = self.equipped.get("weapon", {"weapon_type": "light"}).weapon_type
+            base_stamina_cost = self.get_weapon_stamina_cost(weapon_type)
+            total_stamina_cost = base_stamina_cost + value['stamina_modifier']
+            print(f"[{key[0]}] {value['name']} (Stamina cost: {total_stamina_cost})")
     
     def record_kill(self, enemy_name):
         #Records a kill for a given enemy type
