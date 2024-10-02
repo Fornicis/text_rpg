@@ -61,7 +61,7 @@ class Enemy(Character):
             stamina_loss = min(20, player.stamina)
             player.use_stamina(stamina_loss)
         elif effect == "stun":
-            if random.random() < 1.0:  # 30% chance to stun
+            if random.random() < 0.3:  # 30% chance to stun
                 player.player_stunned = True
     
 def initialise_enemies():
