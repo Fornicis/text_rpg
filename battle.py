@@ -7,6 +7,7 @@ class Battle:
         self.player = player
         self.items = items
         self.game = game
+        self.turn_counter = 0
         self.attack_types = {
             "normal": {"name": "Normal Attack", "stamina_modifier": 0, "damage_modifier": 1},
             "power": {"name": "Power Attack", "stamina_modifier": 3, "damage_modifier": 1.5},
@@ -14,7 +15,6 @@ class Battle:
             "defensive": {"name": "Defensive Stance", "stamina_modifier": 2, "damage_modifier": 0, "defence_boost_percentage": 25, "duration": 5}
         }
         self.defensive_stance = {"boost": 0, "duration": 0}
-        self.player_stunned = False
 
     def calculate_damage(self, base_attack, attacker, attack_type = "normal"):
         #Calculates player and enemy damage within a range of 80% to 120% of base attack
@@ -34,9 +34,9 @@ class Battle:
 
     def player_attack(self, enemy):
         #Handles the player attacking, if enemy dies, player gains exp and gold with a chance for loot, else the enemy attacks back
-        if self.player_stunned:
+        if self.player.player_stunned:
             print("You're stunned and lose your turn.")
-            self.player_stunned = False
+            self.player.player_stunned = False
             return False
         
         print("\nChoose your attack type:")
@@ -114,20 +114,22 @@ class Battle:
         enemy_damage, enemy_crit = self.calculate_damage(enemy.attack, enemy, attack_type)
         enemy_damage = max(0, enemy_damage - self.player.defence)
         
-        attack_name = ENEMY_ATTACK_TYPES[attack_type]["name"]
+        attack_info = ENEMY_ATTACK_TYPES[attack_type]
+        attack_name = attack_info["name"]
+        effect = attack_info.get("effect")
         
         self.display_attack_animation(enemy.name, attack_name)
         self.player.take_damage(enemy_damage)
         
         print(f"{enemy.name} used {attack_name} and dealt {enemy_damage} damage to you.")
         
-        effect = ENEMY_ATTACK_TYPES[attack_type].get("effect")
         if effect:
-            self.apply_enemy_effect(effect, enemy, enemy_damage)
+            enemy.apply_effect(effect, self.player, enemy_damage)
 
         if attack_type == "quick":
-            print(f"{enemy.name} attacks again with Quick Attack!")
-            second_damage, _= self.calculate_damage(enemy.attack, enemy, "quick")
+            self.display_attack_animation(enemy.name, "Quick Follow-up")
+            print(f"\n{enemy.name} attacks again with Quick Attack!")
+            second_damage, _ = self.calculate_damage(enemy.attack, enemy, "quick")
             second_damage = max(0, second_damage - self.player.defence)
             self.player.take_damage(second_damage)
             print(f"{enemy.name} dealt an additional {second_damage} damage to you.")
@@ -139,23 +141,7 @@ class Battle:
         print(f">>> {attack_name.upper()} <<<")
         time.sleep(0.5)
     
-    def apply_enemy_effect(self, effect, enemy, damage):
-        if effect == "lifesteal":
-            heal_amount = int(damage * 0.5)
-            enemy.heal(heal_amount)
-            print(f"{enemy.name} healed for {heal_amount} HP!")
-        elif effect == "self_damage":
-            self_damage = int(damage * 0.2)
-            enemy.take_damage(self_damage)
-            print(f"{enemy.name} took {self_damage} self-damage from its reckless attack!")
-        elif effect == "stamina_drain":
-            stamina_loss = min(20, self.player.stamina)
-            self.player.use_stamina(stamina_loss)
-            print(f"You lost {stamina_loss} stamina from the draining attack!")
-        elif effect == "stun":
-            if random.random() < 0.3:  # 30% chance to stun
-                self.player_stunned = True
-                print("You've been stunned and will lose your next turn!")
+
     
     def update_defensive_stance(self):
         #Update the defensive stance effect.
@@ -191,7 +177,7 @@ class Battle:
         if self.defensive_stance["duration"] > 0:
             print(f"Defensive Stance: +{self.defensive_stance['boost']} defence for {self.defensive_stance['duration']} more turns.")
         
-        if self.player_stunned:
+        if self.player.player_stunned:
             print("You are stunned and will lose your next turn.")
         
         if self.player.active_hots:
@@ -217,11 +203,18 @@ class Battle:
         print(f"\nBattle start! {self.player.name} vs {enemy.name}")
         
         while self.player.is_alive() and enemy.is_alive():
+            self.turn_counter += 1
             self.display_battle_status(enemy)
             self.player.update_cooldowns()
             self.player.update_hots()
             self.player.update_buffs()
             self.update_defensive_stance()
+            
+            if self.player.player_stunned:
+                    print("You're stunned and lose your turn.")
+                    self.player.player_stunned = False
+                    self.enemy_attack(enemy)
+                    continue
             
             action = input("Do you want to:\n[a]ttack\n[u]se item\n[r]un?\n>").lower()
             
@@ -240,8 +233,11 @@ class Battle:
                         self.player.gold += enemy.gold
                         print(f"You gained {enemy.gold} gold.")
                         return
+                    else:
+                        self.enemy_attack(enemy)
                 else:
                     print("No item used. You lose your turn.")
+                    self.enemy_attack(enemy)
             elif action == "r":
                 #Handles the player trying to run away
                 if self.run_away(enemy):
