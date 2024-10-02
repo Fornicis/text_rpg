@@ -22,7 +22,6 @@ class Battle:
         is_critical = random.random() < 0.1  # Critical hit chance 10%
         if is_critical:
             damage = int(damage * 1.5)
-            print(f"Critical hit by {attacker.name if isinstance(attacker, Enemy) else attacker}!")
         return damage, is_critical
 
     def player_attack(self, enemy):
@@ -62,7 +61,7 @@ class Battle:
             if i > 0 and attack_type == "quick":
                 self.display_attack_animation(self.player.name, "Quick Follow-up")
                 
-            player_damage, player_crit = self.calculate_damage(self.player.attack, self.player.name, attack_type)
+            player_damage, is_critical = self.calculate_damage(self.player.attack, self.player.name, attack_type)
             player_damage = max(0, player_damage - enemy.defence)
             enemy.take_damage(player_damage)
             total_damage += player_damage
@@ -71,6 +70,9 @@ class Battle:
                 print(f"{self.player.name} dealt {player_damage} damage to {enemy.name}.")
             else:
                 print(f"{self.player.name} dealt an additional {player_damage} damage to {enemy.name}.")
+                
+            if is_critical:
+                print(f"Critical hit by {self.player.name}!")
         
         if attacks > 1:
             print(f"Total damage dealt: {total_damage}")
@@ -98,7 +100,7 @@ class Battle:
     
     def enemy_attack(self, enemy):
         attack_type = enemy.choose_attack()
-        enemy_damage, enemy_crit = self.calculate_damage(enemy.attack, enemy, attack_type)
+        enemy_damage, is_critical = self.calculate_damage(enemy.attack, enemy, attack_type)
         enemy_damage = max(0, enemy_damage - self.player.defence)
         
         attack_info = ENEMY_ATTACK_TYPES[attack_type]
@@ -109,6 +111,9 @@ class Battle:
         self.player.take_damage(enemy_damage)
         
         print(f"{enemy.name} used {attack_name} and dealt {enemy_damage} damage to you.")
+        
+        if is_critical:
+            print(f"Critical hit by {enemy.name}!")
         
         if effect:
             enemy.apply_effect(effect, self.player, enemy_damage)
