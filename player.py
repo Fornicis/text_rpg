@@ -10,6 +10,8 @@ class Character:
         self.max_hp = hp
         self.attack = attack
         self.defence = defence
+        self.poison_stack = 0
+        self.poison_duration = 0
         self.pause = pause
         self.title_screen = title_screen
         
@@ -84,6 +86,20 @@ class Character:
     def heal(self, amount):
         # Heal character, not exceeding max HP
         self.hp = min(self.max_hp, self.hp + int(amount))
+        
+    def apply_poison(self, stacks, duration):
+        self.poison_stack += stacks
+        self.poison_duration = max(self.poison_duration, duration)
+        
+    def update_poison(self):
+        if self.poison_duration > 0:
+            poison_damage = self.poison_stack
+            self.take_damage(poison_damage)
+            print(f"{self.name} suffers {poison_damage} poison damage!")
+            self.poison_duration -= 1
+            if self.poison_duration == 0:
+                self.poison_stack = 0
+                print("The poison has worn off.")
 
 class Player(Character):
     def __init__(self, name):
@@ -116,6 +132,7 @@ class Player(Character):
         self.active_buffs = {}
         self.combat_buffs = {}
         self.weapon_buff = {'value': 0, 'duration': 0}
+        self.weapon_coating = None
         self.items = initialise_items()
         self.give_starter_items()
         self.active_hots = {}
@@ -127,7 +144,8 @@ class Player(Character):
             "normal": {"name": "Normal Attack", "stamina_modifier": 0, "damage_modifier": 1},
             "power": {"name": "Power Attack", "stamina_modifier": 3, "damage_modifier": 1.5},
             "quick": {"name": "Quick Attack", "stamina_modifier": 1, "damage_modifier": 0.8, "extra_attacks": 1},
-            "defensive": {"name": "Defensive Stance", "stamina_modifier": 2, "damage_modifier": 0, "defence_boost_percentage": 25, "duration": 5}
+            "defensive": {"name": "Defensive Stance", "stamina_modifier": 2, "damage_modifier": 0, "defence_boost_percentage": 25, "duration": 5},
+            "poison": {"name": "Poison Strike", "stamina_modifier": 3, "damage_modifier": 0.9}
         }
         self.defensive_stance = {"boost": 0, "duration": 0}
     
@@ -417,10 +435,30 @@ class Player(Character):
             self.inventory.remove(item)  # Remove the item from inventory after use
             self.cooldowns[item.name] = item.cooldown
             return True, message
+        elif item.effect_type == "poison" and item.type == "weapon_coating":
+            if self.equipped['weapon']:
+                self.weapon_coating = {
+                    'name': item.name,
+                    'stacks': item.effect[0],
+                    'duration': item.effect[1],
+                    'remaining_duration': item.duration
+                }
+                self.inventory.remove(item)
+                self.cooldowns[item.name] = item.cooldown
+                return True, f"You applied {item.name} to your weapon. It will apply {item.effect[0]} poison stacks for {item.effect[1]} turns on your next {item.duration} attacks."
+            else:
+                return False, "You don't have a weapon equipped to apply the poison coating."
         else:
             message = f"You can't use {item.name}."
             return False, message
         
+    def update_weapon_coating(self):
+        if self.weapon_coating:
+            self.weapon_coating['remaining_duration'] -= 1
+            if self.weapon_coating['remaining_duration'] <= 0:
+                print(f"The {self.weapon_coating['name']} on your weapon has worn off.")
+                self.weapon_coating = None
+    
     def use_teleport_scroll(self, game):
         #Allows the use of the teleport scroll to move to any previously visited location
         print("\nVisited locations:")
@@ -512,6 +550,8 @@ class Player(Character):
             if isinstance(item.effect, tuple):
                 stat, value = item.effect
                 return f"Increases weapon {stat} by {value} for {item.duration} turns"
+        elif item.effect_type == "poison" and item.type == "weapon_coating":
+            return f"Applies {item.effect[0]} poison stacks for {item.effect[1]} turns on your next {item.duration} attacks"
         elif item.effect_type == "stamina":
             return f"Restores {item.stamina_restore} stamina"
         elif item.effect_type == "teleport":
@@ -521,7 +561,7 @@ class Player(Character):
         
     def show_usable_items(self):
         #Shows a list of usable items if available, else prints that none are available
-        usable_items = [item for item in self.inventory if item.type in ["consumable", "food", "drink"]]
+        usable_items = [item for item in self.inventory if item.type in ["consumable", "food", "drink", "weapon_coating"]]
         if not usable_items:
             print("You have no usable items.")
             return None
@@ -600,11 +640,11 @@ class Player(Character):
 
     def display_attack_options(self):
         print("\nChoose your attack type:")
-        for key, value in self.attack_types.items():
+        for i, (key, value) in enumerate(self.attack_types.items(), 1):
             weapon_type = self.equipped.get("weapon", {"weapon_type": "light"}).weapon_type
             base_stamina_cost = self.get_weapon_stamina_cost(weapon_type)
             total_stamina_cost = base_stamina_cost + value['stamina_modifier']
-            print(f"[{key[0]}] {value['name']} (Stamina cost: {total_stamina_cost})")
+            print(f"[{i}] {value['name']} (Stamina cost: {total_stamina_cost})")
     
     def record_kill(self, enemy_name):
         #Records a kill for a given enemy type

@@ -34,9 +34,9 @@ class Battle:
         self.player.display_attack_options()
         
         while True:
-            choice = input("\nEnter your choice: \n").lower()
-            if choice in [k[0] for k in self.player.attack_types.keys()]:
-                attack_type = [k for k in self.player.attack_types.keys() if k.startswith(choice)][0]
+            choice = input("\nEnter your choice (1-5): ")
+            if choice.isdigit() and 1 <= int(choice) <= len(self.player.attack_types):
+                attack_type = list(self.player.attack_types.keys())[int(choice) - 1]
                 break
             else:
                 print("Invalid choice. Please try again.")
@@ -79,6 +79,17 @@ class Battle:
         
         if attack_type == "defensive":
             self.player.apply_defensive_stance()
+            
+        if self.player.weapon_coating:
+            enemy.apply_poison(self.player.weapon_coating['stacks'], self.player.weapon_coating['duration'])
+            print(f"{enemy.name} is poisoned by your coated weapon!")
+            self.player.update_weapon_coating()
+        
+        """if attack_type == "poison":
+            poison_stacks = max(1, self.player.level // 5)
+            duration = 3
+            enemy.apply_poison(poison_stacks, duration)
+            print(f"{enemy.name} has been poisoned! ({poison_stacks} stacks for {duration} turns)")"""
         
         if not enemy.is_alive():
             print(f"You defeated the {enemy.name}!")
@@ -116,7 +127,9 @@ class Battle:
             print(f"Critical hit by {enemy.name}!")
         
         if effect:
-            enemy.apply_effect(effect, self.player, enemy_damage)
+            effect_applied = enemy.apply_effect(effect, self.player, enemy_damage)
+            if effect == "stun" and not effect_applied:
+                print(f"{self.player.name} resisted the stun effect!")
 
         if attack_type == "quick":
             self.display_attack_animation(enemy.name, "Quick Follow-up")
@@ -153,11 +166,19 @@ class Battle:
         
         if self.player.player_stunned:
             print("You are stunned and will lose your next turn.")
+            
+        if self.player.poison_stack > 0:
+            print(f"You are poisoned! ({self.player.poison_stack} stacks, {self.player.poison_duration} turns remaining!)")
+        
+        if self.player.weapon_coating:
+            print(f"Your weapon is coated with {self.player.weapon_coating['name']} ({self.player.weapon_coating['remaining_duration']} attacks remaining)")
         
         print(f"\n{enemy.name} HP: {enemy.hp}")
         print(f"Attack: {enemy.attack}")
         print(f"Defence: {enemy.defence}")
         print(f"Level: {enemy.level}")
+        if enemy.poison_stack > 0:
+            print(f"{enemy.name} is poisoned! ({enemy.poison_stack} stacks, {enemy.poison_duration} turns remaining)")
 
     def battle(self, enemy):
         #Battle logic, displays player and enemy stats, updates the cooldowns of any items and buffs
@@ -165,11 +186,13 @@ class Battle:
         
         while self.player.is_alive() and enemy.is_alive():
             self.turn_counter += 1
-            self.display_battle_status(enemy)
             self.player.update_cooldowns()
             self.player.update_hots()
             self.player.update_buffs()
             self.player.update_defensive_stance()
+            self.player.update_poison()
+            enemy.update_poison()
+            self.display_battle_status(enemy)
             
             if self.player.player_stunned:
                 print("You're stunned and lose your turn.")

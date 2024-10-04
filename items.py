@@ -353,6 +353,13 @@ def initialise_items():
         "Superior Sharpening Stone": Item("Superior Sharpening Stone", "consumable", 500, "rare", effect_type="weapon_buff", effect=("attack", 15), cooldown=0, duration=150),
         "Master Sharpening Stone": Item("Master Sharpening Stone", "consumable", 1000, "epic", effect_type="weapon_buff", effect=("attack", 20), cooldown=0, duration=150),
         
+        #Weapon Coatings
+        ##Poison Coatings
+        "Weak Poison Coating": Item("Weak Poison Coating", "weapon_coating", 50, "common", effect_type="poison", effect=(1, 3), cooldown=5, duration=5),
+        "Poison Coating": Item("Poison Coating", "weapon_coating", 100, "uncommon", effect_type="poison", effect=(2, 3), cooldown=6, duration=5),
+        "Potent Poison Coating": Item("Potent Poison Coating", "weapon_coating", 200, "rare", effect_type="poison", effect=(3, 4), cooldown=7, duration=6),
+        "Deadly Poison Coating": Item("Deadly Poison Coating", "weapon_coating", 400, "epic", effect_type="poison", effect=(4, 5), cooldown=8, duration=7),
+        
         # Food items
         "Bread": Item("Bread", "food", 25, "common", effect_type="stamina", stamina_restore=10),
         "Cheese": Item("Cheese", "food", 40, "common", effect_type="stamina", stamina_restore=15),

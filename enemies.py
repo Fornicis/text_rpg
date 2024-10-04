@@ -9,12 +9,15 @@ class Enemy(Character):
         self.tier = tier
         self.level = level
         self.attack_types = attack_types if attack_types is not None else ["normal"]
+        self.poison_stack = 0
+        self.poison_duration = 0
         
     def choose_attack(self):
         chosen_attack = random.choice(self.attack_types)
         return chosen_attack
         
     def apply_effect(self, effect, player, damage):
+        effect_applied = False
         effect_descriptions = {
             "lifesteal": f"{self.name} healed for {int(damage * 0.5)} HP!",
             "self_damage": f"{self.name} took {int(damage * 0.2)} self-damage from its reckless attack!",
@@ -45,24 +48,52 @@ class Enemy(Character):
         }
 
         if effect in effect_descriptions:
-            print(effect_descriptions[effect])
-            self._apply_effect_logic(effect, player, damage)
+            effect_applied = self._apply_effect_logic(effect, player, damage)
+            if effect_applied:
+                print(effect_descriptions[effect])
         else:
             print(f"Unknown effect: {effect}")
+            
+        return effect_applied
 
     def _apply_effect_logic(self, effect, player, damage):
         if effect == "lifesteal":
             heal_amount = int(damage * 0.5)
             self.heal(heal_amount)
+            return True
         elif effect == "self_damage":
             self_damage = int(damage * 0.2)
             self.take_damage(self_damage)
+            return True
         elif effect == "stamina_drain":
             stamina_loss = min(20, player.stamina)
             player.use_stamina(stamina_loss)
+            return True
         elif effect == "stun":
             if random.random() < 0.3:  # 30% chance to stun
                 player.player_stunned = True
+                return True
+            return False
+        elif effect == "poison":
+            poison_stacks = max(1, self.level // 5) #Scales poison stacks with enemy level
+            poison_duration = 3
+            player.apply_poison(poison_stacks, poison_duration)
+            return True
+        return False
+            
+    def apply_poison(self, stacks, duration):
+        self.poison_stack += stacks
+        self.poison_duration = max(self.poison_duration, duration)
+        
+    def update_poison(self):
+        if self.poison_duration > 0:
+            poison_damage = self.poison_stack
+            self.take_damage(poison_damage)
+            print(f"{self.name} suffers {poison_damage} poison damage!")
+            self.poison_duration -= 1
+            if self.poison_duration == 0:
+                self.poison_stack = 0
+                print("The poison on {self.name} has worn off.")
     
 def initialise_enemies():
     return {
@@ -201,4 +232,5 @@ ENEMY_ATTACK_TYPES = {
     "reckless": {"name": "Reckless Assault", "damage_modifier": 2, "effect": "self_damage"},
     "draining": {"name": "Draining Touch", "damage_modifier": 0.9, "effect": "stamina_drain"},
     "stunning": {"name": "Stunning Blow", "damage_modifier": 0.7, "effect": "stun"},
+    "poison": {"name": "Poison Strike", "damage_modifier": 1, "effect": "poison"}
 }
