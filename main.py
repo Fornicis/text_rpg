@@ -120,6 +120,7 @@ class Game:
             elif action == 'u':
                 clear_screen()
                 self.use_item_menu()
+                pause()
             elif action == 'r':
                 clear_screen()
                 self.rest()
@@ -180,7 +181,7 @@ class Game:
                     if item.attack > 0:
                         stamina_cost = self.player.get_weapon_stamina_cost(item.weapon_type)
                         if slot == "weapon":
-                            print(f"  Attack: +{item.attack} Stamina use: {stamina_cost}")
+                            print(f"  Attack: +{item.attack} Stamina use: {stamina_cost} Weapon type: {item.weapon_type.title()}")
                         else:
                             print(f"  Attack: +{item.attack}")
                     if item.defence > 0:
@@ -194,7 +195,7 @@ class Game:
             for i, item in enumerate(equippable_items, 1):
                 if item.type == "weapon":
                     stamina_cost = self.player.get_weapon_stamina_cost(item.weapon_type)
-                    print(f"{i}. {item.name} (Type: {item.type.capitalize()}, Attack: +{item.attack}, Stamina Cost: {stamina_cost})")
+                    print(f"{i}. {item.name} (Type: {item.weapon_type.capitalize()} weapon, Attack: +{item.attack}, Stamina Cost: {stamina_cost})")
                 elif item.type in ["helm", "chest", "waist", "legs", "boots", "gloves", "shield", "back"]:
                     print(f"{i}. {item.name} (Type: {item.type.capitalize()}), Defence: +{item.defence})")
                 else:
@@ -301,6 +302,8 @@ class Game:
                 else:
                     success, message = self.player.use_item(selected_item, self)
                     print(message)
+                    if success:
+                        pause()
                     return selected_item if success else None
             else:
                 print("Invalid choice. Please try again.")
@@ -399,8 +402,10 @@ class Game:
             elif action == "u":
                 #Opens the item usage menu
                 clear_screen()
-                self.use_item_menu()
-                self.player.show_cooldowns()
+                used_item = self.use_item_menu()
+                if used_item:
+                    self.player.show_cooldowns()
+                pause()
             elif action == "r":
                 #Rests the player restoring 25% health
                 self.rest()

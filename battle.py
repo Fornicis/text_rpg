@@ -34,7 +34,7 @@ class Battle:
         self.player.display_attack_options()
         
         while True:
-            choice = input("\nEnter your choice (1-5): ")
+            choice = input("\nEnter your choice (1-4): ")
             if choice.isdigit() and 1 <= int(choice) <= len(self.player.attack_types):
                 attack_type = list(self.player.attack_types.keys())[int(choice) - 1]
                 break
@@ -84,12 +84,6 @@ class Battle:
             enemy.apply_poison(self.player.weapon_coating['stacks'], self.player.weapon_coating['duration'])
             print(f"{enemy.name} is poisoned by your coated weapon!")
             self.player.update_weapon_coating()
-        
-        """if attack_type == "poison":
-            poison_stacks = max(1, self.player.level // 5)
-            duration = 3
-            enemy.apply_poison(poison_stacks, duration)
-            print(f"{enemy.name} has been poisoned! ({poison_stacks} stacks for {duration} turns)")"""
         
         if not enemy.is_alive():
             print(f"You defeated the {enemy.name}!")

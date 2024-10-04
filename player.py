@@ -144,8 +144,7 @@ class Player(Character):
             "normal": {"name": "Normal Attack", "stamina_modifier": 0, "damage_modifier": 1},
             "power": {"name": "Power Attack", "stamina_modifier": 3, "damage_modifier": 1.5},
             "quick": {"name": "Quick Attack", "stamina_modifier": 1, "damage_modifier": 0.8, "extra_attacks": 1},
-            "defensive": {"name": "Defensive Stance", "stamina_modifier": 2, "damage_modifier": 0, "defence_boost_percentage": 25, "duration": 5},
-            "poison": {"name": "Poison Strike", "stamina_modifier": 3, "damage_modifier": 0.9}
+            "defensive": {"name": "Defensive Stance", "stamina_modifier": 2, "damage_modifier": 0, "defence_boost_percentage": 25, "duration": 5}
         }
         self.defensive_stance = {"boost": 0, "duration": 0}
     
@@ -390,7 +389,7 @@ class Player(Character):
             print(f"You can't use {item.name} yet. Cooldown: {self.cooldowns[item.name]} turns.")
             return False, f"Couldn't use {item.name} due to cooldown!"
 
-        if item.type in ["consumable", "food", "drink"]:
+        if item.type in ["consumable", "food", "drink", "weapon_coating"]:
             message = ""
             if item.effect_type == "healing":
                 heal_amount = min(item.effect, self.max_hp - self.hp)
@@ -431,23 +430,28 @@ class Player(Character):
                     return self.use_teleport_scroll(game)
                 else:
                     return False, "Cannot use teleport scroll outside of game context!"
-
+            elif item.effect_type == "poison" and item.type == "weapon_coating":
+                if self.equipped['weapon']:
+                    if self.equipped['weapon'].weapon_type == "light":
+                        self.weapon_coating = {
+                            'name': item.name,
+                            'stacks': item.effect[0],
+                            'duration': item.effect[1],
+                            'remaining_duration': item.duration
+                        }
+                        self.inventory.remove(item)
+                        self.cooldowns[item.name] = item.cooldown
+                        return True, f"You applied {item.name} to your weapon. It will apply {item.effect[0]} poison stacks for {item.effect[1]} turns on your next {item.duration} attacks."
+                    else:
+                        return False, f"You can only apply {item.name} to light weapons. Your current weapon is a {self.equipped['weapon'].weapon_type.title()} Weapon!"
+                else:
+                    return False, "You don't have a weapon equipped to apply the poison coating."    
+        
             self.inventory.remove(item)  # Remove the item from inventory after use
             self.cooldowns[item.name] = item.cooldown
             return True, message
-        elif item.effect_type == "poison" and item.type == "weapon_coating":
-            if self.equipped['weapon']:
-                self.weapon_coating = {
-                    'name': item.name,
-                    'stacks': item.effect[0],
-                    'duration': item.effect[1],
-                    'remaining_duration': item.duration
-                }
-                self.inventory.remove(item)
-                self.cooldowns[item.name] = item.cooldown
-                return True, f"You applied {item.name} to your weapon. It will apply {item.effect[0]} poison stacks for {item.effect[1]} turns on your next {item.duration} attacks."
-            else:
-                return False, "You don't have a weapon equipped to apply the poison coating."
+            
+            
         else:
             message = f"You can't use {item.name}."
             return False, message
@@ -506,7 +510,7 @@ class Player(Character):
             if item.type == "weapon":
                 weapon_type = getattr(item, 'weapon_type', 'light')
                 stamina_cost = self.get_weapon_stamina_cost(weapon_type)
-                print(f"{i}. {item.name} (Attack: {item.attack}) (Stamina use: {stamina_cost}) (Value: {item.value} gold)")
+                print(f"{i}. {item.name} (Attack: {item.attack}) (Stamina use: {stamina_cost}) (Weapon type: {item.weapon_type.title()}) (Value: {item.value} gold)")
             elif item.type == "ring":
                 print(f"{i}. {item.name} (Attack: {item.attack} Defence: {item.defence}) (Value: {item.value})")
             elif item.type in ["helm", "chest", "belt", "legs", "shield", "back", "gloves", "boots"]:
@@ -551,7 +555,7 @@ class Player(Character):
                 stat, value = item.effect
                 return f"Increases weapon {stat} by {value} for {item.duration} turns"
         elif item.effect_type == "poison" and item.type == "weapon_coating":
-            return f"Applies {item.effect[0]} poison stacks for {item.effect[1]} turns on your next {item.duration} attacks"
+            return f"Applies {item.effect[0]} poison stacks for {item.effect[1]} turns on your next {item.duration} attacks (Light weapons only)"
         elif item.effect_type == "stamina":
             return f"Restores {item.stamina_restore} stamina"
         elif item.effect_type == "teleport":
