@@ -642,13 +642,22 @@ class Player(Character):
             else:
                 print(f"\nDefensive Stance remains active for {self.defensive_stance['duration']} more turns.\n")
 
+    def get_available_attack_types(self):
+        if self.defensive_stance["duration"] > 0:
+            return {"normal": self.attack_types["normal"]}
+        return self.attack_types
+    
     def display_attack_options(self):
         print("\nChoose your attack type:")
-        for i, (key, value) in enumerate(self.attack_types.items(), 1):
+        available_attacks = self.get_available_attack_types()
+        for i, (key, value) in enumerate(available_attacks.items(), 1):
             weapon_type = self.equipped.get("weapon", {"weapon_type": "light"}).weapon_type
             base_stamina_cost = self.get_weapon_stamina_cost(weapon_type)
             total_stamina_cost = base_stamina_cost + value['stamina_modifier']
             print(f"[{i}] {value['name']} (Stamina cost: {total_stamina_cost})")
+            
+        if self.defensive_stance["duration"] > 0:
+            print("\n(You can only use Normal Attack while in Defensive Stance)")
     
     def record_kill(self, enemy_name):
         #Records a kill for a given enemy type

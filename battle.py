@@ -33,15 +33,17 @@ class Battle:
         
         self.player.display_attack_options()
         
+        available_attacks = self.player.get_available_attack_types()
+        
         while True:
             choice = input("\nEnter your choice (1-4): ")
-            if choice.isdigit() and 1 <= int(choice) <= len(self.player.attack_types):
-                attack_type = list(self.player.attack_types.keys())[int(choice) - 1]
+            if choice.isdigit() and 1 <= int(choice) <= len(available_attacks):
+                attack_type = list(available_attacks.keys())[int(choice) - 1]
                 break
             else:
                 print("Invalid choice. Please try again.")
 
-        attack_info = self.player.attack_types[attack_type]
+        attack_info = available_attacks[attack_type]
         weapon_type = self.player.equipped.get("weapon", {"weapon_type": "light"}).weapon_type
         base_stamina_cost = self.player.get_weapon_stamina_cost(weapon_type)
         total_stamina_cost = base_stamina_cost + attack_info['stamina_modifier']
@@ -157,6 +159,7 @@ class Battle:
         
         if self.player.defensive_stance["duration"] > 0:
             print(f"Defensive Stance: +{self.player.defensive_stance['boost']} defence for {self.player.defensive_stance['duration']} more turns.")
+            print("While in Defensive Stance you can only use Normal Attacks.")
         
         if self.player.player_stunned:
             print("You are stunned and will lose your next turn.")
