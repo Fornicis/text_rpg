@@ -75,7 +75,7 @@ class Enemy(Character):
                 return True
             return False
         elif effect == "poison":
-            poison_stacks = max(1, self.level // 5) #Scales poison stacks with enemy level
+            poison_stacks = max(1, self.level // 2) #Scales poison stacks with enemy level
             poison_duration = 3
             player.apply_poison(poison_stacks, poison_duration)
             return True
