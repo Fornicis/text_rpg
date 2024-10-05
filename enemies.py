@@ -185,6 +185,7 @@ def initialise_enemies():
             "Ethereal Banshee": Enemy("Ethereal Banshee", 170, 90, 77, 125, random.randrange(210, 231), "hard", 18, ["normal", "draining", "stunning"]),
             "Abyssal Behemoth": Enemy("Abyssal Behemoth", 238, 91, 79, 130, random.randrange(215, 236), "hard", 19, ["normal", "power", "reckless"]),
             
+            #Very hard enemies (levels 20-24)
             "Necropolis Guardian": Enemy("Necropolis Guardian", 323, 106, 93, 300, random.randrange(240, 271), "very-hard", 20, ["normal", "power", "stunning", "vampiric"]),
             "Soul Reaver": Enemy("Soul Reaver", 298, 112, 88, 325, random.randrange(250, 281), "very-hard", 21, ["normal", "quick", "vampiric", "draining"]),
             "Bone Colossus": Enemy("Bone Colossus", 357, 117, 90, 350, random.randrange(260, 291), "very-hard", 22, ["normal", "power", "stunning", "reckless"]),
