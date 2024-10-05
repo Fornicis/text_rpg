@@ -58,15 +58,15 @@ class Enemy(Character):
 
     def _apply_effect_logic(self, effect, player, damage):
         if effect == "lifesteal":
-            heal_amount = int(damage * 0.5)
+            heal_amount = int(damage * 0.5) # Heals enemy half of damage dealt
             self.heal(heal_amount)
             return True
         elif effect == "self_damage":
-            self_damage = int(damage * 0.2)
+            self_damage = int(damage * 0.2) # Deals 20% of damage rounded, to enemy
             self.take_damage(self_damage)
             return True
         elif effect == "stamina_drain":
-            stamina_loss = min(20, player.stamina)
+            stamina_loss = min(20, player.stamina) #Drains a maximum of 20 stamina from the player
             player.use_stamina(stamina_loss)
             return True
         elif effect == "stun":
@@ -79,6 +79,11 @@ class Enemy(Character):
             poison_duration = 3
             player.apply_poison(poison_stacks, poison_duration)
             return True
+        elif effect == "freeze":
+            if random.random() < 0.5: #50% chance to freeze player when striking
+                player.frozen = True
+                return True
+            return False
         return False
             
     def apply_poison(self, stacks, duration):
@@ -138,7 +143,7 @@ def initialise_enemies():
             "Mountain Lion": Enemy("Mountain Lion", 72, 48, 29, 40, random.randrange(35, 46), "medium", 4, ["normal", "quick", "reckless"]),
             "Rock Elemental": Enemy("Rock Elemental", 98, 41, 35, 50, random.randrange(45, 56), "medium", 6, ["normal", "power", "stunning"]),
             "Harpy": Enemy("Harpy", 68, 48, 27, 45, random.randrange(40, 51), "medium", 4, ["normal", "quick", "stunning"]),
-            "Yeti": Enemy("Yeti", 89, 45, 33, 50, random.randrange(45, 56), "medium", 6, ["normal", "power", "reckless"]),
+            "Yeti": Enemy("Yeti", 89, 45, 33, 50, random.randrange(45, 56), "medium", 6, ["normal", "power", "reckless", "freeze"]),
             "Orc": Enemy("Orc", 81, 46, 30, 40, random.randrange(35, 46), "medium", 5, ["normal", "power", "reckless"]),
             
             "Sand Wurm": Enemy("Sand Wurm", 94, 44, 34, 45, random.randrange(40, 51), "medium", 6, ["normal", "power", "poison"]),
@@ -167,9 +172,9 @@ def initialise_enemies():
             "Ruin Wraith": Enemy("Ruin Wraith", 179, 86, 81, 135, random.randrange(135, 156), "hard", 18, ["normal", "draining", "vampiric"]),
             "Forgotten Titan": Enemy("Forgotten Titan", 221, 88, 85, 140, random.randrange(140, 161), "hard", 19, ["normal", "power", "reckless"]),
             
-            "Frost Giant": Enemy("Frost Giant", 221, 76, 89, 100, random.randrange(145, 166), "hard", 15, ["normal", "power", "stunning"]),
+            "Frost Giant": Enemy("Frost Giant", 221, 76, 89, 100, random.randrange(145, 166), "hard", 15, ["normal", "power", "stunning", "freeze"]),
             "Storm Harpy": Enemy("Storm Harpy", 170, 83, 82, 105, random.randrange(150, 171), "hard", 16, ["normal", "quick", "stunning"]),
-            "Avalanche Elemental": Enemy("Avalanche Elemental", 204, 85, 84, 110, random.randrange(155, 176), "hard", 17, ["normal", "power", "stunning"]),
+            "Avalanche Elemental": Enemy("Avalanche Elemental", 204, 85, 84, 110, random.randrange(155, 176), "hard", 17, ["normal", "power", "freeze"]),
             "Mountain Wyvern": Enemy("Mountain Wyvern", 187, 88, 79, 115, random.randrange(160, 181), "hard", 18, ["normal", "quick", "reckless"]),
             "Yeti Alpha": Enemy("Yeti Alpha", 213, 90, 81, 120, random.randrange(165, 186), "hard", 19, ["normal", "power", "reckless"]),
             
@@ -185,44 +190,44 @@ def initialise_enemies():
             "Ethereal Banshee": Enemy("Ethereal Banshee", 170, 90, 77, 125, random.randrange(210, 231), "hard", 18, ["normal", "draining", "stunning"]),
             "Abyssal Behemoth": Enemy("Abyssal Behemoth", 238, 91, 79, 130, random.randrange(215, 236), "hard", 19, ["normal", "power", "reckless"]),
             
-            # Very Hard Enemies (Levels 20-24)
-            "Necropolis Guardian": Enemy("Necropolis Guardian", 323, 106, 93, 300, random.randrange(240, 271), "very-hard", 20, ["normal", "power", "stunning"]),
-            "Soul Reaver": Enemy("Soul Reaver", 298, 112, 88, 325, random.randrange(250, 281), "very-hard", 21, ["normal", "quick", "vampiric"]),
-            "Bone Colossus": Enemy("Bone Colossus", 357, 117, 90, 350, random.randrange(260, 291), "very-hard", 22, ["normal", "power", "stunning"]),
-            "Spectral Devourer": Enemy("Spectral Devourer", 315, 122, 84, 375, random.randrange(270, 301), "very-hard", 23, ["normal", "vampiric", "poison"]),
-            "Lich King": Enemy("Lich King", 340, 125, 87, 400, random.randrange(280, 311), "very-hard", 24, ["normal", "draining", "poison"]),
+            # Very Hard Enemies (Levels 20-24) - 4 attacks each
+            "Necropolis Guardian": Enemy("Necropolis Guardian", 323, 106, 93, 300, random.randrange(240, 271), "very-hard", 20, ["normal", "power", "stunning", "draining"]),
+            "Soul Reaver": Enemy("Soul Reaver", 298, 112, 88, 325, random.randrange(250, 281), "very-hard", 21, ["normal", "quick", "vampiric", "draining"]),
+            "Bone Colossus": Enemy("Bone Colossus", 357, 117, 90, 350, random.randrange(260, 291), "very-hard", 22, ["normal", "power", "stunning", "reckless"]),
+            "Spectral Devourer": Enemy("Spectral Devourer", 315, 122, 84, 375, random.randrange(270, 301), "very-hard", 23, ["normal", "vampiric", "poison", "draining"]),
+            "Lich King": Enemy("Lich King", 340, 125, 87, 400, random.randrange(280, 311), "very-hard", 24, ["normal", "draining", "poison", "freeze"]),
             
-            "Timeless Sphinx": Enemy("Timeless Sphinx", 340, 104, 95, 300, random.randrange(290, 321), "very-hard", 20, ["normal", "stunning", "draining"]),
-            "Eternal Pharaoh": Enemy("Eternal Pharaoh", 323, 110, 90, 325, random.randrange(300, 331), "very-hard", 21, ["normal", "power", "poison"]),
-            "Anubis Reborn": Enemy("Anubis Reborn", 340, 115, 92, 350, random.randrange(310, 341), "very-hard", 22, ["normal", "vampiric", "stunning"]),
-            "Mummy Emperor": Enemy("Mummy Emperor", 357, 120, 86, 375, random.randrange(320, 351), "very-hard", 23, ["normal", "draining", "poison"]),
-            "Living Obelisk": Enemy("Living Obelisk", 383, 124, 89, 400, random.randrange(330, 361), "very-hard", 24, ["normal", "power", "stunning"]),
+            "Timeless Sphinx": Enemy("Timeless Sphinx", 340, 104, 95, 300, random.randrange(290, 321), "very-hard", 20, ["normal", "stunning", "draining", "poison"]),
+            "Eternal Pharaoh": Enemy("Eternal Pharaoh", 323, 110, 90, 325, random.randrange(300, 331), "very-hard", 21, ["normal", "power", "poison", "draining"]),
+            "Anubis Reborn": Enemy("Anubis Reborn", 340, 115, 92, 350, random.randrange(310, 341), "very-hard", 22, ["normal", "vampiric", "stunning", "quick"]),
+            "Mummy Emperor": Enemy("Mummy Emperor", 357, 120, 86, 375, random.randrange(320, 351), "very-hard", 23, ["normal", "draining", "poison", "stunning"]),
+            "Living Obelisk": Enemy("Living Obelisk", 383, 124, 89, 400, random.randrange(330, 361), "very-hard", 24, ["normal", "power", "stunning", "reckless"]),
             
-            "Apocalypse Horseman": Enemy("Apocalypse Horseman", 340, 114, 91, 350, random.randrange(310, 341), "very-hard", 22, ["normal", "reckless", "poison"]),
-            "Abyssal Wyrm": Enemy("Abyssal Wyrm", 357, 119, 85, 375, random.randrange(320, 351), "very-hard", 23, ["normal", "power", "poison"]),
-            "Void Titan": Enemy("Void Titan", 383, 123, 88, 400, random.randrange(330, 361), "very-hard", 24, ["normal", "reckless", "stunning"]),
-            "Chaos Incarnate": Enemy("Chaos Incarnate", 366, 121, 83, 425, random.randrange(340, 371), "very-hard", 23, ["normal", "quick", "poison"]),
-            "Eternity Warden": Enemy("Eternity Warden", 400, 125, 86, 450, random.randrange(350, 381), "very-hard", 24, ["normal", "power", "stunning"]),
+            "Apocalypse Horseman": Enemy("Apocalypse Horseman", 340, 114, 91, 350, random.randrange(310, 341), "very-hard", 22, ["normal", "reckless", "poison", "draining"]),
+            "Abyssal Wyrm": Enemy("Abyssal Wyrm", 357, 119, 85, 375, random.randrange(320, 351), "very-hard", 23, ["normal", "power", "poison", "stunning"]),
+            "Void Titan": Enemy("Void Titan", 383, 123, 88, 400, random.randrange(330, 361), "very-hard", 24, ["normal", "reckless", "stunning", "draining"]),
+            "Chaos Incarnate": Enemy("Chaos Incarnate", 366, 121, 83, 425, random.randrange(340, 371), "very-hard", 23, ["normal", "quick", "poison", "vampiric"]),
+            "Eternity Warden": Enemy("Eternity Warden", 400, 125, 86, 450, random.randrange(350, 381), "very-hard", 24, ["normal", "power", "stunning", "freeze"]),
 
-            "Ancient Wyvern": Enemy("Ancient Wyvern", 349, 111, 89, 300, random.randrange(390, 421), "very-hard", 21, ["normal", "quick", "poison"]),
-            "Elemental Drake": Enemy("Elemental Drake", 340, 108, 92, 325, random.randrange(400, 431), "very-hard", 20, ["normal", "power", "poison"]),
-            "Dragonlord": Enemy("Dragonlord", 366, 116, 91, 350, random.randrange(410, 441), "very-hard", 22, ["normal", "power", "reckless"]),
-            "Chromatic Dragon": Enemy("Chromatic Dragon", 374, 121, 85, 375, random.randrange(420, 451), "very-hard", 23, ["normal", "quick", "poison"]),
-            "Elder Dragon": Enemy("Elder Dragon", 391, 124, 88, 400, random.randrange(440, 471), "very-hard", 24, ["normal", "power", "stunning"]),
+            "Ancient Wyvern": Enemy("Ancient Wyvern", 349, 111, 89, 300, random.randrange(390, 421), "very-hard", 21, ["normal", "quick", "poison", "reckless"]),
+            "Elemental Drake": Enemy("Elemental Drake", 340, 108, 92, 325, random.randrange(400, 431), "very-hard", 20, ["normal", "power", "poison", "freeze"]),
+            "Dragonlord": Enemy("Dragonlord", 366, 116, 91, 350, random.randrange(410, 441), "very-hard", 22, ["normal", "power", "reckless", "stunning"]),
+            "Chromatic Dragon": Enemy("Chromatic Dragon", 374, 121, 85, 375, random.randrange(420, 451), "very-hard", 23, ["normal", "quick", "poison", "freeze"]),
+            "Elder Dragon": Enemy("Elder Dragon", 391, 124, 88, 400, random.randrange(440, 471), "very-hard", 24, ["normal", "power", "stunning", "draining"]),
             
-            # Extreme Enemies (Levels 25+)
-            "Magma Colossus": Enemy("Magma Colossus", 589, 115, 118, 500, random.randrange(480, 531), "extreme", 21, ["normal", "power", "reckless"]),
-            "Phoenix Overlord": Enemy("Phoenix Overlord", 557, 122, 115, 520, random.randrange(500, 551), "extreme", 20, ["normal", "quick", "stunning"]),
-            "Volcanic Titan": Enemy("Volcanic Titan", 655, 117, 122, 540, random.randrange(520, 571), "extreme", 24, ["normal", "power", "reckless"]),
-            "Inferno Wyrm": Enemy("Inferno Wyrm", 622, 121, 116, 560, random.randrange(540, 591), "extreme", 22, ["normal", "quick", "poison"]),
-            "Cinder Archfiend": Enemy("Cinder Archfiend", 576, 126, 111, 580, random.randrange(560, 611), "extreme", 23, ["normal", "power", "poison"]),
+            # Extreme Enemies (Levels 25+) - 5 attacks each
+            "Magma Colossus": Enemy("Magma Colossus", 589, 115, 118, 500, random.randrange(480, 531), "extreme", 21, ["normal", "power", "reckless", "stunning", "draining"]),
+            "Phoenix Overlord": Enemy("Phoenix Overlord", 557, 122, 115, 520, random.randrange(500, 551), "extreme", 20, ["normal", "quick", "stunning", "vampiric", "reckless"]),
+            "Volcanic Titan": Enemy("Volcanic Titan", 655, 117, 122, 540, random.randrange(520, 571), "extreme", 24, ["normal", "power", "reckless", "stunning", "draining"]),
+            "Inferno Wyrm": Enemy("Inferno Wyrm", 622, 121, 116, 560, random.randrange(540, 591), "extreme", 22, ["normal", "quick", "poison", "reckless", "stunning"]),
+            "Cinder Archfiend": Enemy("Cinder Archfiend", 576, 126, 111, 580, random.randrange(560, 611), "extreme", 23, ["normal", "power", "poison", "vampiric", "draining"]),
             
-            # Boss Monsters
-            "Seraphim Guardian": Enemy("Seraphim Guardian", 916, 131, 137, 1000, random.randrange(950, 1051), "boss", 25, ["normal", "power", "stunning"]),
-            "Celestial Arbiter": Enemy("Celestial Arbiter", 851, 141, 128, 1100, random.randrange(1050, 1151), "boss", 25, ["normal", "quick", "draining"]),
-            "Astral Demiurge": Enemy("Astral Demiurge", 982, 134, 136, 1200, random.randrange(1150, 1251), "boss", 25, ["normal", "power", "poison"]),
-            "Ethereal Leviathan": Enemy("Ethereal Leviathan", 1047, 145, 126, 1300, random.randrange(1250, 1351), "boss", 25, ["normal", "reckless", "draining"]),
-            "Divine Architect": Enemy("Divine Architect", 1113, 138, 132, 1500, random.randrange(1450, 1551), "boss", 25, ["normal", "power", "stunning"]),
+            # Boss Monsters - 6 attacks each
+            "Seraphim Guardian": Enemy("Seraphim Guardian", 916, 131, 137, 1000, random.randrange(950, 1051), "boss", 25, ["normal", "power", "stunning", "draining", "reckless", "freeze"]),
+            "Celestial Arbiter": Enemy("Celestial Arbiter", 851, 141, 128, 1100, random.randrange(1050, 1151), "boss", 25, ["normal", "quick", "draining", "stunning", "poison", "vampiric"]),
+            "Astral Demiurge": Enemy("Astral Demiurge", 982, 134, 136, 1200, random.randrange(1150, 1251), "boss", 25, ["normal", "power", "poison", "freeze", "stunning", "vampiric"]),
+            "Ethereal Leviathan": Enemy("Ethereal Leviathan", 1047, 145, 126, 1300, random.randrange(1250, 1351), "boss", 25, ["normal", "reckless", "draining", "quick", "poison", "stunning"]),
+            "Divine Architect": Enemy("Divine Architect", 1113, 138, 132, 1500, random.randrange(1450, 1551), "boss", 25, ["normal", "power", "stunning", "freeze", "draining", "reckless"]),
     }
     
 ENEMY_ATTACK_TYPES = {
@@ -233,5 +238,6 @@ ENEMY_ATTACK_TYPES = {
     "reckless": {"name": "Reckless Assault", "damage_modifier": 2, "effect": "self_damage"},
     "draining": {"name": "Draining Touch", "damage_modifier": 0.9, "effect": "stamina_drain"},
     "stunning": {"name": "Stunning Blow", "damage_modifier": 0.7, "effect": "stun"},
-    "poison": {"name": "Poison Strike", "damage_modifier": 1, "effect": "poison"}
+    "poison": {"name": "Poison Strike", "damage_modifier": 0.9, "effect": "poison"},
+    "freeze": {"name": "Frozen Strike", "damage_modifier": 0.9, "effect": "freeze"}
 }

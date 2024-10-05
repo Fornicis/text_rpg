@@ -30,6 +30,14 @@ class Battle:
             print("You're stunned and lose your turn.")
             self.player.player_stunned = False
             return False
+        if self.player.frozen:
+            if random.random() < 0.5:
+                print(f"{self.player.name} is frozen and cannot attack!")
+                self.enemy_attack(enemy)
+                return False
+            else:
+                print(f"{self.player.name} thaws out from the ice and attacks!")
+                self.player.frozen = False
         
         self.player.display_attack_options()
         
@@ -248,6 +256,9 @@ class Battle:
         
         if self.player.player_stunned:
             print("You are stunned and will lose your next turn.")
+            
+        if self.player.frozen:
+            print("You are frozen and might lose your next turn!")
             
         if self.player.poison_stack > 0:
             print(f"You are poisoned! ({self.player.poison_stack} stacks, {self.player.poison_duration} turns remaining!)")

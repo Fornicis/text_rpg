@@ -12,6 +12,7 @@ class Character:
         self.defence = defence
         self.poison_stack = 0
         self.poison_duration = 0
+        self.frozen = False
         self.pause = pause
         self.title_screen = title_screen
         
@@ -87,8 +88,6 @@ class Character:
         # Heal character, not exceeding max HP
         self.hp = min(self.max_hp, self.hp + int(amount))
         
-    
-
 class Player(Character):
     def __init__(self, name):
         # Initialise player with default stats
