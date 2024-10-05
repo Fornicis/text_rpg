@@ -87,21 +87,7 @@ class Character:
         # Heal character, not exceeding max HP
         self.hp = min(self.max_hp, self.hp + int(amount))
         
-    def apply_poison(self, stacks, duration):
-        #Applies the appropriate stacks and duration of poison
-        self.poison_stack += stacks
-        self.poison_duration = max(self.poison_duration, duration)
-        
-    def update_poison(self):
-        #Updates the poison duration and inflicts poison damage
-        if self.poison_duration > 0:
-            poison_damage = self.poison_stack
-            self.take_damage(poison_damage)
-            print(f"{self.name} suffers {poison_damage} poison damage!")
-            self.poison_duration -= 1
-            if self.poison_duration == 0:
-                self.poison_stack = 0
-                print("The poison has worn off.")
+    
 
 class Player(Character):
     def __init__(self, name):
@@ -365,6 +351,22 @@ class Player(Character):
         }
         self.defence += self.defensive_stance["boost"]
         print(f"Your defence increased by {self.defensive_stance['boost']} ({attack_info['defence_boost_percentage']}%) for the next {self.defensive_stance['duration']} turns.")
+    
+    def apply_poison(self, stacks, duration):
+        #Applies the appropriate stacks and duration of poison
+        self.poison_stack += stacks
+        self.poison_duration = max(self.poison_duration, duration)
+        
+    def update_poison(self):
+        #Updates the poison duration and inflicts poison damage
+        if self.poison_duration > 0:
+            poison_damage = self.poison_stack
+            self.take_damage(poison_damage)
+            print(f"{self.name} suffers {poison_damage} poison damage!")
+            self.poison_duration -= 1
+            if self.poison_duration == 0:
+                self.poison_stack = 0
+                print("The poison has worn off.")
     
     def update_buffs(self):
         #Reduces the duration of any duration based buffs (Such as HoTs or sharpening stones)
