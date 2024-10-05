@@ -135,48 +135,6 @@ class Battle:
             self.player.take_damage(second_damage)
             print(f"{enemy.name} dealt an additional {second_damage} damage to you.")
     
-    def display_attack_animation(self, attacker_name, attack_name):
-        #Shows the enemy attacking in a dramatic way!
-        print(f"\n{attacker_name} is preparing to attack...")
-        time.sleep(1)  # Pause for dramatic effect
-        print(f">>> {attack_name.upper()} <<<")
-        time.sleep(0.5)
-
-    def run_away(self, enemy):
-        #Gives the player a 50% chance to run away from the enemy, if they fail, the enemy attacks, damage is set based on difference between enemy attack and player defence * 2
-        if random.random() < 0.5:
-            print("You successfully ran away!")
-            return True
-        else:
-            damage_taken = max(0, (enemy.attack - self.player.defence) * 2)
-            self.player.take_damage(damage_taken)
-            print(f"You failed to run away and took {damage_taken} damage.")
-            return False
-
-    def display_battle_status(self, enemy):
-        #Shows the defined info below whenever player attacks, helps to keep track of info
-        self.player.show_stats()
-        
-        if self.player.defensive_stance["duration"] > 0:
-            print(f"Defensive Stance: +{self.player.defensive_stance['boost']} defence for {self.player.defensive_stance['duration']} more turns.")
-            print("While in Defensive Stance you can only use Normal Attacks.")
-        
-        if self.player.player_stunned:
-            print("You are stunned and will lose your next turn.")
-            
-        if self.player.poison_stack > 0:
-            print(f"You are poisoned! ({self.player.poison_stack} stacks, {self.player.poison_duration} turns remaining!)")
-        
-        if self.player.weapon_coating:
-            print(f"Your weapon is coated with {self.player.weapon_coating['name']} ({self.player.weapon_coating['remaining_duration']} attacks remaining)")
-        
-        print(f"\n{enemy.name} HP: {enemy.hp}")
-        print(f"Attack: {enemy.attack}")
-        print(f"Defence: {enemy.defence}")
-        print(f"Level: {enemy.level}")
-        if enemy.poison_stack > 0:
-            print(f"{enemy.name} is poisoned! ({enemy.poison_stack} stacks, {enemy.poison_duration} turns remaining)")
-
     def battle(self, enemy):
         #Battle logic, displays player and enemy stats, updates the cooldowns of any items and buffs
         print(f"\nBattle start! {self.player.name} vs {enemy.name}")
@@ -230,18 +188,6 @@ class Battle:
                 self.handle_player_defeat()
                 return True
     
-    def handle_player_defeat(self):
-        if self.player.respawn_counter >= 1:
-            print("You have been defeated...")
-            print("As your conciousness fades away, you feel a divine presence gazing upon you...")
-            print("A benevolent deity takes pity on you and grants you another chance at life.")
-            self.player.lose_level()
-            self.player.lose_gold()
-            self.player.respawn()
-            self.game.current_location = "Village"
-        else:
-            self.player.game_over()
-    
     def loot_drop(self, enemy_tier):
         #Handles loot drops after defeating an enemy.
         if random.random() < 0.3:  # 30% chance of loot drop
@@ -261,6 +207,60 @@ class Battle:
             "extreme": ["masterwork, legendary"],
         }
         return tiers.get(enemy_tier, ["mythical"])
+    
+    def run_away(self, enemy):
+        #Gives the player a 50% chance to run away from the enemy, if they fail, the enemy attacks, damage is set based on difference between enemy attack and player defence * 2
+        if random.random() < 0.5:
+            print("You successfully ran away!")
+            return True
+        else:
+            damage_taken = max(0, (enemy.attack - self.player.defence) * 2)
+            self.player.take_damage(damage_taken)
+            print(f"You failed to run away and took {damage_taken} damage.")
+            return False
+    
+    def handle_player_defeat(self):
+        if self.player.respawn_counter >= 1:
+            print("You have been defeated...")
+            print("As your conciousness fades away, you feel a divine presence gazing upon you...")
+            print("A benevolent deity takes pity on you and grants you another chance at life.")
+            self.player.lose_level()
+            self.player.lose_gold()
+            self.player.respawn()
+            self.game.current_location = "Village"
+        else:
+            self.player.game_over()
+    
+    def display_attack_animation(self, attacker_name, attack_name):
+        #Shows the enemy attacking in a dramatic way!
+        print(f"\n{attacker_name} is preparing to attack...")
+        time.sleep(1)  # Pause for dramatic effect
+        print(f">>> {attack_name.upper()} <<<")
+        time.sleep(0.5)
+
+    def display_battle_status(self, enemy):
+        #Shows the defined info below whenever player attacks, helps to keep track of info
+        self.player.show_stats()
+        
+        if self.player.defensive_stance["duration"] > 0:
+            print(f"Defensive Stance: +{self.player.defensive_stance['boost']} defence for {self.player.defensive_stance['duration']} more turns.")
+            print("While in Defensive Stance you can only use Normal Attacks.")
+        
+        if self.player.player_stunned:
+            print("You are stunned and will lose your next turn.")
+            
+        if self.player.poison_stack > 0:
+            print(f"You are poisoned! ({self.player.poison_stack} stacks, {self.player.poison_duration} turns remaining!)")
+        
+        if self.player.weapon_coating:
+            print(f"Your weapon is coated with {self.player.weapon_coating['name']} ({self.player.weapon_coating['remaining_duration']} attacks remaining)")
+        
+        print(f"\n{enemy.name} HP: {enemy.hp}")
+        print(f"Attack: {enemy.attack}")
+        print(f"Defence: {enemy.defence}")
+        print(f"Level: {enemy.level}")
+        if enemy.poison_stack > 0:
+            print(f"{enemy.name} is poisoned! ({enemy.poison_stack} stacks, {enemy.poison_duration} turns remaining)")
 
     def use_item_menu(self, enemy):
         #Handles item usage inside battle, checks if player has the item, if so and not on cooldown, uses item by calling use_combat_item method

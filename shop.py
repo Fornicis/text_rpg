@@ -39,6 +39,13 @@ class BaseShop:
                 print(f"{i}. {item_name}: {info['quantity']} available (Price: {info['item'].value} gold)")
                 self.display_item_stats(item, player)
                 
+    def display_sellable_items(self, player):
+        #Shows a list of items the player can sell, offers half item value
+        print("\nItems you can sell:")
+        sellable_items = self.get_sellable_items(player)
+        for i, item in enumerate(sellable_items, 1):
+            print(f"{i}. {item.name} (Sell value: {item.value // 2} gold)")
+    
     def display_item_stats(self, item, player):
         print(f"   Type: {item.type.capitalize()}")
         print(f"   Tier: {item.tier.capitalize()}")
@@ -85,6 +92,11 @@ class BaseShop:
                 print(f"   Effect: Heal over time ({item.tick_effect} HP per turn) for {item.duration} turns. Total Healing: {item.tick_effect * item.duration} HP")
             if item.effect_type == "damage":
                 print(f"   Effect: Damage ({item.effect})")
+        
+        elif item.type == "weapon coating":
+            if isinstance(item.effect, tuple):
+                stack, duration = item.effect
+                print(f"   Poison Stacks: {stack} for {duration} turns")
             
         if item.cooldown:
             print(f"   Cooldown: {item.cooldown} turns")
@@ -232,13 +244,6 @@ class BaseShop:
             
             input("\nPress Enter to continue...")
 
-    def display_sellable_items(self, player):
-        #Shows a list of items the player can sell, offers half item value
-        print("\nItems you can sell:")
-        sellable_items = self.get_sellable_items(player)
-        for i, item in enumerate(sellable_items, 1):
-            print(f"{i}. {item.name} (Sell value: {item.value // 2} gold)")
-
     def get_sellable_items(self, player):
         #Shows items the player can sell
         return [item for item in player.inventory if self.can_sell_item(item)]
@@ -278,11 +283,11 @@ class Armourer(BaseShop):
 class Alchemist(BaseShop):
     #Child class of Shop called Alchemist, sells potions
     def __init__(self, all_items):
-        super().__init__({k: v for k, v in all_items.items() if v.type == "consumable" and "Sharpening Stone" not in v.name})
+        super().__init__({k: v for k, v in all_items.items() if v.type in ["consumable", "weapon coating"] and "Sharpening Stone" not in v.name})
 
     def can_sell_item(self, item):
         #Allows player to sell consumables
-        return item.type == "consumable" and "Sharpening Stone" not in item.name
+        return item.type in ["consumable", "weapon coating"] and "Sharpening Stone" not in item.name
 
 class Inn(BaseShop):
     #Shop class for inn selling food and drink and offering improved rest functions

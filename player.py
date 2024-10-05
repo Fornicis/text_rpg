@@ -88,10 +88,12 @@ class Character:
         self.hp = min(self.max_hp, self.hp + int(amount))
         
     def apply_poison(self, stacks, duration):
+        #Applies the appropriate stacks and duration of poison
         self.poison_stack += stacks
         self.poison_duration = max(self.poison_duration, duration)
         
     def update_poison(self):
+        #Updates the poison duration and inflicts poison damage
         if self.poison_duration > 0:
             poison_damage = self.poison_stack
             self.take_damage(poison_damage)
@@ -344,6 +346,26 @@ class Player(Character):
             else:
                 self.active_buffs[stat] = {'value': value, 'duration': duration} if duration > 0 else value
 
+    def apply_hot(self, item):
+        #Applies any HoT items and displays the length of the effect
+        if item.effect_type == "hot":
+            self.active_hots[item.name] = {
+                "duration": item.duration,
+                "tick_effect": item.tick_effect
+            }
+            return True, f"Applied {item.name}. You will heal for {item.tick_effect} HP every turn for {item.duration} turns."
+        return False, "This item does not have a heal over time effect."
+    
+    def apply_defensive_stance(self):
+        attack_info = self.attack_types["defensive"]
+        defence_boost = int(self.defence * attack_info["defence_boost_percentage"] / 100)
+        self.defensive_stance = {
+            "boost": defence_boost,
+            "duration": attack_info["duration"]
+        }
+        self.defence += self.defensive_stance["boost"]
+        print(f"Your defence increased by {self.defensive_stance['boost']} ({attack_info['defence_boost_percentage']}%) for the next {self.defensive_stance['duration']} turns.")
+    
     def update_buffs(self):
         #Reduces the duration of any duration based buffs (Such as HoTs or sharpening stones)
         for stat, buff_info in list(self.active_buffs.items()):
@@ -366,6 +388,44 @@ class Player(Character):
                 print(f"Your weapon's sharpening effect has worn off")
                 self.weapon_buff = {'value': 0, 'duration': 0}
                     
+    def update_cooldowns(self):
+        # Decrease cooldowns each turn
+        for item, cooldown in list(self.cooldowns.items()):
+            if cooldown > 0:
+                self.cooldowns[item] -= 1
+            else:
+                del self.cooldowns[item]
+    
+    def update_hots(self):
+        #Updates the duration of any hots aswell as displaying to the player how many turns are left and informing them they have worn off once duration is over
+        for hot_name, hot_info in list(self.active_hots.items()):
+            heal_amount = min(hot_info["tick_effect"], self.max_hp - self.hp)
+            self.heal(heal_amount)
+            hot_info["duration"] -= 1
+            
+            if hot_info["duration"] > 0:
+                print(f"{hot_name} healed you for {heal_amount} HP. ({hot_info['duration']} turns remaining)")
+            else:
+                print(f"{hot_name} healed you for {heal_amount} HP and has worn off.")
+                del self.active_hots[hot_name]
+    
+    def update_defensive_stance(self):
+        if self.defensive_stance["duration"] > 0:
+            self.defensive_stance["duration"] -= 1
+            if self.defensive_stance["duration"] == 0:
+                self.defence -= self.defensive_stance["boost"]
+                print(f"Your defence boost from Defensive Stance has worn off.")
+                self.defensive_stance = {"boost": 0, "duration": 0}
+            else:
+                print(f"\nDefensive Stance remains active for {self.defensive_stance['duration']} more turns.\n")
+    
+    def update_weapon_coating(self):
+        if self.weapon_coating:
+            self.weapon_coating['remaining_duration'] -= 1
+            if self.weapon_coating['remaining_duration'] <= 0:
+                print(f"The {self.weapon_coating['name']} on your weapon has worn off.")
+                self.weapon_coating = None
+    
     def remove_combat_buffs(self):
         #Removes any combat related buffs at the end of the battle
         for stat, buff_info in self.combat_buffs.items():
@@ -379,17 +439,13 @@ class Player(Character):
             print(f"Your combat {stat} buff has worn off.")
         self.combat_buffs.clear()
         
-    def add_visited_location(self, location):
-        #Adds the current location to the visited_locations to help work with teleport scrolls
-        self.visited_locations.add(location)
-
     def use_item(self, item, game=None):
         #Allows the player to use an item based on current state, be that cooldown, combat_only items, teleport scrolls etc.
         if item.name in self.cooldowns and self.cooldowns[item.name] > 0:
             print(f"You can't use {item.name} yet. Cooldown: {self.cooldowns[item.name]} turns.")
             return False, f"Couldn't use {item.name} due to cooldown!"
 
-        if item.type in ["consumable", "food", "drink", "weapon_coating"]:
+        if item.type in ["consumable", "food", "drink", "weapon coating"]:
             message = ""
             if item.effect_type == "healing":
                 heal_amount = min(item.effect, self.max_hp - self.hp)
@@ -430,7 +486,7 @@ class Player(Character):
                     return self.use_teleport_scroll(game)
                 else:
                     return False, "Cannot use teleport scroll outside of game context!"
-            elif item.effect_type == "poison" and item.type == "weapon_coating":
+            elif item.effect_type == "poison" and item.type == "weapon coating":
                 if self.equipped['weapon']:
                     if self.equipped['weapon'].weapon_type == "light":
                         self.weapon_coating = {
@@ -451,18 +507,10 @@ class Player(Character):
             self.cooldowns[item.name] = item.cooldown
             return True, message
             
-            
         else:
             message = f"You can't use {item.name}."
             return False, message
         
-    def update_weapon_coating(self):
-        if self.weapon_coating:
-            self.weapon_coating['remaining_duration'] -= 1
-            if self.weapon_coating['remaining_duration'] <= 0:
-                print(f"The {self.weapon_coating['name']} on your weapon has worn off.")
-                self.weapon_coating = None
-    
     def use_teleport_scroll(self, game):
         #Allows the use of the teleport scroll to move to any previously visited location
         print("\nVisited locations:")
@@ -486,13 +534,18 @@ class Player(Character):
             except ValueError:
                 print("Invalid input. Please enter a number or 'c' to cancel.")
 
-    def update_cooldowns(self):
-        # Decrease cooldowns each turn
-        for item, cooldown in list(self.cooldowns.items()):
-            if cooldown > 0:
-                self.cooldowns[item] -= 1
-            else:
-                del self.cooldowns[item]
+    def show_usable_items(self):
+        #Shows a list of usable items if available, else prints that none are available
+        usable_items = [item for item in self.inventory if item.type in ["consumable", "food", "drink", "weapon coating"]]
+        if not usable_items:
+            print("You have no usable items.")
+            return None
+        
+        print("\nUsable Items:")
+        for i, item in enumerate(usable_items, 1):
+            effect_description = self.get_effect_description(item)
+            print(f"{i}. {item.name}: {effect_description}")
+        return usable_items
 
     def show_cooldowns(self):
         # Display items currently on cooldown
@@ -554,7 +607,7 @@ class Player(Character):
             if isinstance(item.effect, tuple):
                 stat, value = item.effect
                 return f"Increases weapon {stat} by {value} for {item.duration} turns"
-        elif item.effect_type == "poison" and item.type == "weapon_coating":
+        elif item.effect_type == "poison" and item.type == "weapon coating":
             return f"Applies {item.effect[0]} poison stacks for {item.effect[1]} turns on your next {item.duration} attacks (Light weapons only)"
         elif item.effect_type == "stamina":
             return f"Restores {item.stamina_restore} stamina"
@@ -562,42 +615,6 @@ class Player(Character):
             return f"Teleports player to previously visited location of choice."
         else:
             return "Unknown effect"
-        
-    def show_usable_items(self):
-        #Shows a list of usable items if available, else prints that none are available
-        usable_items = [item for item in self.inventory if item.type in ["consumable", "food", "drink", "weapon_coating"]]
-        if not usable_items:
-            print("You have no usable items.")
-            return None
-        
-        print("\nUsable Items:")
-        for i, item in enumerate(usable_items, 1):
-            effect_description = self.get_effect_description(item)
-            print(f"{i}. {item.name}: {effect_description}")
-        return usable_items
-    
-    def apply_hot(self, item):
-        #Applies any HoT items and displays the length of the effect
-        if item.effect_type == "hot":
-            self.active_hots[item.name] = {
-                "duration": item.duration,
-                "tick_effect": item.tick_effect
-            }
-            return True, f"Applied {item.name}. You will heal for {item.tick_effect} HP every turn for {item.duration} turns."
-        return False, "This item does not have a heal over time effect."
-
-    def update_hots(self):
-        #Updates the duration of any hots aswell as displaying to the player how many turns are left and informing them they have worn off once duration is over
-        for hot_name, hot_info in list(self.active_hots.items()):
-            heal_amount = min(hot_info["tick_effect"], self.max_hp - self.hp)
-            self.heal(heal_amount)
-            hot_info["duration"] -= 1
-            
-            if hot_info["duration"] > 0:
-                print(f"{hot_name} healed you for {heal_amount} HP. ({hot_info['duration']} turns remaining)")
-            else:
-                print(f"{hot_name} healed you for {heal_amount} HP and has worn off.")
-                del self.active_hots[hot_name]
                 
     def use_stamina(self, amount):
         #Reduces the stamina by the given amount
@@ -622,31 +639,11 @@ class Player(Character):
         stamina_cost = self.get_weapon_stamina_cost(weapon_type)
         return self.stamina >= stamina_cost
     
-    def apply_defensive_stance(self):
-        attack_info = self.attack_types["defensive"]
-        defence_boost = int(self.defence * attack_info["defence_boost_percentage"] / 100)
-        self.defensive_stance = {
-            "boost": defence_boost,
-            "duration": attack_info["duration"]
-        }
-        self.defence += self.defensive_stance["boost"]
-        print(f"Your defence increased by {self.defensive_stance['boost']} ({attack_info['defence_boost_percentage']}%) for the next {self.defensive_stance['duration']} turns.")
-
-    def update_defensive_stance(self):
-        if self.defensive_stance["duration"] > 0:
-            self.defensive_stance["duration"] -= 1
-            if self.defensive_stance["duration"] == 0:
-                self.defence -= self.defensive_stance["boost"]
-                print(f"Your defence boost from Defensive Stance has worn off.")
-                self.defensive_stance = {"boost": 0, "duration": 0}
-            else:
-                print(f"\nDefensive Stance remains active for {self.defensive_stance['duration']} more turns.\n")
-
     def get_available_attack_types(self):
         if self.defensive_stance["duration"] > 0:
             return {"normal": self.attack_types["normal"]}
         return self.attack_types
-    
+
     def display_attack_options(self):
         print("\nChoose your attack type:")
         available_attacks = self.get_available_attack_types()
@@ -658,14 +655,7 @@ class Player(Character):
             
         if self.defensive_stance["duration"] > 0:
             print("\n(You can only use Normal Attack while in Defensive Stance)")
-    
-    def record_kill(self, enemy_name):
-        #Records a kill for a given enemy type
-        if enemy_name in self.kill_tracker:
-            self.kill_tracker[enemy_name] += 1
-        else:
-            self.kill_tracker[enemy_name] = 1
-            
+
     def display_kill_stats(self):
         #Displays all the enemies the player has killed
         print("\n=== Enemy Kill Statistics ===")
@@ -675,4 +665,13 @@ class Player(Character):
             for enemy, count in sorted(self.kill_tracker.items(), key = lambda x: x[1], reverse=True):
                 print(f"{enemy}: {count}")
     
-    
+    def record_kill(self, enemy_name):
+        #Records a kill for a given enemy type
+        if enemy_name in self.kill_tracker:
+            self.kill_tracker[enemy_name] += 1
+        else:
+            self.kill_tracker[enemy_name] = 1
+            
+    def add_visited_location(self, location):
+        #Adds the current location to the visited_locations to help work with teleport scrolls
+        self.visited_locations.add(location)

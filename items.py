@@ -355,10 +355,10 @@ def initialise_items():
         
         #Weapon Coatings
         ##Poison Coatings
-        "Weak Poison Coating": Item("Weak Poison Coating", "weapon_coating", 50, "common", effect_type="poison", effect=(2, 3), cooldown=5, duration=5),
-        "Poison Coating": Item("Poison Coating", "weapon_coating", 100, "uncommon", effect_type="poison", effect=(3, 4), cooldown=6, duration=5),
-        "Potent Poison Coating": Item("Potent Poison Coating", "weapon_coating", 200, "rare", effect_type="poison", effect=(4, 5), cooldown=7, duration=6),
-        "Deadly Poison Coating": Item("Deadly Poison Coating", "weapon_coating", 400, "epic", effect_type="poison", effect=(5, 6), cooldown=8, duration=7),
+        "Weak Poison Coating": Item("Weak Poison Coating", "weapon coating", 50, "common", effect_type="poison", effect=(2, 3), cooldown=5, duration=5),
+        "Poison Coating": Item("Poison Coating", "weapon coating", 100, "uncommon", effect_type="poison", effect=(3, 4), cooldown=6, duration=5),
+        "Potent Poison Coating": Item("Potent Poison Coating", "weapon coating", 200, "rare", effect_type="poison", effect=(4, 5), cooldown=7, duration=6),
+        "Deadly Poison Coating": Item("Deadly Poison Coating", "weapon coating", 400, "epic", effect_type="poison", effect=(5, 6), cooldown=8, duration=7),
         
         # Food items
         "Bread": Item("Bread", "food", 25, "common", effect_type="stamina", stamina_restore=10),
