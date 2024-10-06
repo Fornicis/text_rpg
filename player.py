@@ -1,6 +1,7 @@
 import random
 from items import Item, initialise_items
 from display import pause, title_screen
+from status_effects import *
 
 class Character:
     def __init__(self, name, hp, attack, defence):
@@ -10,9 +11,11 @@ class Character:
         self.max_hp = hp
         self.attack = attack
         self.defence = defence
+        self.status_effects = []
         self.poison_stack = 0
         self.poison_duration = 0
         self.frozen = False
+        self.stunned = False
         self.pause = pause
         self.title_screen = title_screen
         
@@ -88,6 +91,32 @@ class Character:
         # Heal character, not exceeding max HP
         self.hp = min(self.max_hp, self.hp + int(amount))
         
+    def apply_status_effect(self, effect):
+        existing_effect = next((e for e in self.status_effects if e.name == effect.name), None)
+        if existing_effect:
+            existing_effect.duration = max(existing_effect.duration, effect.duration)
+            existing_effect.strength = max(existing_effect.strength, effect.strength)
+        else:
+            self.status_effects.append(effect)
+        if effect.duration > 1:
+            print(f"{self.name} is affected by {effect.name} for {effect.duration} turns!")
+        else:
+            print(f"{self.name} is affected by {effect.name}!")
+
+    def remove_status_effect(self, effect_name):
+        self.status_effects = [e for e in self.status_effects if e.name != effect_name]
+
+    def update_status_effects(self):
+        for effect in self.status_effects[:]:
+            effect.apply(self)
+            effect.duration -= 1
+            if effect.duration <= 0:
+                self.status_effects.remove(effect)
+                print(f"{effect.name} has worn off from {self.name}.")
+
+    def get_status_effects_display(self):
+        return ", ".join(str(effect) for effect in self.status_effects)
+        
 class Player(Character):
     def __init__(self, name):
         # Initialise player with default stats
@@ -125,7 +154,6 @@ class Player(Character):
         self.active_hots = {}
         self.visited_locations = set(["Village"])
         self.kill_tracker = {}
-        self.player_stunned = False
         self.weapon_stamina_cost = {"light": 2, "medium": 4, "heavy": 6}
         self.attack_types = {
             "normal": {"name": "Normal Attack", "stamina_modifier": 0, "damage_modifier": 1},

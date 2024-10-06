@@ -2,6 +2,7 @@ import random
 from player import Player
 from enemies import Enemy, ENEMY_ATTACK_TYPES
 import time
+from status_effects import BURN, POISON, FREEZE, STUN
 
 class Battle:
     def __init__(self, player, items, game):
@@ -26,9 +27,9 @@ class Battle:
 
     def player_attack(self, enemy):
         #Handles the player attacking, if enemy dies, player gains exp and gold with a chance for loot, else the enemy attacks back
-        if self.player.player_stunned:
+        if self.player.stunned:
             print("You're stunned and lose your turn.")
-            self.player.player_stunned = False
+            self.player.stunned = False
             return False
         if self.player.frozen:
             if random.random() < 0.5:
@@ -91,7 +92,11 @@ class Battle:
             self.player.apply_defensive_stance()
             
         if self.player.weapon_coating:
-            enemy.apply_poison(self.player.weapon_coating['stacks'], self.player.weapon_coating['duration'])
+            poison_effect = POISON(
+                duration=self.player.weapon_coating['duration'],
+                strength=self.player.weapon_coating['stacks']
+            )
+            enemy.apply_status_effect(poison_effect)
             print(f"{enemy.name} is poisoned by your coated weapon!")
             self.player.update_weapon_coating()
         
@@ -131,9 +136,10 @@ class Battle:
             print(f"Critical hit by {enemy.name}!")
         
         if effect:
-            effect_applied = enemy.apply_effect(effect, self.player, enemy_damage)
+            """effect_applied = enemy.apply_effect(effect, self.player, enemy_damage)
             if effect == "stun" and not effect_applied:
-                print(f"{self.player.name} resisted the stun effect!")
+                print(f"{self.player.name} resisted the stun effect!")"""
+            self.apply_attack_effect(effect, self.player, enemy)
 
         if attack_type == "quick":
             self.display_attack_animation(enemy.name, "Quick Follow-up")
@@ -142,6 +148,18 @@ class Battle:
             second_damage = max(0, second_damage - self.player.defence)
             self.player.take_damage(second_damage)
             print(f"{enemy.name} dealt an additional {second_damage} damage to you.")
+    
+    def apply_attack_effect(self, effect, target, attacker):
+        effect_strength = max(1, attacker.level // 5)
+        if effect == "burn":
+            target.apply_status_effect(BURN(1, effect_strength))
+        elif effect == "poison":
+            effect_strength = max(1, attacker.level // 2)
+            target.apply_status_effect(POISON(3, effect_strength))
+        elif effect == "freeze":
+            target.apply_status_effect(FREEZE(2, effect_strength))
+        elif effect == "stun":
+            target.apply_status_effect(STUN(1, effect_strength))
     
     def battle(self, enemy):
         #Battle logic, displays player and enemy stats, updates the cooldowns of any items and buffs
@@ -153,13 +171,15 @@ class Battle:
             self.player.update_hots()
             self.player.update_buffs()
             self.player.update_defensive_stance()
-            self.player.update_poison()
-            enemy.update_poison()
+            """self.player.update_poison()
+            enemy.update_poison()"""
+            self.player.update_status_effects()
+            enemy.update_status_effects()
             self.display_battle_status(enemy)
             
-            if self.player.player_stunned:
+            if self.player.stunned:
                 print("You're stunned and lose your turn.")
-                self.player.player_stunned = False
+                self.player.stunned = False
                 self.enemy_attack(enemy)
                 continue
             
@@ -254,14 +274,17 @@ class Battle:
             print(f"Defensive Stance: +{self.player.defensive_stance['boost']} defence for {self.player.defensive_stance['duration']} more turns.")
             print("While in Defensive Stance you can only use Normal Attacks.")
         
-        if self.player.player_stunned:
-            print("You are stunned and will lose your next turn.")
-            
-        if self.player.frozen:
-            print("You are frozen and might lose your next turn!")
-            
-        if self.player.poison_stack > 0:
-            print(f"You are poisoned! ({self.player.poison_stack} stacks, {self.player.poison_duration} turns remaining!)")
+        if self.player.status_effects:
+            print("\nActive Status Effects:")
+            for effect in self.player.status_effects:
+                if effect.name == "Poison":
+                    print(f"You are poisoned! ({self.player.poison_stack} damage per turn, {effect.duration} turns remaining!)")
+                elif effect.name == "Stun":
+                    print("You are stunned and will lose your next turn.")
+                elif effect.name == "Freeze":
+                    print("You are frozen and might lose your next turn!")
+                else:
+                    print(f"{effect.name}: {effect.duration} turns remaining")
         
         if self.player.weapon_coating:
             print(f"Your weapon is coated with {self.player.weapon_coating['name']} ({self.player.weapon_coating['remaining_duration']} attacks remaining)")
@@ -270,8 +293,13 @@ class Battle:
         print(f"Attack: {enemy.attack}")
         print(f"Defence: {enemy.defence}")
         print(f"Level: {enemy.level}")
-        if enemy.poison_stack > 0:
-            print(f"{enemy.name} is poisoned! ({enemy.poison_stack} stacks, {enemy.poison_duration} turns remaining)")
+        if enemy.status_effects:
+            print(f"\n{enemy.name} Status Effects:")
+            for effect in enemy.status_effects:
+                if effect.name == "Poison":
+                    print(f"{enemy.name} is poisoned! ({enemy.poison_stack} damage per turn, {effect.get_remaining_duration()} turns remaining)")
+                else:
+                    print(f"{effect.name}: {effect.get_remaining_duration()} turns remaining")
 
     def use_item_menu(self, enemy):
         #Handles item usage inside battle, checks if player has the item, if so and not on cooldown, uses item by calling use_combat_item method

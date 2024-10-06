@@ -9,14 +9,14 @@ class Enemy(Character):
         self.tier = tier
         self.level = level
         self.attack_types = attack_types if attack_types is not None else ["normal"]
-        self.poison_stack = 0
-        self.poison_duration = 0
+        """self.poison_stack = 0
+        self.poison_duration = 0"""
         
     def choose_attack(self):
         chosen_attack = random.choice(self.attack_types)
         return chosen_attack
         
-    def apply_effect(self, effect, player, damage):
+    """def apply_effect(self, effect, player, damage):
         effect_applied = False
         effect_descriptions = {
             "lifesteal": f"{self.name} healed for {int(damage * 0.5)} HP!",
@@ -84,9 +84,9 @@ class Enemy(Character):
                 player.frozen = True
                 return True
             return False
-        return False
+        return False"""
             
-    def apply_poison(self, stacks, duration):
+    """def apply_poison(self, stacks, duration):
         self.poison_stack += stacks
         self.poison_duration = max(self.poison_duration, duration)
         
@@ -98,7 +98,7 @@ class Enemy(Character):
             self.poison_duration -= 1
             if self.poison_duration == 0:
                 self.poison_stack = 0
-                print("The poison on {self.name} has worn off.")
+                print("The poison on {self.name} has worn off.")"""
     
 def initialise_enemies():
     return {
@@ -239,5 +239,6 @@ ENEMY_ATTACK_TYPES = {
     "draining": {"name": "Draining Touch", "damage_modifier": 0.9, "effect": "stamina_drain"},
     "stunning": {"name": "Stunning Blow", "damage_modifier": 0.7, "effect": "stun"},
     "poison": {"name": "Poison Strike", "damage_modifier": 0.9, "effect": "poison"},
-    "freeze": {"name": "Frozen Strike", "damage_modifier": 0.9, "effect": "freeze"}
+    "freeze": {"name": "Frozen Strike", "damage_modifier": 0.9, "effect": "freeze"},
+    "burn": {"name": "Burning Strike", "damage_modifier": 0.9, "effect": "burn"}
 }
