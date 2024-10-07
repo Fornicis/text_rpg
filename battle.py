@@ -2,7 +2,7 @@ import random
 from player import Player
 from enemies import Enemy, ENEMY_ATTACK_TYPES
 import time
-from status_effects import BURN, POISON, FREEZE, STUN
+from status_effects import *
 
 class Battle:
     def __init__(self, player, items, game):
@@ -136,10 +136,7 @@ class Battle:
             print(f"Critical hit by {enemy.name}!")
         
         if effect:
-            """effect_applied = enemy.apply_effect(effect, self.player, enemy_damage)
-            if effect == "stun" and not effect_applied:
-                print(f"{self.player.name} resisted the stun effect!")"""
-            self.apply_attack_effect(effect, self.player, enemy)
+            self.apply_attack_effect(effect, self.player, enemy, enemy_damage)
 
         if attack_type == "quick":
             self.display_attack_animation(enemy.name, "Quick Follow-up")
@@ -148,8 +145,11 @@ class Battle:
             second_damage = max(0, second_damage - self.player.defence)
             self.player.take_damage(second_damage)
             print(f"{enemy.name} dealt an additional {second_damage} damage to you.")
+            
+        if attack_type == "reckless":
+            self_damage_effect(enemy, enemy_damage)
     
-    def apply_attack_effect(self, effect, target, attacker):
+    def apply_attack_effect(self, effect, target, attacker, damage):
         effect_strength = max(1, attacker.level // 5)
         if effect == "burn":
             target.apply_status_effect(BURN(1, effect_strength))
@@ -160,6 +160,8 @@ class Battle:
             target.apply_status_effect(FREEZE(2, effect_strength))
         elif effect == "stun":
             target.apply_status_effect(STUN(1, effect_strength))
+        elif effect == "stamina_drain":
+            target.apply_status_effect(STAMINA_DRAIN(damage))
     
     def battle(self, enemy):
         #Battle logic, displays player and enemy stats, updates the cooldowns of any items and buffs

@@ -90,6 +90,10 @@ class Character:
     def heal(self, amount):
         # Heal character, not exceeding max HP
         self.hp = min(self.max_hp, self.hp + int(amount))
+    
+    def use_stamina(self, amount):
+        # Default implementation that does nothing
+        pass
         
     def apply_status_effect(self, effect):
         existing_effect = next((e for e in self.status_effects if e.name == effect.name), None)
@@ -97,6 +101,7 @@ class Character:
             existing_effect.duration = max(existing_effect.duration, effect.duration)
             existing_effect.strength = max(existing_effect.strength, effect.strength)
         else:
+            effect.initial_duration = effect.duration
             self.status_effects.append(effect)
         if effect.duration > 1:
             print(f"{self.name} is affected by {effect.name} for {effect.duration} turns!")
@@ -112,7 +117,9 @@ class Character:
             effect.duration -= 1
             if effect.duration <= 0:
                 self.status_effects.remove(effect)
-                print(f"{effect.name} has worn off from {self.name}.")
+                # Only print the "worn off" message for effects that initially lasted more than 1 turn
+                if hasattr(effect, 'initial_duration') and effect.initial_duration > 1:
+                    print(f"{effect.name} has worn off from {self.name}.")
 
     def get_status_effects_display(self):
         return ", ".join(str(effect) for effect in self.status_effects)

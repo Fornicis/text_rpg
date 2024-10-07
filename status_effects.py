@@ -4,6 +4,7 @@ class StatusEffect:
     def __init__(self, name, duration, effect_func, strength = 1, is_debuff = False):
         self.name = name
         self.duration = duration
+        self.initial_duration = duration
         self.effect_func = effect_func
         self.strength = strength
         self.is_debuff = is_debuff
@@ -46,9 +47,25 @@ def stun_effect(character, strength):
         print(f"{character.name} is stunned and loses their next turn!")
     else:
         print(f"{character.name} resists the stun effect!")
+        
+def self_damage_effect(character, strength):
+    damage = int(strength * 0.2) # Deals 20% of original damage to user
+    character.take_damage(damage)
+    print(f"{character.name} takes {damage} self-damage from their reckless attack!")
+    
+def stamina_drain_effect(character, strength):
+    if hasattr(character, 'stamina'):
+        max_drain = int(strength * 0.2)  # 20% of the damage dealt
+        stamina_loss = max(10, min(max_drain, character.stamina))  # Minimum 10, maximum 20% of damage, capped at current stamina
+        character.use_stamina(stamina_loss)
+        print(f"{character.name} lost {stamina_loss} stamina from the draining attack!")
+    else:
+        print(f"The draining attack has no effect on {character.name}!")
 
 # Define StatusEffect instances for common effects
 BURN = lambda duration, strength=1: StatusEffect("Burn", duration, burn_effect, strength, is_debuff=True)
 POISON = lambda duration, strength=1: StatusEffect("Poison", duration, poison_effect, strength, is_debuff=True)
 FREEZE = lambda duration, strength=1: StatusEffect("Freeze", duration, freeze_effect, strength, is_debuff=True)
 STUN = lambda duration, strength=1: StatusEffect("Stun", duration, stun_effect, strength, is_debuff=True)
+SELF_DAMAGE = lambda strength: StatusEffect("Self Damage", 1, self_damage_effect, strength, is_debuff=True)
+STAMINA_DRAIN = lambda strength: StatusEffect("Stamina Drain", 1, stamina_drain_effect, strength, is_debuff=True)
