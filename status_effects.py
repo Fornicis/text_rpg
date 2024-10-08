@@ -9,8 +9,8 @@ class StatusEffect:
         self.strength = strength
         self.is_debuff = is_debuff
         
-    def apply(self, character):
-        self.effect_func(character, self.strength)
+    def apply(self, character, damage_dealt = 0):
+        return self.effect_func(character, self.strength, damage_dealt)
     
     def update(self, character):
         self.apply(character)
@@ -29,7 +29,7 @@ def burn_effect(character, strength):
     print(f"{character.name} takes {damage} burn damage!")
 
 def poison_effect(character, strength):
-    character.poison_stack = max(character.poison_stack, strength)  # Use the highest poison stack
+    character.poison_stack += max(character.poison_stack, strength)  # Use the highest poison stack
     damage = character.poison_stack
     character.take_damage(damage)
     print(f"{character.name} takes {damage} poison damage!")
@@ -61,6 +61,15 @@ def stamina_drain_effect(character, strength):
         print(f"{character.name} lost {stamina_loss} stamina from the draining attack!")
     else:
         print(f"The draining attack has no effect on {character.name}!")
+        
+def damage_reflect(character, strength, damage_dealt):
+    if damage_dealt > 0:
+        reflected_damage = int(damage_dealt * 0.5 * strength)
+        print(f"{character.name} reflects {reflected_damage} damage!")
+        return reflected_damage
+    else:
+        print(f"{character.name} has a reflective barrier active!")
+        return 0
 
 # Define StatusEffect instances for common effects
 BURN = lambda duration, strength=1: StatusEffect("Burn", duration, burn_effect, strength, is_debuff=True)
@@ -69,3 +78,4 @@ FREEZE = lambda duration, strength=1: StatusEffect("Freeze", duration, freeze_ef
 STUN = lambda duration, strength=1: StatusEffect("Stun", duration, stun_effect, strength, is_debuff=True)
 SELF_DAMAGE = lambda strength: StatusEffect("Self Damage", 1, self_damage_effect, strength, is_debuff=True)
 STAMINA_DRAIN = lambda strength: StatusEffect("Stamina Drain", 1, stamina_drain_effect, strength, is_debuff=True)
+DAMAGE_REFLECT = lambda duration, strength=1: StatusEffect("Damage Reflect", duration, damage_reflect, strength, is_debuff=False)

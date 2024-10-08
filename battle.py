@@ -74,6 +74,16 @@ class Battle:
                 
             player_damage, is_critical = self.calculate_damage(self.player.attack, self.player.name, attack_type)
             player_damage = max(0, player_damage - enemy.defence)
+            
+            reflected_damage = 0
+            for effect in enemy.status_effects:
+                if effect.name == "Damage Reflect":
+                    reflected_damage = effect.apply(enemy, player_damage)
+            
+            if reflected_damage > 0:
+                self.player.take_damage(reflected_damage)
+                print(f"{self.player.name} takes {reflected_damage} reflected damage!")
+                    
             enemy.take_damage(player_damage)
             total_damage += player_damage
             
@@ -128,6 +138,16 @@ class Battle:
         effect = attack_info.get("effect")
         
         self.display_attack_animation(enemy.name, attack_name)
+        
+        reflected_damage = 0
+        for effect in self.player.status_effects:
+            if effect.name == "Damage Reflect":
+                reflected_damage = effect.apply(self.player, enemy_damage)
+        
+        if reflected_damage > 0:
+            enemy.take_damage(reflected_damage)
+            print(f"{enemy.name} takes {reflected_damage} reflected damage!")
+        
         self.player.take_damage(enemy_damage)
         
         print(f"{enemy.name} used {attack_name} and dealt {enemy_damage} damage to you.")
@@ -143,6 +163,16 @@ class Battle:
             print(f"\n{enemy.name} attacks again with Quick Attack!")
             second_damage, _ = self.calculate_damage(enemy.attack, enemy, "quick")
             second_damage = max(0, second_damage - self.player.defence)
+            
+            reflected_damage = 0
+            for effect in self.player.status_effects:
+                if effect.name == "Damage Reflect":
+                    reflected_damage = effect.apply(self.player, second_damage)
+            
+            if reflected_damage > 0:
+                enemy.take_damage(reflected_damage)
+                print(f"{enemy.name} takes {reflected_damage} reflected damage!")
+            
             self.player.take_damage(second_damage)
             print(f"{enemy.name} dealt an additional {second_damage} damage to you.")
             
@@ -152,7 +182,7 @@ class Battle:
     def apply_attack_effect(self, effect, target, attacker, damage):
         effect_strength = max(1, attacker.level // 5)
         if effect == "burn":
-            target.apply_status_effect(BURN(1, effect_strength))
+            target.apply_status_effect(BURN(3, effect_strength))
         elif effect == "poison":
             effect_strength = max(1, attacker.level // 2)
             target.apply_status_effect(POISON(3, effect_strength))
@@ -162,6 +192,8 @@ class Battle:
             target.apply_status_effect(STUN(1, effect_strength))
         elif effect == "stamina_drain":
             target.apply_status_effect(STAMINA_DRAIN(damage))
+        elif effect == "damage_reflect":
+            attacker.apply_status_effect(DAMAGE_REFLECT(3, effect_strength))
     
     def battle(self, enemy):
         #Battle logic, displays player and enemy stats, updates the cooldowns of any items and buffs

@@ -140,11 +140,11 @@ def initialise_enemies():
             "Animated Statue": Enemy("Animated Statue", 85, 43, 32, 50, random.randrange(45, 56), "medium", 5, ["normal", "power", "stunning"]),
             "Temple Guardian": Enemy("Temple Guardian", 94, 43, 33, 55, random.randrange(50, 61), "medium", 6, ["normal", "power", "stunning"]),
             
-            "Mountain Lion": Enemy("Mountain Lion", 72, 48, 29, 40, random.randrange(35, 46), "medium", 4, ["draining"]),
-            "Rock Elemental": Enemy("Rock Elemental", 98, 41, 35, 50, random.randrange(45, 56), "medium", 6, ["draining"]),
-            "Harpy": Enemy("Harpy", 68, 48, 27, 45, random.randrange(40, 51), "medium", 4, ["draining"]),
-            "Yeti": Enemy("Yeti", 89, 45, 33, 50, random.randrange(45, 56), "medium", 6, ["draining"]),
-            "Orc": Enemy("Orc", 81, 46, 30, 40, random.randrange(35, 46), "medium", 5, ["draining"]),
+            "Mountain Lion": Enemy("Mountain Lion", 72, 48, 29, 40, random.randrange(35, 46), "medium", 4, ["normal", "quick", "reckless"]),
+            "Rock Elemental": Enemy("Rock Elemental", 98, 41, 35, 50, random.randrange(45, 56), "medium", 6, ["normal", "power", "stunning"]),
+            "Harpy": Enemy("Harpy", 68, 48, 27, 45, random.randrange(40, 51), "medium", 4, ["normal", "quick", "stunning"]),
+            "Yeti": Enemy("Yeti", 89, 45, 33, 50, random.randrange(45, 56), "medium", 6, ["normal", "power", "reckless", "freeze"]),
+            "Orc": Enemy("Orc", 81, 46, 30, 40, random.randrange(35, 46), "medium", 5, ["normal", "power", "reckless"]),
             
             "Sand Wurm": Enemy("Sand Wurm", 94, 44, 34, 45, random.randrange(40, 51), "medium", 6, ["normal", "power", "poison"]),
             "Dried Mummy": Enemy("Dried Mummy", 85, 43, 31, 40, random.randrange(35, 46), "medium", 5, ["normal", "draining", "poison"]),
@@ -240,5 +240,6 @@ ENEMY_ATTACK_TYPES = {
     "stunning": {"name": "Stunning Blow", "damage_modifier": 0.7, "effect": "stun"},
     "poison": {"name": "Poison Strike", "damage_modifier": 0.9, "effect": "poison"},
     "freeze": {"name": "Frozen Strike", "damage_modifier": 0.9, "effect": "freeze"},
-    "burn": {"name": "Burning Strike", "damage_modifier": 0.9, "effect": "burn"}
+    "burn": {"name": "Burning Strike", "damage_modifier": 0.9, "effect": "burn"},
+    "damage_reflect": {"name": "Reflective Shield", "damage_modifier": 0.5, "effect": "damage_reflect"}
 }
