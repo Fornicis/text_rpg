@@ -13,7 +13,7 @@ class Character:
         self.defence = defence
         self.status_effects = []
         self.poison_stack = 0
-        self.poison_duration = 0
+        self.burn_stack = 0
         self.frozen = False
         self.stunned = False
         self.pause = pause
@@ -95,31 +95,47 @@ class Character:
         # Default implementation that does nothing
         pass
         
-    def apply_status_effect(self, effect):
-        existing_effect = next((e for e in self.status_effects if e.name == effect.name), None)
+    def apply_status_effect(self, new_effect):
+        #print(f"Attempting to apply {new_effect.name} to {self.name}")  # Debug output
+        existing_effect = next((e for e in self.status_effects if e.name == new_effect.name), None)
+        
         if existing_effect:
-            existing_effect.duration = max(existing_effect.duration, effect.duration)
-            existing_effect.strength = max(existing_effect.strength, effect.strength)
+            #print(f"Found existing {existing_effect.name} effect")  # Debug output
+            if existing_effect.stackable:
+                old_strength = existing_effect.strength
+                existing_effect.strength = max(existing_effect.strength, new_effect.strength)
+                existing_effect.reset_duration()
+                #print(f"{self.name}'s {existing_effect.name} is refreshed from {old_strength} to {existing_effect.strength} stacks for {existing_effect.remaining_duration} turns!") # Debug output
+            else:
+                existing_effect.reset_duration()
+                old_strength = existing_effect.strength
+                existing_effect.strength = max(existing_effect.strength, new_effect.strength)
+                #print(f"{self.name}'s {existing_effect.name} is refreshed from strength {old_strength} to {existing_effect.strength} for {existing_effect.remaining_duration} turns!") # Debug ouput
         else:
-            effect.initial_duration = effect.duration
-            self.status_effects.append(effect)
-        if effect.duration > 1:
-            print(f"{self.name} is affected by {effect.name} for {effect.duration} turns!")
-        else:
-            print(f"{self.name} is affected by {effect.name}!")
+            #print(f"No existing {new_effect.name} effect found, adding new effect")  # Debug output
+            self.status_effects.append(new_effect)
+            if new_effect.stackable:
+                if new_effect.strength == 1:
+                    print(f"{self.name} is affected by {new_effect.name} with {new_effect.strength} stack for {new_effect.remaining_duration} turns!")
+                else:
+                    print(f"{self.name} is affected by {new_effect.name} with {new_effect.strength} stacks for {new_effect.remaining_duration} turns!")
+            else:
+                print(f"{self.name} is affected by {new_effect.name} for {new_effect.remaining_duration} turns!")
 
     def remove_status_effect(self, effect_name):
         self.status_effects = [e for e in self.status_effects if e.name != effect_name]
 
     def update_status_effects(self):
+        #print(f"Updating status effects for {self.name}")  # Debug output
         for effect in self.status_effects[:]:
+            #print(f"Applying {effect.name} effect")  # Debug output
             effect.apply(self)
-            effect.duration -= 1
-            if effect.duration <= 0:
+            effect.remaining_duration -= 1
+            if effect.remaining_duration <= 0:
                 self.status_effects.remove(effect)
-                # Only print the "worn off" message for effects that initially lasted more than 1 turn
-                if hasattr(effect, 'initial_duration') and effect.initial_duration > 1:
-                    print(f"{effect.name} has worn off from {self.name}.")
+                print(f"{effect.name} has worn off from {self.name}.")
+            else:
+                print(f"{effect.name} has {effect.remaining_duration} turns remaining on {self.name}")  # Debug output
 
     def get_status_effects_display(self):
         return ", ".join(str(effect) for effect in self.status_effects)
@@ -386,7 +402,7 @@ class Player(Character):
         self.defence += self.defensive_stance["boost"]
         print(f"Your defence increased by {self.defensive_stance['boost']} ({attack_info['defence_boost_percentage']}%) for the next {self.defensive_stance['duration']} turns.")
     
-    def apply_poison(self, stacks, duration):
+    """def apply_poison(self, stacks, duration):
         #Applies the appropriate stacks and duration of poison
         self.poison_stack += stacks
         self.poison_duration = max(self.poison_duration, duration)
@@ -400,7 +416,7 @@ class Player(Character):
             self.poison_duration -= 1
             if self.poison_duration == 0:
                 self.poison_stack = 0
-                print("The poison has worn off.")
+                print("The poison has worn off.")"""
     
     def update_buffs(self):
         #Reduces the duration of any duration based buffs (Such as HoTs or sharpening stones)

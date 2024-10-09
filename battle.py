@@ -135,7 +135,7 @@ class Battle:
         
         attack_info = ENEMY_ATTACK_TYPES[attack_type]
         attack_name = attack_info["name"]
-        effect = attack_info.get("effect")
+        effect_type = attack_info.get("effect")
         
         self.display_attack_animation(enemy.name, attack_name)
         
@@ -155,8 +155,9 @@ class Battle:
         if is_critical:
             print(f"Critical hit by {enemy.name}!")
         
-        if effect:
-            self.apply_attack_effect(effect, self.player, enemy, enemy_damage)
+        if effect_type:
+            #print(f"Applying {effect_type} effect from enemy attack") # Debug output
+            self.apply_attack_effect(effect_type, self.player, enemy, enemy_damage)
 
         if attack_type == "quick":
             self.display_attack_animation(enemy.name, "Quick Follow-up")
@@ -179,21 +180,31 @@ class Battle:
         if attack_type == "reckless":
             self_damage_effect(enemy, enemy_damage)
     
-    def apply_attack_effect(self, effect, target, attacker, damage):
+    def apply_attack_effect(self, effect_type, target, attacker, damage):
+        #print(f"Applying {effect_type} effect from {attacker.name} to {target.name}")  # Debug output
         effect_strength = max(1, attacker.level // 5)
-        if effect == "burn":
-            target.apply_status_effect(BURN(3, effect_strength))
-        elif effect == "poison":
+        if effect_type == "poison":
             effect_strength = max(1, attacker.level // 2)
-            target.apply_status_effect(POISON(3, effect_strength))
-        elif effect == "freeze":
-            target.apply_status_effect(FREEZE(2, effect_strength))
-        elif effect == "stun":
-            target.apply_status_effect(STUN(1, effect_strength))
-        elif effect == "stamina_drain":
-            target.apply_status_effect(STAMINA_DRAIN(damage))
-        elif effect == "damage_reflect":
-            attacker.apply_status_effect(DAMAGE_REFLECT(3, effect_strength))
+            poison_effect = POISON(3, effect_strength)
+            target.apply_status_effect(poison_effect)
+        elif effect_type == "burn":
+            burn_effect = BURN(3, effect_strength)
+            target.apply_status_effect(burn_effect)
+        elif effect_type == "freeze":
+            freeze_effect = FREEZE(1, effect_strength)
+            target.apply_status_effect(freeze_effect)
+        elif effect_type == "stun":
+            stun_effect = STUN(1, effect_strength)
+            target.apply_status_effect(stun_effect)
+        elif effect_type == "stamina_drain":
+            stamina_drain_effect = STAMINA_DRAIN(damage)
+            target.apply_status_effect(stamina_drain_effect)
+        elif effect_type == "damage_reflect":
+            damage_reflect_effect = DAMAGE_REFLECT(3, effect_strength)
+            attacker.apply_status_effect(damage_reflect_effect)
+        # Add other effects as needed
+        else:
+            print(f"Unknown effect type: {effect_type}")
     
     def battle(self, enemy):
         #Battle logic, displays player and enemy stats, updates the cooldowns of any items and buffs
@@ -205,8 +216,6 @@ class Battle:
             self.player.update_hots()
             self.player.update_buffs()
             self.player.update_defensive_stance()
-            """self.player.update_poison()
-            enemy.update_poison()"""
             self.player.update_status_effects()
             enemy.update_status_effects()
             self.display_battle_status(enemy)
@@ -312,13 +321,16 @@ class Battle:
             print("\nActive Status Effects:")
             for effect in self.player.status_effects:
                 if effect.name == "Poison":
-                    print(f"You are poisoned! ({self.player.poison_stack} damage per turn, {effect.duration} turns remaining!)")
+                    print(f"You are poisoned! ({self.player.poison_stack} damage per turn, {effect.remaining_duration} turns remaining!)")
+                elif effect.name == "Burn":
+                    damage = int(self.player.burn_stack * 0.02 * self.player.max_hp)
+                    print(f"You are burned! ({damage} damage per turn, {effect.remaining_duration} turns remaining!)")
                 elif effect.name == "Stun":
                     print("You are stunned and will lose your next turn.")
                 elif effect.name == "Freeze":
                     print("You are frozen and might lose your next turn!")
                 else:
-                    print(f"{effect.name}: {effect.duration} turns remaining")
+                    print(f"{effect.name}: {effect.remaining_duration} turns remaining")
         
         if self.player.weapon_coating:
             print(f"Your weapon is coated with {self.player.weapon_coating['name']} ({self.player.weapon_coating['remaining_duration']} attacks remaining)")
