@@ -9,23 +9,13 @@ class Enemy(Character):
         self.tier = tier
         self.level = level
         self.attack_types = attack_types if attack_types is not None else ["normal"]
-        """self.poison_stack = 0
-        self.poison_duration = 0"""
+        
         
     def choose_attack(self):
         chosen_attack = random.choice(self.attack_types)
         return chosen_attack
         
-    """def apply_effect(self, effect, player, damage):
-        effect_applied = False
-        effect_descriptions = {
-            "lifesteal": f"{self.name} healed for {int(damage * 0.5)} HP!",
-            "self_damage": f"{self.name} took {int(damage * 0.2)} self-damage from its reckless attack!",
-            "stamina_drain": f"{player.name} lost {min(20, player.stamina)} stamina from the draining attack!",
-            "stun": f"{player.name} has been stunned and will lose their next turn!",
-            "poison": f"{player.name} has been poisoned! They'll take damage over time.",
-            "freeze": f"{player.name} has been frozen! They might skip their next turn.",
-            "burn": f"{player.name} is on fire! They'll take additional damage each turn.",
+    """ Effects to add
             "confusion": f"{player.name} is confused! They might hurt themselves on their next turn.",
             "defense_break": f"{player.name}'s armor is shattered! Their defense is temporarily lowered.",
             "double_attack": f"{self.name} strikes one more time!",
@@ -34,7 +24,6 @@ class Enemy(Character):
             "damage_share": f"{player.name} is linked with {self.name}! They'll share some of the damage they deal.",
             "mana_drain": f"{player.name}'s energy is drained! They lose some stamina.",
             "weaken": f"{player.name} has been cursed! Their attacks will be weaker for a few turns.",
-            "damage_reflect": f"{self.name} is surrounded by a reflective barrier!",
             "absorb_buff": f"{self.name} absorbs some of {player.name}'s power, growing stronger!",
             "random_effect": "A chaotic energy surges through the battlefield!",
             # Add descriptions for boss-specific effects
@@ -45,60 +34,7 @@ class Enemy(Character):
             "alter_stats": "The fabric of reality changes, altering your stats!",
             "invulnerability": f"{self.name} is surrounded by an impenetrable divine shield!",
             "ultimate_damage": "Cosmic forces converge to deal devastating damage!"
-        }
-
-        if effect in effect_descriptions:
-            effect_applied = self._apply_effect_logic(effect, player, damage)
-            if effect_applied:
-                print(effect_descriptions[effect])
-        else:
-            print(f"Unknown effect: {effect}")
-            
-        return effect_applied
-
-    def _apply_effect_logic(self, effect, player, damage):
-        if effect == "lifesteal":
-            heal_amount = int(damage * 0.5) # Heals enemy half of damage dealt
-            self.heal(heal_amount)
-            return True
-        elif effect == "self_damage":
-            self_damage = int(damage * 0.2) # Deals 20% of damage rounded, to enemy
-            self.take_damage(self_damage)
-            return True
-        elif effect == "stamina_drain":
-            stamina_loss = min(20, player.stamina) #Drains a maximum of 20 stamina from the player
-            player.use_stamina(stamina_loss)
-            return True
-        elif effect == "stun":
-            if random.random() < 0.3:  # 30% chance to stun
-                player.player_stunned = True
-                return True
-            return False
-        elif effect == "poison":
-            poison_stacks = max(1, self.level // 2) #Scales poison stacks with enemy level
-            poison_duration = 3
-            player.apply_poison(poison_stacks, poison_duration)
-            return True
-        elif effect == "freeze":
-            if random.random() < 0.5: #50% chance to freeze player when striking
-                player.frozen = True
-                return True
-            return False
-        return False"""
-            
-    """def apply_poison(self, stacks, duration):
-        self.poison_stack += stacks
-        self.poison_duration = max(self.poison_duration, duration)
-        
-    def update_poison(self):
-        if self.poison_duration > 0:
-            poison_damage = self.poison_stack
-            self.take_damage(poison_damage)
-            print(f"{self.name} suffers {poison_damage} poison damage!")
-            self.poison_duration -= 1
-            if self.poison_duration == 0:
-                self.poison_stack = 0
-                print("The poison on {self.name} has worn off.")"""
+        }"""
     
 def initialise_enemies():
     return {
