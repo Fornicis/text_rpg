@@ -21,26 +21,31 @@ def save_game(player, current_location, days, filename):
             "level": player.level,
             "exp": player.exp,
             "hp": player.hp,
-            "days": player.days,
-            "respawn_counter": player.respawn_counter,
             "max_hp": player.max_hp,
             "stamina": player.stamina,
             "max_stamina": player.max_stamina,
-            "weapon_stamina_cost": player.weapon_stamina_cost,
             "attack": player.attack,
             "defence": player.defence,
             "gold": player.gold,
+            "base_attack": player.base_attack,
+            "base_defence": player.base_defence,
+            "respawn_counter": player.respawn_counter,
+            "days": player.days,
             "inventory": [item.name for item in player.inventory],
             "equipped": {slot: (item.name if item else None) for slot, item in player.equipped.items()},
             "cooldowns": player.cooldowns,
             "active_buffs": player.active_buffs,
-            "combat_buffs": player.combat_buffs,  # New: Save combat buffs
-            "active_hots": player.active_hots,  # New: Save active HoTs
-            "visited_locations": list(player.visited_locations), # New: Save visited locations
-            "kill_tracker": player.kill_tracker
+            "combat_buffs": player.combat_buffs,
+            "weapon_buff": player.weapon_buff,
+            "weapon_coating": player.weapon_coating,
+            "active_hots": player.active_hots,
+            "visited_locations": list(player.visited_locations),
+            "kill_tracker": player.kill_tracker,
+            "weapon_stamina_cost": player.weapon_stamina_cost,
+            "defensive_stance": player.defensive_stance,
+            "status_effects": [(effect.name, effect.remaining_duration, effect.strength, effect.stackable) for effect in player.status_effects]
         },
         "current_location": current_location,
-        #"days": days  # New: Save the current day count
     }
     
     filepath = os.path.join(SAVE_DIRECTORY, filename)
@@ -52,37 +57,44 @@ def load_game(filename):
     filepath = os.path.join(SAVE_DIRECTORY, filename)
     if not os.path.exists(filepath):
         print(f"Save file {filename} not found.")
-        return None, None, None  # Return None for player, location, and days
+        return None, None
 
     with open(filepath, 'r') as f:
         save_data = json.load(f)
 
     player_data = save_data["player"]
     player = Player(player_data["name"])
-    player.level = player_data["level"]
-    player.exp = player_data["exp"]
-    player.days = player_data["days"]
-    player.hp = player_data["hp"]
-    player.max_hp = player_data["max_hp"]
-    player.respawn_counter = player_data["respawn_counter"]
-    player.stamina = player_data["stamina"]
-    player.max_stamina = player_data["max_stamina"]
-    player.weapon_stamina_cost = player_data.get("weapon_stamina_cost", {"light": 3, "medium": 5, "heavy": 7})
-    player.attack = player_data["attack"]
-    player.defence = player_data["defence"]
-    player.gold = player_data["gold"]
     
+    # Load basic attributes
+    for attr in ["level", "exp", "hp", "max_hp", "stamina", "max_stamina", "attack", "defence", "gold", 
+                 "base_attack", "base_defence", "respawn_counter", "days"]:
+        setattr(player, attr, player_data[attr])
+    
+    # Load inventory and equipped items
     all_items = initialise_items()
     player.inventory = [all_items[item_name] for item_name in player_data["inventory"] if item_name in all_items]
     player.equipped = {slot: (all_items[item_name] if item_name else None) for slot, item_name in player_data["equipped"].items()}
+    
+    # Load other attributes
     player.cooldowns = player_data["cooldowns"]
     player.active_buffs = player_data["active_buffs"]
-    player.combat_buffs = player_data["combat_buffs"]  # New: Load combat buffs
-    player.active_hots = player_data["active_hots"]  # New: Load active HoTs
-    player.visited_locations = set(player_data["visited_locations"])  # New: Load visited locations
-    player.kill_tracker = player_data.get("kill_tracker", {})
+    player.combat_buffs = player_data["combat_buffs"]
+    player.weapon_buff = player_data["weapon_buff"]
+    player.weapon_coating = player_data["weapon_coating"]
+    player.active_hots = player_data["active_hots"]
+    player.visited_locations = set(player_data["visited_locations"])
+    player.kill_tracker = player_data["kill_tracker"]
+    player.weapon_stamina_cost = player_data["weapon_stamina_cost"]
+    player.defensive_stance = player_data["defensive_stance"]
+    
+    # Load status effects
+    from status_effects import StatusEffect
+    player.status_effects = [
+        StatusEffect(name, duration, lambda c, s: None, strength, stackable=stackable)
+        for name, duration, strength, stackable in player_data["status_effects"]
+    ]
 
     current_location = save_data["current_location"]
     
     print(f"Game loaded successfully from {filepath}")
-    return player, current_location  # Return player and location
+    return player, current_location

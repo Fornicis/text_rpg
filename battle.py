@@ -203,8 +203,6 @@ class Battle:
             damage_reflect_effect = DAMAGE_REFLECT(3, effect_strength)
             attacker.apply_status_effect(damage_reflect_effect)
         # Add other effects as needed
-        else:
-            print(f"Unknown effect type: {effect_type}")
     
     def battle(self, enemy):
         #Battle logic, displays player and enemy stats, updates the cooldowns of any items and buffs
