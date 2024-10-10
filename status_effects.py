@@ -60,10 +60,15 @@ def stun_effect(character, strength):
     else:
         print(f"{character.name} resists the stun effect!")
         
-def self_damage_effect(character, strength):
+def self_damage_effect(character, strength, attack_type = "reckless"):
     damage = int(strength * 0.2) # Deals 20% of original damage to user
     character.take_damage(damage)
-    print(f"{character.name} takes {damage} self-damage from their reckless attack!")
+    if attack_type == "reckless":
+        print(f"{character.name} takes {damage} self-damage from their reckless attack!")
+    elif attack_type == "triple":
+        print(f"{character.name} takes {damage} self-damage from their triple attack!")
+    else:
+        print(f"{character.name} takes {damage} self-damage!")
     
 def stamina_drain_effect(character, strength):
     if hasattr(character, 'stamina'):
@@ -88,6 +93,6 @@ BURN = lambda duration, strength=1: StatusEffect("Burn", duration, burn_effect, 
 POISON = lambda duration, strength=1: StatusEffect("Poison", duration, poison_effect, strength, is_debuff=True, stackable=True)
 FREEZE = lambda duration, strength=1: StatusEffect("Freeze", duration, freeze_effect, strength, is_debuff=True)
 STUN = lambda duration, strength=1: StatusEffect("Stun", duration, stun_effect, strength, is_debuff=True)
-SELF_DAMAGE = lambda strength: StatusEffect("Self Damage", 1, self_damage_effect, strength, is_debuff=True)
+SELF_DAMAGE = lambda strength, attack_type="reckless": StatusEffect("Self Damage", 1, lambda char, str: self_damage_effect(char, str, attack_type), strength, is_debuff=True)
 STAMINA_DRAIN = lambda strength: StatusEffect("Stamina Drain", 1, stamina_drain_effect, strength, is_debuff=True)
 DAMAGE_REFLECT = lambda duration, strength=1: StatusEffect("Damage Reflect", duration, damage_reflect, strength, is_debuff=False)

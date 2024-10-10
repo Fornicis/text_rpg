@@ -118,7 +118,11 @@ class Character:
         if total_damage > damage:
             message += f"\nTotal damage dealt: {total_damage}"
 
-        return message, total_damage
+        self_damage_info = None
+        if attack_type in ["reckless", "triple"]:
+            self_damage_info = {"type": attack_type, "damage": total_damage}
+        
+        return message, total_damage, self_damage_info
 
     
     def is_alive(self):

@@ -50,8 +50,12 @@ class Battle:
         
         self.display_attack_animation(self.player.name, attack_info['name'])
         
-        message, total_damage = self.player.perform_attack(enemy, attack_type)
+        message, total_damage, self_damage_info = self.player.perform_attack(enemy, attack_type)
         print(message)
+        
+        if self_damage_info:
+            self_damage_effect = SELF_DAMAGE(self_damage_info["damage"], self_damage_info["type"])
+            self_damage_effect.apply(self.player)
         
         reflected_damage = 0
         for effect in enemy.status_effects:
@@ -88,17 +92,21 @@ class Battle:
         
         if not self.player.is_alive():
             self.handle_player_defeat()
-            return True
+            return True, None
         
-        return False
+        return False, self_damage_info
 
     def enemy_attack(self, enemy):
         attack_type = enemy.choose_attack()
         attack_info = ENEMY_ATTACK_TYPES[attack_type]
         effect_type = attack_info.get("effect")
-        message, total_damage = enemy.perform_attack(self.player, attack_type)
+        message, total_damage, self_damage_info = enemy.perform_attack(self.player, attack_type)
         self.display_attack_animation(enemy.name, attack_info['name'])
         print(message)
+        
+        if self_damage_info:
+            self_damage_effect = SELF_DAMAGE(self_damage_info["damage"], self_damage_info["type"])
+            self_damage_effect.apply(enemy)
         
         reflected_damage = 0
         for effect in self.player.status_effects:
@@ -112,8 +120,11 @@ class Battle:
         if effect_type:
             self.apply_attack_effect(effect_type, self.player, enemy, total_damage)
 
-        if attack_type == "reckless":
+        """if attack_type == "reckless":
             self_damage_effect(enemy, total_damage)
+            
+        if attack_type == "triple":
+            self_damage_effect(enemy, total_damage)"""
     
     def apply_attack_effect(self, effect_type, target, attacker, damage):
         #print(f"Applying {effect_type} effect from {attacker.name} to {target.name}")  # Debug output
@@ -161,9 +172,11 @@ class Battle:
             
             action = input("Do you want to:\n[a]ttack\n[u]se item\n[r]un?\n>").lower()
             
+            self_damage_info = None
+            
             if action == "a":
                 #Runs the player_attack method when selected
-                battle_over = self.player_attack(enemy)
+                battle_over, self_damage_info = self.player_attack(enemy)
                 if battle_over:
                     return
             elif action == "u":
@@ -187,7 +200,7 @@ class Battle:
                     return
             else:
                 print("Invalid action. You lose your turn.")
-                
+            
             if not self.player.is_alive():
                 self.handle_player_defeat()
                 return True
