@@ -53,11 +53,11 @@ def initialise_enemies():
             "Slime": Enemy("Slime", 38, 22, 9, 25, random.randrange(10, 20), "low", 2, ["normal", "poison", "stunning"]),
             "Frog": Enemy("Frog", 36, 26, 8, 30, random.randrange(12, 24), "low", 3, ["normal", "quick", "poison"]),
             
-            "Tree Sprite": Enemy("Tree Sprite", 20, 24, 6, 10, random.randrange(3, 10), "low", 1, ["poison"]),
-            "Snake": Enemy("Snake", 24, 27, 5, 15, random.randrange(5, 15), "low", 1, ["poison"]),
-            "Forest Hawk": Enemy("Forest Hawk", 29, 25, 7, 20, random.randrange(8, 18), "low", 2, ["poison"]),
-            "Locust": Enemy("Locust", 26, 26, 6, 25, random.randrange(10, 20), "low", 2, ["poison"]),
-            "Leprechaun": Enemy("Leprechaun", 41, 23, 9, 30, random.randrange(12, 24), "low", 3, ["poison"]),
+            "Tree Sprite": Enemy("Tree Sprite", 20, 24, 6, 10, random.randrange(3, 10), "low", 1, ["normal", "quick", "draining"]),
+            "Snake": Enemy("Snake", 24, 27, 5, 15, random.randrange(5, 15), "low", 1, ["normal", "quick", "poison"]),
+            "Forest Hawk": Enemy("Forest Hawk", 29, 25, 7, 20, random.randrange(8, 18), "low", 2, ["normal", "quick", "stunning"]),
+            "Locust": Enemy("Locust", 26, 26, 6, 25, random.randrange(10, 20), "low", 2, ["normal", "quick", "poison"]),
+            "Leprechaun": Enemy("Leprechaun", 41, 23, 9, 30, random.randrange(12, 24), "low", 3, ["normal", "quick", "stunning"]),
             
             "Wood Spirit": Enemy("Wood Spirit", 26, 24, 7, 10, random.randrange(3, 10), "low", 1, ["normal", "draining", "stunning"]),
             "Deepwood Stalker": Enemy("Deepwood Stalker", 32, 26, 9, 15, random.randrange(5, 15), "low", 2, ["normal", "quick", "poison"]),
