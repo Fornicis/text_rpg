@@ -10,6 +10,9 @@ class Character:
         self.hp = hp
         self.max_hp = hp
         self.attack = attack
+        self.attack_types = {
+            "normal": {"name": "Normal Attack", "stamina_modifier": 0, "damage_modifier": 1},
+        }
         self.defence = defence
         self.status_effects = []
         self.poison_stack = 0
@@ -78,6 +81,45 @@ class Character:
                 print("\nActive Heal Over Time Effects:")
                 for hot_name, hot_info in self.active_hots.items():
                     print(f"  {hot_name}: {hot_info['tick_effect']} HP/turn for {hot_info['duration']} more turns")
+    
+    def calculate_damage(self, base_attack, attack_type):
+        attack_info = self.attack_types[attack_type]
+        modified_attack = base_attack * attack_info["damage_modifier"]
+        damage = random.randint(int(modified_attack * 0.8), int(modified_attack * 1.2))
+        is_critical = random.random() < 0.1  # Critical hit chance 10%
+        if is_critical:
+            damage = int(damage * 1.5)
+        return damage, is_critical
+
+    def perform_attack(self, target, attack_type):
+        attack_info = self.attack_types[attack_type]
+        base_damage, is_critical = self.calculate_damage(self.attack, attack_type)
+        damage = max(0, base_damage - target.defence)
+        
+        target.take_damage(damage)
+        
+        message = f"{self.name} used {attack_info['name']} and dealt {damage} damage to {target.name}."
+        if is_critical:
+            message += f" Critical hit!"
+
+        extra_attacks = attack_info.get("extra_attacks", 0)
+        total_damage = damage
+
+        for i in range(extra_attacks):
+            extra_damage, extra_critical = self.calculate_damage(self.attack, attack_type)
+            extra_damage = max(0, extra_damage - target.defence)
+            target.take_damage(extra_damage)
+            total_damage += extra_damage
+            
+            message += f"\n{self.name} dealt an additional {extra_damage} damage to {target.name}."
+            if extra_critical:
+                message += f" Critical hit on the extra attack!"
+
+        if total_damage > damage:
+            message += f"\nTotal damage dealt: {total_damage}"
+
+        return message, total_damage
+
     
     def is_alive(self):
         # Check if character is still alive

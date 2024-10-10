@@ -44,7 +44,7 @@ def poison_effect(character, strength):
     character.poison_stack += poison_stack  # Use the highest poison stack
     damage = character.poison_stack
     character.take_damage(damage)
-    print(f"{character.name} takes {damage} poison damage!")
+    print(f"{character.name} takes {damage} poison damage! ({poison_stack} stack/s added!)")
 
 def freeze_effect(character, strength):
     if random.random() < 0.5 * strength:

@@ -8,12 +8,14 @@ class Enemy(Character):
         self.gold = gold
         self.tier = tier
         self.level = level
-        self.attack_types = attack_types if attack_types is not None else ["normal"]
+        if attack_types:
+            self.attack_types = {attack_type: ENEMY_ATTACK_TYPES[attack_type] for attack_type in attack_types}
+        else:
+            self.attack_types = {"normal": ENEMY_ATTACK_TYPES["normal"]}
         
         
     def choose_attack(self):
-        chosen_attack = random.choice(self.attack_types)
-        return chosen_attack
+        return random.choice(list(self.attack_types.keys()))
         
     """ Effects to add
             "confusion": f"{player.name} is confused! They might hurt themselves on their next turn.",
@@ -51,11 +53,11 @@ def initialise_enemies():
             "Slime": Enemy("Slime", 38, 22, 9, 25, random.randrange(10, 20), "low", 2, ["normal", "poison", "stunning"]),
             "Frog": Enemy("Frog", 36, 26, 8, 30, random.randrange(12, 24), "low", 3, ["normal", "quick", "poison"]),
             
-            "Tree Sprite": Enemy("Tree Sprite", 20, 24, 6, 10, random.randrange(3, 10), "low", 1, ["normal", "quick", "draining"]),
-            "Snake": Enemy("Snake", 24, 27, 5, 15, random.randrange(5, 15), "low", 1, ["normal", "quick", "poison"]),
-            "Forest Hawk": Enemy("Forest Hawk", 29, 25, 7, 20, random.randrange(8, 18), "low", 2, ["normal", "quick", "stunning"]),
-            "Locust": Enemy("Locust", 26, 26, 6, 25, random.randrange(10, 20), "low", 2, ["normal", "quick", "poison"]),
-            "Leprechaun": Enemy("Leprechaun", 41, 23, 9, 30, random.randrange(12, 24), "low", 3, ["normal", "quick", "stunning"]),
+            "Tree Sprite": Enemy("Tree Sprite", 20, 24, 6, 10, random.randrange(3, 10), "low", 1, ["poison"]),
+            "Snake": Enemy("Snake", 24, 27, 5, 15, random.randrange(5, 15), "low", 1, ["poison"]),
+            "Forest Hawk": Enemy("Forest Hawk", 29, 25, 7, 20, random.randrange(8, 18), "low", 2, ["poison"]),
+            "Locust": Enemy("Locust", 26, 26, 6, 25, random.randrange(10, 20), "low", 2, ["poison"]),
+            "Leprechaun": Enemy("Leprechaun", 41, 23, 9, 30, random.randrange(12, 24), "low", 3, ["poison"]),
             
             "Wood Spirit": Enemy("Wood Spirit", 26, 24, 7, 10, random.randrange(3, 10), "low", 1, ["normal", "draining", "stunning"]),
             "Deepwood Stalker": Enemy("Deepwood Stalker", 32, 26, 9, 15, random.randrange(5, 15), "low", 2, ["normal", "quick", "poison"]),
@@ -169,7 +171,7 @@ def initialise_enemies():
 ENEMY_ATTACK_TYPES = {
     "normal": {"name": "Normal Attack", "damage_modifier": 1, "effect": None},
     "power": {"name": "Power Attack", "damage_modifier": 1.5, "effect": None},
-    "quick": {"name": "Quick Attack", "damage_modifier": 0.85, "effect": "double_attack"},
+    "quick": {"name": "Quick Attack", "damage_modifier": 0.85, "effect": None, "extra_attacks": 1},
     "vampiric": {"name": "Vampiric Strike", "damage_modifier": 0.9, "effect": "lifesteal"},
     "reckless": {"name": "Reckless Assault", "damage_modifier": 2, "effect": "self_damage"},
     "draining": {"name": "Draining Touch", "damage_modifier": 0.9, "effect": "stamina_drain"},

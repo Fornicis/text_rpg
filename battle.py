@@ -11,22 +11,7 @@ class Battle:
         self.game = game
         self.turn_counter = 0
 
-    def calculate_damage(self, base_attack, attacker, attack_type = "normal"):
-        #Calculates player and enemy damage within a range of 80% to 120% of base attack
-        if isinstance(attacker, Enemy):
-            attack_info = ENEMY_ATTACK_TYPES[attack_type]
-        else:
-            attack_info = self.player.attack_types[attack_type]
-            
-        modified_attack = base_attack * attack_info["damage_modifier"]
-        damage = random.randint(int(modified_attack * 0.8), int(modified_attack * 1.2))
-        is_critical = random.random() < 0.1  # Critical hit chance 10%
-        if is_critical:
-            damage = int(damage * 1.5)
-        return damage, is_critical
-
     def player_attack(self, enemy):
-        #Handles the player attacking, if enemy dies, player gains exp and gold with a chance for loot, else the enemy attacks back
         if self.player.stunned:
             print("You're stunned and lose your turn.")
             self.player.stunned = False
@@ -63,44 +48,23 @@ class Battle:
 
         self.player.use_stamina(total_stamina_cost)
         
-        total_damage = 0
-        attacks = 1 + attack_info.get("extra_attacks", 0)
-        
         self.display_attack_animation(self.player.name, attack_info['name'])
         
-        for i in range(attacks):
-            if i > 0 and attack_type == "quick":
-                self.display_attack_animation(self.player.name, "Quick Follow-up")
-                
-            player_damage, is_critical = self.calculate_damage(self.player.attack, self.player.name, attack_type)
-            player_damage = max(0, player_damage - enemy.defence)
-            
-            reflected_damage = 0
-            for effect in enemy.status_effects:
-                if effect.name == "Damage Reflect":
-                    reflected_damage = effect.apply(enemy, player_damage)
-            
-            if reflected_damage > 0:
-                self.player.take_damage(reflected_damage)
-                print(f"{self.player.name} takes {reflected_damage} reflected damage!")
-                    
-            enemy.take_damage(player_damage)
-            total_damage += player_damage
-            
-            if i == 0:
-                print(f"{self.player.name} dealt {player_damage} damage to {enemy.name}.")
-            else:
-                print(f"{self.player.name} dealt an additional {player_damage} damage to {enemy.name}.")
-                
-            if is_critical:
-                print(f"Critical hit by {self.player.name}!")
+        message, total_damage = self.player.perform_attack(enemy, attack_type)
+        print(message)
         
-        if attacks > 1:
-            print(f"Total damage dealt: {total_damage}")
+        reflected_damage = 0
+        for effect in enemy.status_effects:
+            if effect.name == "Damage Reflect":
+                reflected_damage = effect.apply(enemy, total_damage)
+        
+        if reflected_damage > 0:
+            self.player.take_damage(reflected_damage)
+            print(f"{self.player.name} takes {reflected_damage} reflected damage!")
         
         if attack_type == "defensive":
             self.player.apply_defensive_stance()
-            
+        
         if self.player.weapon_coating:
             poison_effect = POISON(
                 duration=self.player.weapon_coating['duration'],
@@ -127,58 +91,29 @@ class Battle:
             return True
         
         return False
-    
+
     def enemy_attack(self, enemy):
         attack_type = enemy.choose_attack()
-        enemy_damage, is_critical = self.calculate_damage(enemy.attack, enemy, attack_type)
-        enemy_damage = max(0, enemy_damage - self.player.defence)
-        
         attack_info = ENEMY_ATTACK_TYPES[attack_type]
-        attack_name = attack_info["name"]
         effect_type = attack_info.get("effect")
-        
-        self.display_attack_animation(enemy.name, attack_name)
+        message, total_damage = enemy.perform_attack(self.player, attack_type)
+        self.display_attack_animation(enemy.name, attack_info['name'])
+        print(message)
         
         reflected_damage = 0
         for effect in self.player.status_effects:
             if effect.name == "Damage Reflect":
-                reflected_damage = effect.apply(self.player, enemy_damage)
+                reflected_damage = effect.apply(self.player, total_damage)
         
         if reflected_damage > 0:
             enemy.take_damage(reflected_damage)
             print(f"{enemy.name} takes {reflected_damage} reflected damage!")
         
-        self.player.take_damage(enemy_damage)
-        
-        print(f"{enemy.name} used {attack_name} and dealt {enemy_damage} damage to you.")
-        
-        if is_critical:
-            print(f"Critical hit by {enemy.name}!")
-        
         if effect_type:
-            #print(f"Applying {effect_type} effect from enemy attack") # Debug output
-            self.apply_attack_effect(effect_type, self.player, enemy, enemy_damage)
+            self.apply_attack_effect(effect_type, self.player, enemy, total_damage)
 
-        if attack_type == "quick":
-            self.display_attack_animation(enemy.name, "Quick Follow-up")
-            print(f"\n{enemy.name} attacks again with Quick Attack!")
-            second_damage, _ = self.calculate_damage(enemy.attack, enemy, "quick")
-            second_damage = max(0, second_damage - self.player.defence)
-            
-            reflected_damage = 0
-            for effect in self.player.status_effects:
-                if effect.name == "Damage Reflect":
-                    reflected_damage = effect.apply(self.player, second_damage)
-            
-            if reflected_damage > 0:
-                enemy.take_damage(reflected_damage)
-                print(f"{enemy.name} takes {reflected_damage} reflected damage!")
-            
-            self.player.take_damage(second_damage)
-            print(f"{enemy.name} dealt an additional {second_damage} damage to you.")
-            
         if attack_type == "reckless":
-            self_damage_effect(enemy, enemy_damage)
+            self_damage_effect(enemy, total_damage)
     
     def apply_attack_effect(self, effect_type, target, attacker, damage):
         #print(f"Applying {effect_type} effect from {attacker.name} to {target.name}")  # Debug output
