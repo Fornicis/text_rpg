@@ -10,17 +10,18 @@ class Battle:
         self.items = items
         self.game = game
         self.turn_counter = 0
+        self.battle_ended = False
 
     def player_attack(self, enemy):
         if self.player.stunned:
             print("You're stunned and lose your turn.")
             self.player.stunned = False
-            return False
+            return False, None
         if self.player.frozen:
             if random.random() < 0.5:
                 print(f"{self.player.name} is frozen and cannot attack!")
                 self.enemy_attack(enemy)
-                return False
+                return False, None
             else:
                 print(f"{self.player.name} thaws out from the ice and attacks!")
                 self.player.frozen = False
@@ -79,19 +80,13 @@ class Battle:
             self.player.update_weapon_coating()
         
         if not enemy.is_alive():
-            print(f"You defeated the {enemy.name}!")
-            self.player.record_kill(enemy.name)
-            self.player.gain_exp(enemy.exp, enemy.level)
-            self.player.gold += enemy.gold
-            print(f"You gained {enemy.gold} gold.")
-            self.loot_drop(enemy.tier)
-            self.player.remove_combat_buffs()
-            return True
+            self.end_battle("enemy_defeat", enemy)
+            return True, None
         
         self.enemy_attack(enemy)
         
         if not self.player.is_alive():
-            self.handle_player_defeat()
+            self.end_battle("player_defeat")
             return True, None
         
         return False, self_damage_info
@@ -120,6 +115,10 @@ class Battle:
         if effect_type:
             self.apply_attack_effect(effect_type, self.player, enemy, total_damage)
 
+        if not self.player.is_alive():
+            self.end_battle("player_defeat")
+        
+        return False, self_damage_info
         """if attack_type == "reckless":
             self_damage_effect(enemy, total_damage)
             
@@ -154,7 +153,7 @@ class Battle:
         #Battle logic, displays player and enemy stats, updates the cooldowns of any items and buffs
         print(f"\nBattle start! {self.player.name} vs {enemy.name}")
         
-        while self.player.is_alive() and enemy.is_alive():
+        while not self.battle_ended:
             self.turn_counter += 1
             self.player.update_cooldowns()
             self.player.update_hots()
@@ -163,6 +162,14 @@ class Battle:
             self.player.update_status_effects()
             enemy.update_status_effects()
             self.display_battle_status(enemy)
+            
+            if not self.player.is_alive():
+                self.end_battle("player_defeat")
+                return
+            
+            if not enemy.is_alive():
+                self.end_battle("enemy_defeat", enemy)
+                return
             
             if self.player.stunned:
                 print("You're stunned and lose your turn.")
@@ -201,9 +208,24 @@ class Battle:
             else:
                 print("Invalid action. You lose your turn.")
             
-            if not self.player.is_alive():
-                self.handle_player_defeat()
-                return True
+    def end_battle(self, reason, enemy=None):
+        self.battle_ended = True
+        
+        if reason == "player_defeat":
+            self.handle_player_defeat()
+        elif reason == "enemy_defeat":
+            print(f"You defeated the {enemy.name}!")
+            self.player.record_kill(enemy.name)
+            self.player.gain_exp(enemy.exp, enemy.level)
+            self.player.gold += enemy.gold
+            print(f"You gained {enemy.gold} gold.")
+            self.loot_drop(enemy.tier)
+            self.battle_ended = False
+        elif reason == "run_away":
+            print("You successfully ran away from the battle.")
+        
+        self.player.remove_combat_buffs()
+        
     
     def loot_drop(self, enemy_tier):
         #Handles loot drops after defeating an enemy.
