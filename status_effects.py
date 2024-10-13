@@ -33,6 +33,7 @@ class StatusEffect:
         return f"{self.name} ({self.remaining_duration} turns remaining)"
     
 def burn_effect(character, strength):
+    # Adds one stack of burn per attack, burn deal 2% of damage per turn per stack
     burn_stack = strength
     character.burn_stack += burn_stack
     damage = max(1, int(character.max_hp * 0.02 * character.burn_stack))
@@ -40,6 +41,7 @@ def burn_effect(character, strength):
     print(f"{character.name} takes {damage} burn damage!")
 
 def poison_effect(character, strength):
+    # Adds one stack of poison for every 2 levels of enemy rounded down, min 1 for 3 turns (1 = 1, 2 = 1, 3 = 1, 4 = 2), or player weapon_coating poison stack, deals poison stack amount per turn
     poison_stack = strength
     character.poison_stack += poison_stack  # Use the highest poison stack
     damage = character.poison_stack
@@ -47,13 +49,16 @@ def poison_effect(character, strength):
     print(f"{character.name} takes {damage} poison damage! ({poison_stack} stack/s added!)")
 
 def freeze_effect(character, strength):
+    # 50% chance of freezing the target
     if random.random() < 0.5 * strength:
         character.frozen = True
-        print(f"{character.name} is frozen and loses their next turn!")
+        print(f"{character.name} is frozen and might lose their next turn!")
     else:
+        character.frozen = False
         print(f"{character.name} resists the freeze effect!")
 
 def stun_effect(character, strength):
+    # 30% chance of stunning the target
     if random.random() < 0.3 * strength:
         character.stunned = True
         print(f"{character.name} is stunned and loses their next turn!")
@@ -61,6 +66,7 @@ def stun_effect(character, strength):
         print(f"{character.name} resists the stun effect!")
         
 def self_damage_effect(character, strength, attack_type = "reckless"):
+    # Causes self damage to the user due to their recklessness
     damage = int(strength * 0.2) # Deals 20% of original damage to user
     character.take_damage(damage)
     if attack_type == "reckless":
@@ -69,8 +75,15 @@ def self_damage_effect(character, strength, attack_type = "reckless"):
         print(f"{character.name} takes {damage} self-damage from their triple attack!")
     else:
         print(f"{character.name} takes {damage} self-damage!")
+
+def lifesteal(character, strength):
+    # Steals a percentage of damage dealt and heals the user
+    heal_effect = int(strength * 0.33) # Heals 33% of original damage to user
+    character.heal(heal_effect)
+    print(f"{character.name} healed {heal_effect} damage from their vampiric attack!")
     
 def stamina_drain_effect(character, strength):
+    # Drains an amount of stamina from the player
     if hasattr(character, 'stamina'):
         max_drain = int(strength * 0.2)  # 20% of the damage dealt
         stamina_loss = max(10, min(max_drain, character.stamina))  # Minimum 10, maximum 20% of damage, capped at current stamina
@@ -80,6 +93,7 @@ def stamina_drain_effect(character, strength):
         print(f"The draining attack has no effect on {character.name}!")
         
 def damage_reflect(character, strength, damage_dealt):
+    # Reflects a portion of the damage dealt to the user to the attacker
     if damage_dealt > 0:
         reflected_damage = int(damage_dealt * 0.5 * strength)
         print(f"{character.name} reflects {reflected_damage} damage!")
@@ -94,5 +108,6 @@ POISON = lambda duration, strength=1: StatusEffect("Poison", duration, poison_ef
 FREEZE = lambda duration, strength=1: StatusEffect("Freeze", duration, freeze_effect, strength, is_debuff=True)
 STUN = lambda duration, strength=1: StatusEffect("Stun", duration, stun_effect, strength, is_debuff=True)
 SELF_DAMAGE = lambda strength, attack_type="reckless": StatusEffect("Self Damage", 1, lambda char, str: self_damage_effect(char, str, attack_type), strength, is_debuff=True)
+VAMPIRIC = lambda strength: StatusEffect("Vampiric", 1, lifesteal, strength, is_debuff=True)
 STAMINA_DRAIN = lambda strength: StatusEffect("Stamina Drain", 1, stamina_drain_effect, strength, is_debuff=True)
 DAMAGE_REFLECT = lambda duration, strength=1: StatusEffect("Damage Reflect", duration, damage_reflect, strength, is_debuff=False)

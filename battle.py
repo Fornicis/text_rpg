@@ -19,7 +19,7 @@ class Battle:
             return False, None
         if self.player.frozen:
             if random.random() < 0.5:
-                print(f"{self.player.name} is frozen and cannot attack!")
+                print("You're frozen and cannot attack!")
                 self.enemy_attack(enemy)
                 return False, None
             else:
@@ -31,7 +31,7 @@ class Battle:
         available_attacks = self.player.get_available_attack_types()
         
         while True:
-            choice = input("\nEnter your choice (1-4): ")
+            choice = input(f"\nEnter your choice (1-{len(available_attacks)}): ")
             if choice.isdigit() and 1 <= int(choice) <= len(available_attacks):
                 attack_type = list(available_attacks.keys())[int(choice) - 1]
                 break
@@ -69,6 +69,10 @@ class Battle:
         
         if attack_type == "defensive":
             self.player.apply_defensive_stance()
+            
+        if attack_type == "stunning":
+            stunning_effect = STUN(duration = 1, strength = 1)
+            enemy.apply_status_effect(stunning_effect)
         
         if self.player.weapon_coating:
             poison_effect = POISON(
@@ -83,7 +87,11 @@ class Battle:
             self.end_battle("enemy_defeat", enemy)
             return True, None
         
-        self.enemy_attack(enemy)
+        if enemy.stunned:
+            print(f"{enemy.name} is stunned and loses their turn!")
+            enemy.stunned = False
+        else:
+            self.enemy_attack(enemy)
         
         if not self.player.is_alive():
             self.end_battle("player_defeat")
@@ -119,11 +127,6 @@ class Battle:
             self.end_battle("player_defeat")
         
         return False, self_damage_info
-        """if attack_type == "reckless":
-            self_damage_effect(enemy, total_damage)
-            
-        if attack_type == "triple":
-            self_damage_effect(enemy, total_damage)"""
     
     def apply_attack_effect(self, effect_type, target, attacker, damage):
         #print(f"Applying {effect_type} effect from {attacker.name} to {target.name}")  # Debug output
@@ -147,6 +150,9 @@ class Battle:
         elif effect_type == "damage_reflect":
             damage_reflect_effect = DAMAGE_REFLECT(3, effect_strength)
             attacker.apply_status_effect(damage_reflect_effect)
+        elif effect_type == "lifesteal":
+            heal_effect = VAMPIRIC(damage)
+            attacker.apply_status_effect(heal_effect)
         # Add other effects as needed
     
     def battle(self, enemy):

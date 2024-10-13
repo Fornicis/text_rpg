@@ -8,6 +8,7 @@ class Enemy(Character):
         self.gold = gold
         self.tier = tier
         self.level = level
+        self.stunned = False
         if attack_types:
             self.attack_types = {attack_type: ENEMY_ATTACK_TYPES[attack_type] for attack_type in attack_types}
         else:
@@ -15,6 +16,9 @@ class Enemy(Character):
         
         
     def choose_attack(self):
+        if self.stunned:
+            self.stunned = False
+            return None
         return random.choice(list(self.attack_types.keys()))
         
     """ Effects to add

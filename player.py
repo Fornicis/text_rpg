@@ -165,8 +165,10 @@ class Character:
                     print(f"{self.name} is affected by {new_effect.name} with {new_effect.strength} stack for {new_effect.remaining_duration} turns!")
                 else:
                     print(f"{self.name} is affected by {new_effect.name} with {new_effect.strength} stacks for {new_effect.remaining_duration} turns!")
-            else:
+            elif new_effect.initial_duration > 1:
                 print(f"{self.name} is affected by {new_effect.name} for {new_effect.remaining_duration} turns!")
+            else:
+                return
 
     def remove_status_effect(self, effect_name):
         self.status_effects = [e for e in self.status_effects if e.name != effect_name]
@@ -177,11 +179,14 @@ class Character:
             #print(f"Applying {effect.name} effect")  # Debug output
             effect.apply(self)
             effect.remaining_duration -= 1
-            if effect.remaining_duration <= 0:
+            if effect.remaining_duration <= 0 and effect.initial_duration > 1:
                 self.status_effects.remove(effect)
                 print(f"{effect.name} has worn off from {self.name}.")
-            else:
+            elif effect.remaining_duration > 0 and effect.initial_duration > 1:
                 print(f"{effect.name} has {effect.remaining_duration} turns remaining on {self.name}")  # Debug output
+            else:
+                self.status_effects.remove(effect)
+                return
 
     def get_status_effects_display(self):
         return ", ".join(str(effect) for effect in self.status_effects)
@@ -228,6 +233,7 @@ class Player(Character):
             "normal": {"name": "Normal Attack", "stamina_modifier": 0, "damage_modifier": 1},
             "power": {"name": "Power Attack", "stamina_modifier": 3, "damage_modifier": 1.5},
             "quick": {"name": "Quick Attack", "stamina_modifier": 1, "damage_modifier": 0.8, "extra_attacks": 1},
+            "stunning": {"name": "Stunning Blow", "stamina_modifier": 2, "damage_modifier": 0.8},
             "defensive": {"name": "Defensive Stance", "stamina_modifier": 2, "damage_modifier": 0, "defence_boost_percentage": 25, "duration": 5}
         }
         self.defensive_stance = {"boost": 0, "duration": 0}
@@ -447,22 +453,6 @@ class Player(Character):
         }
         self.defence += self.defensive_stance["boost"]
         print(f"Your defence increased by {self.defensive_stance['boost']} ({attack_info['defence_boost_percentage']}%) for the next {self.defensive_stance['duration']} turns.")
-    
-    """def apply_poison(self, stacks, duration):
-        #Applies the appropriate stacks and duration of poison
-        self.poison_stack += stacks
-        self.poison_duration = max(self.poison_duration, duration)
-        
-    def update_poison(self):
-        #Updates the poison duration and inflicts poison damage
-        if self.poison_duration > 0:
-            poison_damage = self.poison_stack
-            self.take_damage(poison_damage)
-            print(f"{self.name} suffers {poison_damage} poison damage!")
-            self.poison_duration -= 1
-            if self.poison_duration == 0:
-                self.poison_stack = 0
-                print("The poison has worn off.")"""
     
     def update_buffs(self):
         #Reduces the duration of any duration based buffs (Such as HoTs or sharpening stones)
