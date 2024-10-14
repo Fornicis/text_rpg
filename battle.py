@@ -61,7 +61,7 @@ class Battle:
         reflected_damage = 0
         for effect in enemy.status_effects:
             if effect.name == "Damage Reflect":
-                reflected_damage = effect.apply(enemy, total_damage)
+                reflected_damage += effect.apply(enemy, total_damage)
         
         if reflected_damage > 0:
             self.player.take_damage(reflected_damage)
@@ -114,7 +114,7 @@ class Battle:
         reflected_damage = 0
         for effect in self.player.status_effects:
             if effect.name == "Damage Reflect":
-                reflected_damage = effect.apply(self.player, total_damage)
+                reflected_damage += effect.apply(self.player, total_damage)
         
         if reflected_damage > 0:
             enemy.take_damage(reflected_damage)
@@ -139,10 +139,10 @@ class Battle:
             burn_effect = BURN(3, effect_strength)
             target.apply_status_effect(burn_effect)
         elif effect_type == "freeze":
-            freeze_effect = FREEZE(1, effect_strength)
+            freeze_effect = FREEZE(2, effect_strength)
             target.apply_status_effect(freeze_effect)
         elif effect_type == "stun":
-            stun_effect = STUN(1, effect_strength)
+            stun_effect = STUN(2, effect_strength)
             target.apply_status_effect(stun_effect)
         elif effect_type == "stamina_drain":
             stamina_drain_effect = STAMINA_DRAIN(damage)
@@ -153,6 +153,9 @@ class Battle:
         elif effect_type == "lifesteal":
             heal_effect = VAMPIRIC(damage)
             attacker.apply_status_effect(heal_effect)
+        elif effect_type == "defence_break":
+            defence_break_effect = DEFENCE_BREAK(3, effect_strength)
+            target.apply_status_effect(defence_break_effect)
         # Add other effects as needed
     
     def battle(self, enemy):
@@ -286,25 +289,15 @@ class Battle:
     def display_battle_status(self, enemy):
         #Shows the defined info below whenever player attacks, helps to keep track of info
         self.player.show_stats()
-        
+    
         if self.player.defensive_stance["duration"] > 0:
             print(f"Defensive Stance: +{self.player.defensive_stance['boost']} defence for {self.player.defensive_stance['duration']} more turns.")
             print("While in Defensive Stance you can only use Normal Attacks.")
         
         if self.player.status_effects:
-            print("\nActive Status Effects:")
+            print("\nPlayer Status Effects:")
             for effect in self.player.status_effects:
-                if effect.name == "Poison":
-                    print(f"You are poisoned! ({self.player.poison_stack} damage per turn, {effect.remaining_duration} turns remaining!)")
-                elif effect.name == "Burn":
-                    damage = int(self.player.burn_stack * 0.02 * self.player.max_hp)
-                    print(f"You are burned! ({damage} damage per turn, {effect.remaining_duration} turns remaining!)")
-                elif effect.name == "Stun":
-                    print("You are stunned and will lose your next turn.")
-                elif effect.name == "Freeze":
-                    print("You are frozen and might lose your next turn!")
-                else:
-                    print(f"{effect.name}: {effect.remaining_duration} turns remaining")
+                print(f"- {effect}")
         
         if self.player.weapon_coating:
             print(f"Your weapon is coated with {self.player.weapon_coating['name']} ({self.player.weapon_coating['remaining_duration']} attacks remaining)")
@@ -313,13 +306,11 @@ class Battle:
         print(f"Attack: {enemy.attack}")
         print(f"Defence: {enemy.defence}")
         print(f"Level: {enemy.level}")
+        
         if enemy.status_effects:
             print(f"\n{enemy.name} Status Effects:")
             for effect in enemy.status_effects:
-                if effect.name == "Poison":
-                    print(f"{enemy.name} is poisoned! ({enemy.poison_stack} damage per turn, {effect.get_remaining_duration()} turns remaining)")
-                else:
-                    print(f"{effect.name}: {effect.get_remaining_duration()} turns remaining")
+                print(f"- {effect}")
 
     def use_item_menu(self, enemy):
         #Handles item usage inside battle, checks if player has the item, if so and not on cooldown, uses item by calling use_combat_item method

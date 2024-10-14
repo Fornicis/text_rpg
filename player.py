@@ -124,7 +124,6 @@ class Character:
         
         return message, total_damage, self_damage_info
 
-    
     def is_alive(self):
         # Check if character is still alive
         return self.hp > 0
@@ -140,53 +139,39 @@ class Character:
     def use_stamina(self, amount):
         # Default implementation that does nothing
         pass
-        
+    
     def apply_status_effect(self, new_effect):
-        #print(f"Attempting to apply {new_effect.name} to {self.name}")  # Debug output
         existing_effect = next((e for e in self.status_effects if e.name == new_effect.name), None)
         
         if existing_effect:
-            #print(f"Found existing {existing_effect.name} effect")  # Debug output
             if existing_effect.stackable:
-                old_strength = existing_effect.strength
-                existing_effect.strength = max(existing_effect.strength, new_effect.strength)
-                existing_effect.reset_duration()
-                #print(f"{self.name}'s {existing_effect.name} is refreshed from {old_strength} to {existing_effect.strength} stacks for {existing_effect.remaining_duration} turns!") # Debug output
+                existing_effect.strength += new_effect.strength
+                existing_effect.remaining_duration = max(existing_effect.remaining_duration, new_effect.initial_duration)
+                print(f"{self.name}'s {existing_effect.name} is stacked to {existing_effect.strength} and refreshed for {existing_effect.remaining_duration} turns!")
             else:
-                existing_effect.reset_duration()
-                old_strength = existing_effect.strength
+                existing_effect.remaining_duration = max(existing_effect.remaining_duration, new_effect.initial_duration)
                 existing_effect.strength = max(existing_effect.strength, new_effect.strength)
-                #print(f"{self.name}'s {existing_effect.name} is refreshed from strength {old_strength} to {existing_effect.strength} for {existing_effect.remaining_duration} turns!") # Debug ouput
+                print(f"{self.name}'s {existing_effect.name} is refreshed to strength {existing_effect.strength} for {existing_effect.remaining_duration} turns!")
         else:
-            #print(f"No existing {new_effect.name} effect found, adding new effect")  # Debug output
             self.status_effects.append(new_effect)
+            new_effect.apply(self)
             if new_effect.stackable:
-                if new_effect.strength == 1:
-                    print(f"{self.name} is affected by {new_effect.name} with {new_effect.strength} stack for {new_effect.remaining_duration} turns!")
-                else:
-                    print(f"{self.name} is affected by {new_effect.name} with {new_effect.strength} stacks for {new_effect.remaining_duration} turns!")
-            elif new_effect.initial_duration > 1:
-                print(f"{self.name} is affected by {new_effect.name} for {new_effect.remaining_duration} turns!")
+                print(f"{self.name} is affected by {new_effect.name} with {new_effect.strength} stack(s) for {new_effect.remaining_duration} turns!")
             else:
-                return
-
-    def remove_status_effect(self, effect_name):
-        self.status_effects = [e for e in self.status_effects if e.name != effect_name]
+                print(f"{self.name} is affected by {new_effect.name} for {new_effect.remaining_duration} turns!")
 
     def update_status_effects(self):
-        #print(f"Updating status effects for {self.name}")  # Debug output
         for effect in self.status_effects[:]:
-            #print(f"Applying {effect.name} effect")  # Debug output
             effect.apply(self)
-            effect.remaining_duration -= 1
-            if effect.remaining_duration <= 0 and effect.initial_duration > 1:
+            if effect.update(self):
+                print(f"{effect.name} has {effect.remaining_duration} turns remaining on {self.name}")
+            else:
+                effect.remove(self)
                 self.status_effects.remove(effect)
                 print(f"{effect.name} has worn off from {self.name}.")
-            elif effect.remaining_duration > 0 and effect.initial_duration > 1:
-                print(f"{effect.name} has {effect.remaining_duration} turns remaining on {self.name}")  # Debug output
-            else:
-                self.status_effects.remove(effect)
-                return
+   
+    def remove_status_effect(self, effect_name):
+        self.status_effects = [e for e in self.status_effects if e.name != effect_name]
 
     def get_status_effects_display(self):
         return ", ".join(str(effect) for effect in self.status_effects)

@@ -24,8 +24,6 @@ class Enemy(Character):
     """ Effects to add
             "confusion": f"{player.name} is confused! They might hurt themselves on their next turn.",
             "defense_break": f"{player.name}'s armor is shattered! Their defense is temporarily lowered.",
-            "double_attack": f"{self.name} strikes one more time!",
-            "triple_attack": f"{self.name} strikes two more times!",
             "execute_low_health": f"The attack deals extra damage due to {player.name}'s low health!",
             "damage_share": f"{player.name} is linked with {self.name}! They'll share some of the damage they deal.",
             "mana_drain": f"{player.name}'s energy is drained! They lose some stamina.",
@@ -184,5 +182,6 @@ ENEMY_ATTACK_TYPES = {
     "poison": {"name": "Poison Strike", "damage_modifier": 0.9, "effect": "poison"},
     "freeze": {"name": "Frozen Strike", "damage_modifier": 0.9, "effect": "freeze"},
     "burn": {"name": "Burning Strike", "damage_modifier": 0.9, "effect": "burn"},
-    "damage_reflect": {"name": "Reflective Shield", "damage_modifier": 0.5, "effect": "damage_reflect"}
+    "damage_reflect": {"name": "Reflective Shield", "damage_modifier": 0.5, "effect": "damage_reflect"},
+    "defence_break": {"name": "Defence Shatter", "damage_modifier": 0.7, "effect": "defence_break"}
 }
