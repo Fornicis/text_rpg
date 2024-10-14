@@ -125,3 +125,16 @@ def defence_break_remove(character, strength):
         print(f"{character.name}'s defence has been restored.")
 
 DEFENCE_BREAK = lambda duration, strength: StatusEffect("Defence Break", duration, defence_break_apply, defence_break_remove, strength=strength, is_debuff=True)
+
+def defensive_stance_apply(character, strength):
+    defence_boost = int(character.defence * strength / 100)
+    character.defence += defence_boost
+    print(f"{character.name}'s defence increased by {defence_boost} due to Defensive Stance.")
+    return defence_boost
+
+def defensive_stance_remove(character, strength):
+    defence_boost = int(character.defence * strength / 100)
+    character.defence -= defence_boost
+    print(f"{character.name}'s Defensive Stance has worn off. Defence decreased by {defence_boost}.")
+
+DEFENSIVE_STANCE = lambda duration, strength=25: StatusEffect("Defensive Stance", duration, defensive_stance_apply, defensive_stance_remove, strength=strength, is_debuff=False)

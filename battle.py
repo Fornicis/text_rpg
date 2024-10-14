@@ -75,12 +75,12 @@ class Battle:
             enemy.apply_status_effect(stunning_effect)
         
         if self.player.weapon_coating:
+            print(f"{enemy.name} is poisoned by your coated weapon!")
             poison_effect = POISON(
                 duration=self.player.weapon_coating['duration'],
                 strength=self.player.weapon_coating['stacks']
             )
             enemy.apply_status_effect(poison_effect)
-            print(f"{enemy.name} is poisoned by your coated weapon!")
             self.player.update_weapon_coating()
         
         if not enemy.is_alive():
@@ -289,15 +289,13 @@ class Battle:
     def display_battle_status(self, enemy):
         #Shows the defined info below whenever player attacks, helps to keep track of info
         self.player.show_stats()
-    
-        if self.player.defensive_stance["duration"] > 0:
-            print(f"Defensive Stance: +{self.player.defensive_stance['boost']} defence for {self.player.defensive_stance['duration']} more turns.")
-            print("While in Defensive Stance you can only use Normal Attacks.")
         
         if self.player.status_effects:
             print("\nPlayer Status Effects:")
             for effect in self.player.status_effects:
                 print(f"- {effect}")
+                if effect.name == "Defensive Stance":
+                    print(" While in Defensive Stance you can only use Normal Attacks!")
         
         if self.player.weapon_coating:
             print(f"Your weapon is coated with {self.player.weapon_coating['name']} ({self.player.weapon_coating['remaining_duration']} attacks remaining)")

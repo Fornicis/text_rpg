@@ -221,7 +221,6 @@ class Player(Character):
             "stunning": {"name": "Stunning Blow", "stamina_modifier": 2, "damage_modifier": 0.8},
             "defensive": {"name": "Defensive Stance", "stamina_modifier": 2, "damage_modifier": 0, "defence_boost_percentage": 25, "duration": 5}
         }
-        self.defensive_stance = {"boost": 0, "duration": 0}
     
     def give_starter_items(self):
         #Gives starter items to the player
@@ -431,13 +430,12 @@ class Player(Character):
     
     def apply_defensive_stance(self):
         attack_info = self.attack_types["defensive"]
-        defence_boost = int(self.defence * attack_info["defence_boost_percentage"] / 100)
-        self.defensive_stance = {
-            "boost": defence_boost,
-            "duration": attack_info["duration"]
-        }
-        self.defence += self.defensive_stance["boost"]
-        print(f"Your defence increased by {self.defensive_stance['boost']} ({attack_info['defence_boost_percentage']}%) for the next {self.defensive_stance['duration']} turns.")
+        defensive_stance_effect = DEFENSIVE_STANCE(
+            attack_info["duration"], 
+            attack_info["defence_boost_percentage"]
+        )
+        self.apply_status_effect(defensive_stance_effect)
+        print(f"You've entered a Defensive Stance for {attack_info['duration']} turns.")
     
     def update_buffs(self):
         #Reduces the duration of any duration based buffs (Such as HoTs or sharpening stones)
@@ -713,7 +711,7 @@ class Player(Character):
         return self.stamina >= stamina_cost
     
     def get_available_attack_types(self):
-        if self.defensive_stance["duration"] > 0:
+        if any(effect.name == "Defensive Stance" for effect in self.status_effects):
             return {"normal": self.attack_types["normal"]}
         return self.attack_types
 
