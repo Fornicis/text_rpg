@@ -58,14 +58,7 @@ def create_dot_effect(name, damage_func):
 
 def create_chance_effect(name, chance_func, effect_func):
     def apply(character, strength):
-        existing_effect = next((e for e in character.status_effects if e.name == name), None)
-        if existing_effect and existing_effect.is_active:
-            effect_func(character, True)
-            existing_effect.reset_duration()
-            existing_effect.strength = max(existing_effect.strength, strength)
-            print(f"{character.name}'s {name} is refreshed.")
-            return True
-        elif random.random() < chance_func(strength):
+        if random.random() < chance_func(strength):
             effect_func(character, True)
             #print(f"{character.name} is affected by {name}!\n")
             return True

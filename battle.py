@@ -143,7 +143,7 @@ class Battle:
             freeze_effect = FREEZE(2, effect_strength)
             target.apply_status_effect(freeze_effect)
         elif effect_type == "stun":
-            stun_effect = STUN(1, effect_strength)
+            stun_effect = STUN(2, effect_strength)
             target.apply_status_effect(stun_effect)
         elif effect_type == "stamina_drain":
             stamina_drain_effect = STAMINA_DRAIN(damage)
