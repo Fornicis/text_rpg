@@ -15,12 +15,12 @@ class Battle:
 
     def player_attack(self, enemy):
         if self.player.stunned:
-            print("You're stunned and lose your turn.\n")
+            print("You're stunned and lose your turn.")
             self.player.stunned = False
             return False, None
         if self.player.frozen:
             if random.random() < 0.5:
-                print("You're frozen and cannot attack!\n")
+                print("You're frozen and cannot attack!")
                 self.enemy_attack(enemy)
                 return False, None
             else:
@@ -233,7 +233,6 @@ class Battle:
             print(f"You gained {enemy.gold} gold.")
             self.loot_drop(enemy.tier)
             self.battle_ended = False
-            print()
         elif reason == "run_away":
             print("You successfully ran away from the battle.")
         
