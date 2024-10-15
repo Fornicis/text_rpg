@@ -18,7 +18,7 @@ class Character:
         self.status_effects = []
         self.poison_stack = 0
         self.burn_stack = 0
-        self.frozen = False
+        #self.frozen = False
         self.stunned = False
         self.pause = pause
         self.title_screen = title_screen
@@ -123,6 +123,8 @@ class Character:
         if attack_type in ["reckless", "triple"]:
             self_damage_info = {"type": attack_type, "damage": total_damage}
         
+        self.remove_status_effect("Freeze")
+        
         return message, total_damage, self_damage_info
 
     def is_alive(self):
@@ -169,18 +171,15 @@ class Character:
 
     def update_status_effects(self, character):
         for effect in character.status_effects[:]:
-            result = effect.apply(character)
-            if isinstance(result, str) and result:
-                print(result)
-            if effect.update(character):
-                if isinstance(result, str) and result:
-                    print(result)
+            if effect.is_active:
+                is_active, remove_message = effect.update(character)
+                if not is_active:
+                    if remove_message:
+                        print(remove_message)
+                    self.remove_status_effect(effect.name)
+                    print(f"{effect.name} has worn off from {character.name}.")
             else:
-                remove_message = effect.remove(character)
-                if remove_message:
-                    print(remove_message)
-                character.status_effects.remove(effect)
-                print(f"{effect.name} has worn off from {character.name}.")
+                self.remove_status_effect(effect.name)
    
     def remove_status_effect(self, effect_name):
         self.status_effects = [e for e in self.status_effects if e.name != effect_name]

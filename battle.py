@@ -17,15 +17,17 @@ class Battle:
         if self.player.stunned:
             print("You're stunned and lose your turn.")
             self.player.stunned = False
+            self.player.remove_status_effect("Stun")
             return False, None
-        if self.player.frozen:
+        frozen_effect = next((effect for effect in self.player.status_effects if effect.name == "Freeze"), None)
+        if frozen_effect:
             if random.random() < 0.5:
                 print("You're frozen and cannot attack!")
                 self.enemy_attack(enemy)
                 return False, None
             else:
                 print(f"{self.player.name} thaws out from the ice and attacks!")
-                self.player.frozen = False
+                self.player.remove_status_effect("Freeze")
         
         self.player.display_attack_options()
         

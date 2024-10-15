@@ -14,9 +14,8 @@ class StatusEffect:
         self.is_active = False
 
     def apply(self, character, *args):
-        if not self.applied_this_turn:
+        if not self.is_active:
             result = self.apply_func(character, self.strength, *args)
-            self.applied_this_turn = True
             self.is_active = result
             return result
         return False
@@ -25,16 +24,17 @@ class StatusEffect:
         if self.remove_func:
             self.remove_func(character, self.strength)
         self.is_active = False
+        return None
 
     def update(self, character):
-        self.applied_this_turn = False
         if self.is_active:
             self.remaining_duration -= 1
             if self.remaining_duration <= 0:
-                self.remove(character)
-                return False
-            return True
-        return False
+                remove_message = self.remove(character)
+                self.is_active = False
+                return False, remove_message
+            return True, None
+        return False, None
 
     def reset_duration(self):
         self.remaining_duration = self.initial_duration
@@ -63,7 +63,7 @@ def create_chance_effect(name, chance_func, effect_func):
             return True
         else:
             effect_func(character, False)
-            print(f"{character.name} resists the {name} effect!", end='')
+            print(f"{character.name} resists the {name} effect!")
             return False
     
     def remove(character, strength):
@@ -80,10 +80,10 @@ POISON = lambda duration, strength=1: StatusEffect("Poison", duration,
     create_dot_effect("Poison", lambda char, str: str),
     strength=strength, is_debuff=True, stackable=True)
 
-freeze_apply, freeze_remove = create_chance_effect("Freeze", lambda str: 0.5 * str, lambda char, frozen: setattr(char, 'frozen', frozen))
+freeze_apply, freeze_remove = create_chance_effect("Freeze", lambda str: 0.8 * str, lambda char, frozen: setattr(char, 'frozen', frozen))
 FREEZE = lambda duration, strength=1: StatusEffect("Freeze", duration, freeze_apply, freeze_remove, strength=strength, is_debuff=True)
 
-stun_apply, stun_remove = create_chance_effect("Stun", lambda str: 0.3 * str, lambda char, stunned: setattr(char, 'stunned', stunned))
+stun_apply, stun_remove = create_chance_effect("Stun", lambda str: 0.8 * str, lambda char, stunned: setattr(char, 'stunned', stunned))
 STUN = lambda duration, strength=1: StatusEffect("Stun", duration, stun_apply, stun_remove, strength=strength, is_debuff=True)
 
 def self_damage_apply(character, strength, attack_type="reckless"):
