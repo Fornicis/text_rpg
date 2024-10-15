@@ -24,7 +24,7 @@ class Battle:
                 self.enemy_attack(enemy)
                 return False, None
             else:
-                print(f"{self.player.name} thaws out from the ice and attacks!\n")
+                print(f"{self.player.name} thaws out from the ice and attacks!")
                 self.player.frozen = False
         
         self.player.display_attack_options()
@@ -53,7 +53,7 @@ class Battle:
         self.display_attack_animation(self.player.name, attack_info['name'])
         
         message, total_damage, self_damage_info = self.player.perform_attack(enemy, attack_type)
-        print(message)
+        print(message.rstrip())
         
         if self_damage_info:
             self_damage_effect = SELF_DAMAGE(self_damage_info["damage"], self_damage_info["type"])
@@ -69,7 +69,9 @@ class Battle:
             print(f"{self.player.name} takes {reflected_damage} reflected damage!\n")
         
         if attack_type == "defensive":
-            self.player.apply_defensive_stance()
+            stance_message = self.player.apply_defensive_stance()
+            if stance_message:
+                print(stance_message)
             
         if attack_type == "stunning":
             stunning_effect = STUN(duration = 1, strength = 1)
@@ -89,7 +91,7 @@ class Battle:
             return True, None
         
         if enemy.stunned:
-            print(f"{enemy.name} is stunned and loses their turn!\n")
+            print(f"{enemy.name} is stunned and loses their turn!")
             enemy.stunned = False
         else:
             self.enemy_attack(enemy)
@@ -106,7 +108,7 @@ class Battle:
         effect_type = attack_info.get("effect")
         message, total_damage, self_damage_info = enemy.perform_attack(self.player, attack_type)
         self.display_attack_animation(enemy.name, attack_info['name'])
-        print(message)
+        print(message.rstrip())
         
         if self_damage_info:
             self_damage_effect = SELF_DAMAGE(self_damage_info["damage"], self_damage_info["type"])
@@ -169,8 +171,8 @@ class Battle:
             self.player.update_hots()
             self.player.update_buffs()
             #self.player.update_defensive_stance()
-            self.player.update_status_effects()
-            enemy.update_status_effects()
+            self.player.update_status_effects(self.player)
+            enemy.update_status_effects(enemy)
             self.display_battle_status(enemy)
             
             if not self.player.is_alive():
@@ -231,6 +233,7 @@ class Battle:
             print(f"You gained {enemy.gold} gold.")
             self.loot_drop(enemy.tier)
             self.battle_ended = False
+            print()
         elif reason == "run_away":
             print("You successfully ran away from the battle.")
         
@@ -293,10 +296,13 @@ class Battle:
         
         if self.player.status_effects:
             print("\nPlayer Status Effects:")
+            effect_messages = []
             for effect in self.player.status_effects:
-                print(f"- {effect}")
-                if effect.name == "Defensive Stance":
-                    print(" While in Defensive Stance you can only use Normal Attacks!")
+                effect_str = str(effect)
+                if effect_str:
+                    effect_messages.append(f"- {effect_str}")
+            if effect_messages:
+                print("\n".join(effect_messages))
         
         if self.player.weapon_coating:
             print(f"\nYour weapon is coated with {self.player.weapon_coating['name']} ({self.player.weapon_coating['remaining_duration']} attacks remaining)")
@@ -308,8 +314,13 @@ class Battle:
         
         if enemy.status_effects:
             print(f"\n{enemy.name} Status Effects:")
+            effect_messages = []
             for effect in enemy.status_effects:
-                print(f"- {effect}")
+                effect_str = str(effect)
+                if effect_str:
+                    effect_messages.append(f"- {effect_str}")
+            if effect_messages:
+                print("\n".join(effect_messages))
 
     def use_item_menu(self, enemy):
         #Handles item usage inside battle, checks if player has the item, if so and not on cooldown, uses item by calling use_combat_item method

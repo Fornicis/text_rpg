@@ -167,15 +167,20 @@ class Character:
                 #print(f"{self.name} resists the {new_effect.name} effect!")
                 self.status_effects.remove(new_effect)
 
-    def update_status_effects(self):
-        for effect in self.status_effects[:]:
-            effect.apply(self)
-            if effect.update(self):
-                print("")
+    def update_status_effects(self, character):
+        for effect in character.status_effects[:]:
+            result = effect.apply(character)
+            if isinstance(result, str) and result:
+                print(result)
+            if effect.update(character):
+                if isinstance(result, str) and result:
+                    print(result)
             else:
-                effect.remove(self)
-                self.status_effects.remove(effect)
-                print(f"{effect.name} has worn off from {self.name}.")
+                remove_message = effect.remove(character)
+                if remove_message:
+                    print(remove_message)
+                character.status_effects.remove(effect)
+                print(f"{effect.name} has worn off from {character.name}.")
    
     def remove_status_effect(self, effect_name):
         self.status_effects = [e for e in self.status_effects if e.name != effect_name]

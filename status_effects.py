@@ -60,11 +60,10 @@ def create_chance_effect(name, chance_func, effect_func):
     def apply(character, strength):
         if random.random() < chance_func(strength):
             effect_func(character, True)
-            #print(f"{character.name} is affected by {name}!\n")
             return True
         else:
             effect_func(character, False)
-            print(f"{character.name} resists the {name} effect!")
+            print(f"{character.name} resists the {name} effect!", end='')
             return False
     
     def remove(character, strength):
@@ -146,13 +145,14 @@ def defensive_stance_apply(character, strength):
         defence_boost = int(character.defence * strength / 100)
         character.defensive_stance_boost = defence_boost
         character.defence += defence_boost
-        print(f"{character.name}'s defence increased by {defence_boost} due to Defensive Stance.")
-    return True
+        return f"{character.name}'s defence increased by {defence_boost} due to Defensive Stance."
+    return ""
 
 def defensive_stance_remove(character, strength):
     if hasattr(character, 'defensive_stance_boost'):
         character.defence -= character.defensive_stance_boost
         del character.defensive_stance_boost
-        print(f"{character.name}'s Defensive Stance has worn off. Defence decreased to {character.defence}.")
+        return f"{character.name}'s Defensive Stance has worn off. Defence decreased to {character.defence}."
+    return ""
 
 DEFENSIVE_STANCE = lambda duration, strength=25: StatusEffect("Defensive Stance", duration, defensive_stance_apply, defensive_stance_remove, strength=strength, is_debuff=False)
