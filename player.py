@@ -14,6 +14,7 @@ class Character:
             "normal": {"name": "Normal Attack", "stamina_modifier": 0, "damage_modifier": 1},
         }
         self.defence = defence
+        self.original_defence = defence
         self.status_effects = []
         self.poison_stack = 0
         self.burn_stack = 0
@@ -147,24 +148,30 @@ class Character:
             if existing_effect.stackable:
                 existing_effect.strength += new_effect.strength
                 existing_effect.remaining_duration = max(existing_effect.remaining_duration, new_effect.initial_duration)
+                existing_effect.is_active = True
                 print(f"{self.name}'s {existing_effect.name} is stacked to {existing_effect.strength} and refreshed for {existing_effect.remaining_duration} turns!")
             else:
                 existing_effect.remaining_duration = max(existing_effect.remaining_duration, new_effect.initial_duration)
                 existing_effect.strength = max(existing_effect.strength, new_effect.strength)
-                print(f"{self.name}'s {existing_effect.name} is refreshed to strength {existing_effect.strength} for {existing_effect.remaining_duration} turns!")
+                existing_effect.is_active = True
+                #print(f"{self.name}'s {existing_effect.name} is refreshed to strength {existing_effect.strength} for {existing_effect.remaining_duration} turns!")
         else:
             self.status_effects.append(new_effect)
-            new_effect.apply(self)
-            if new_effect.stackable:
-                print(f"{self.name} is affected by {new_effect.name} with {new_effect.strength} stack(s) for {new_effect.remaining_duration} turns!")
+            apply_result = new_effect.apply(self)
+            if apply_result:
+                if new_effect.stackable:
+                    print(f"{self.name} is affected by {new_effect.name} with {new_effect.strength} stack(s) for {new_effect.remaining_duration} turns!")
+                else:
+                    print(f"{self.name} is affected by {new_effect.name} for {new_effect.remaining_duration} turns!")
             else:
-                print(f"{self.name} is affected by {new_effect.name} for {new_effect.remaining_duration} turns!")
+                #print(f"{self.name} resists the {new_effect.name} effect!")
+                self.status_effects.remove(new_effect)
 
     def update_status_effects(self):
         for effect in self.status_effects[:]:
             effect.apply(self)
             if effect.update(self):
-                print(f"{effect.name} has {effect.remaining_duration} turns remaining on {self.name}")
+                print("")
             else:
                 effect.remove(self)
                 self.status_effects.remove(effect)
@@ -430,12 +437,17 @@ class Player(Character):
     
     def apply_defensive_stance(self):
         attack_info = self.attack_types["defensive"]
-        defensive_stance_effect = DEFENSIVE_STANCE(
-            attack_info["duration"], 
-            attack_info["defence_boost_percentage"]
-        )
-        self.apply_status_effect(defensive_stance_effect)
-        print(f"You've entered a Defensive Stance for {attack_info['duration']} turns.")
+        existing_effect = next((effect for effect in self.status_effects if effect.name == "Defensive Stance"), None)
+        if existing_effect:
+            existing_effect.reset_duration()
+            print(f"Your Defensive Stance has been refreshed for {attack_info['duration']} turns.")
+        else:
+            defensive_stance_effect = DEFENSIVE_STANCE(
+                attack_info["duration"], 
+                attack_info["defence_boost_percentage"]
+            )
+            self.apply_status_effect(defensive_stance_effect)
+            print(f"You've entered a Defensive Stance for {attack_info['duration']} turns.")
     
     def update_buffs(self):
         #Reduces the duration of any duration based buffs (Such as HoTs or sharpening stones)
@@ -488,13 +500,13 @@ class Player(Character):
                 print(f"Your defence boost from Defensive Stance has worn off.")
                 self.defensive_stance = {"boost": 0, "duration": 0}
             else:
-                print(f"\nDefensive Stance remains active for {self.defensive_stance['duration']} more turns.\n")
+                print(f"\nDefensive Stance remains active for {self.defensive_stance['duration']} more turns.")
     
     def update_weapon_coating(self):
         if self.weapon_coating:
             self.weapon_coating['remaining_duration'] -= 1
             if self.weapon_coating['remaining_duration'] <= 0:
-                print(f"The {self.weapon_coating['name']} on your weapon has worn off.")
+                print(f"\nThe {self.weapon_coating['name']} on your weapon has worn off.")
                 self.weapon_coating = None
     
     def remove_combat_buffs(self):

@@ -4,6 +4,7 @@ from enemies import Enemy, ENEMY_ATTACK_TYPES
 import time
 from status_effects import *
 
+
 class Battle:
     def __init__(self, player, items, game):
         self.player = player
@@ -14,16 +15,16 @@ class Battle:
 
     def player_attack(self, enemy):
         if self.player.stunned:
-            print("You're stunned and lose your turn.")
+            print("You're stunned and lose your turn.\n")
             self.player.stunned = False
             return False, None
         if self.player.frozen:
             if random.random() < 0.5:
-                print("You're frozen and cannot attack!")
+                print("You're frozen and cannot attack!\n")
                 self.enemy_attack(enemy)
                 return False, None
             else:
-                print(f"{self.player.name} thaws out from the ice and attacks!")
+                print(f"{self.player.name} thaws out from the ice and attacks!\n")
                 self.player.frozen = False
         
         self.player.display_attack_options()
@@ -65,7 +66,7 @@ class Battle:
         
         if reflected_damage > 0:
             self.player.take_damage(reflected_damage)
-            print(f"{self.player.name} takes {reflected_damage} reflected damage!")
+            print(f"{self.player.name} takes {reflected_damage} reflected damage!\n")
         
         if attack_type == "defensive":
             self.player.apply_defensive_stance()
@@ -75,7 +76,7 @@ class Battle:
             enemy.apply_status_effect(stunning_effect)
         
         if self.player.weapon_coating:
-            print(f"{enemy.name} is poisoned by your coated weapon!")
+            print(f"{enemy.name} is poisoned by your coated weapon!\n")
             poison_effect = POISON(
                 duration=self.player.weapon_coating['duration'],
                 strength=self.player.weapon_coating['stacks']
@@ -88,7 +89,7 @@ class Battle:
             return True, None
         
         if enemy.stunned:
-            print(f"{enemy.name} is stunned and loses their turn!")
+            print(f"{enemy.name} is stunned and loses their turn!\n")
             enemy.stunned = False
         else:
             self.enemy_attack(enemy)
@@ -142,7 +143,7 @@ class Battle:
             freeze_effect = FREEZE(2, effect_strength)
             target.apply_status_effect(freeze_effect)
         elif effect_type == "stun":
-            stun_effect = STUN(2, effect_strength)
+            stun_effect = STUN(1, effect_strength)
             target.apply_status_effect(stun_effect)
         elif effect_type == "stamina_drain":
             stamina_drain_effect = STAMINA_DRAIN(damage)
@@ -167,7 +168,7 @@ class Battle:
             self.player.update_cooldowns()
             self.player.update_hots()
             self.player.update_buffs()
-            self.player.update_defensive_stance()
+            #self.player.update_defensive_stance()
             self.player.update_status_effects()
             enemy.update_status_effects()
             self.display_battle_status(enemy)
@@ -186,7 +187,7 @@ class Battle:
                 self.enemy_attack(enemy)
                 continue
             
-            action = input("Do you want to:\n[a]ttack\n[u]se item\n[r]un?\n>").lower()
+            action = input("\nDo you want to:\n[a]ttack\n[u]se item\n[r]un?\n>").lower()
             
             self_damage_info = None
             
@@ -298,7 +299,7 @@ class Battle:
                     print(" While in Defensive Stance you can only use Normal Attacks!")
         
         if self.player.weapon_coating:
-            print(f"Your weapon is coated with {self.player.weapon_coating['name']} ({self.player.weapon_coating['remaining_duration']} attacks remaining)")
+            print(f"\nYour weapon is coated with {self.player.weapon_coating['name']} ({self.player.weapon_coating['remaining_duration']} attacks remaining)")
         
         print(f"\n{enemy.name} HP: {enemy.hp}")
         print(f"Attack: {enemy.attack}")

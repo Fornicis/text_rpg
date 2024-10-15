@@ -11,49 +11,71 @@ class StatusEffect:
         self.stackable = stackable
         self.is_debuff = is_debuff
         self.applied_this_turn = False
+        self.is_active = False
 
     def apply(self, character, *args):
         if not self.applied_this_turn:
             result = self.apply_func(character, self.strength, *args)
             self.applied_this_turn = True
+            self.is_active = result
             return result
+        return False
 
     def remove(self, character):
         if self.remove_func:
             self.remove_func(character, self.strength)
+        self.is_active = False
 
     def update(self, character):
         self.applied_this_turn = False
-        self.remaining_duration -= 1
-        return self.remaining_duration > 0
+        if self.is_active:
+            self.remaining_duration -= 1
+            if self.remaining_duration <= 0:
+                self.remove(character)
+                return False
+            return True
+        return False
 
     def reset_duration(self):
         self.remaining_duration = self.initial_duration
 
     def __str__(self):
+        if not self.is_active:
+            return ""
         if self.stackable:
-            return f"{self.name} ({self.strength} stacks, {self.remaining_duration} turns remaining)"
-        return f"{self.name} ({self.remaining_duration} turns remaining)"
+            return f"{self.name} ({self.strength} stacks, {self.remaining_duration} turns)"
+        return f"{self.name} ({self.remaining_duration} turns)"
 
 def create_dot_effect(name, damage_func):
     def apply(character, strength):
         damage = damage_func(character, strength)
         character.take_damage(damage)
-        print(f"{character.name} takes {damage} {name.lower()} damage! (Current stacks: {strength})")
+        effect = next((e for e in character.status_effects if e.name == name), None)
+        duration = effect.remaining_duration if effect else 0
+        print(f"{character.name} takes {damage} {name.lower()} damage! (Current stacks: {strength}, Duration: {duration} turns)")
+        return True
     return apply
 
 def create_chance_effect(name, chance_func, effect_func):
     def apply(character, strength):
-        if random.random() < chance_func(strength):
+        existing_effect = next((e for e in character.status_effects if e.name == name), None)
+        if existing_effect and existing_effect.is_active:
             effect_func(character, True)
-            print(f"{character.name} is affected by {name}!")
+            existing_effect.reset_duration()
+            existing_effect.strength = max(existing_effect.strength, strength)
+            print(f"{character.name}'s {name} is refreshed.")
+            return True
+        elif random.random() < chance_func(strength):
+            effect_func(character, True)
+            #print(f"{character.name} is affected by {name}!\n")
+            return True
         else:
             effect_func(character, False)
             print(f"{character.name} resists the {name} effect!")
+            return False
     
     def remove(character, strength):
         effect_func(character, False)
-        print(f"{name} effect has worn off from {character.name}.")
     
     return apply, remove
 
@@ -66,10 +88,10 @@ POISON = lambda duration, strength=1: StatusEffect("Poison", duration,
     create_dot_effect("Poison", lambda char, str: str),
     strength=strength, is_debuff=True, stackable=True)
 
-freeze_apply, freeze_remove = create_chance_effect("Freeze", lambda str: 1.0 * str, lambda char, frozen: setattr(char, 'frozen', frozen))
+freeze_apply, freeze_remove = create_chance_effect("Freeze", lambda str: 0.5 * str, lambda char, frozen: setattr(char, 'frozen', frozen))
 FREEZE = lambda duration, strength=1: StatusEffect("Freeze", duration, freeze_apply, freeze_remove, strength=strength, is_debuff=True)
 
-stun_apply, stun_remove = create_chance_effect("Stun", lambda str: 1.0 * str, lambda char, stunned: setattr(char, 'stunned', stunned))
+stun_apply, stun_remove = create_chance_effect("Stun", lambda str: 0.3 * str, lambda char, stunned: setattr(char, 'stunned', stunned))
 STUN = lambda duration, strength=1: StatusEffect("Stun", duration, stun_apply, stun_remove, strength=strength, is_debuff=True)
 
 def self_damage_apply(character, strength, attack_type="reckless"):
@@ -127,14 +149,17 @@ def defence_break_remove(character, strength):
 DEFENCE_BREAK = lambda duration, strength: StatusEffect("Defence Break", duration, defence_break_apply, defence_break_remove, strength=strength, is_debuff=True)
 
 def defensive_stance_apply(character, strength):
-    defence_boost = int(character.defence * strength / 100)
-    character.defence += defence_boost
-    print(f"{character.name}'s defence increased by {defence_boost} due to Defensive Stance.")
-    return defence_boost
+    if not hasattr(character, 'defensive_stance_boost'):
+        defence_boost = int(character.defence * strength / 100)
+        character.defensive_stance_boost = defence_boost
+        character.defence += defence_boost
+        print(f"{character.name}'s defence increased by {defence_boost} due to Defensive Stance.")
+    return True
 
 def defensive_stance_remove(character, strength):
-    defence_boost = int(character.defence * strength / 100)
-    character.defence -= defence_boost
-    print(f"{character.name}'s Defensive Stance has worn off. Defence decreased by {defence_boost}.")
+    if hasattr(character, 'defensive_stance_boost'):
+        character.defence -= character.defensive_stance_boost
+        del character.defensive_stance_boost
+        print(f"{character.name}'s Defensive Stance has worn off. Defence decreased to {character.defence}.")
 
 DEFENSIVE_STANCE = lambda duration, strength=25: StatusEffect("Defensive Stance", duration, defensive_stance_apply, defensive_stance_remove, strength=strength, is_debuff=False)
