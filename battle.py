@@ -238,7 +238,7 @@ class Battle:
         elif reason == "run_away":
             print("You successfully ran away from the battle.")
         
-        self.player.remove_combat_buffs()
+        self.player.cleanup_after_battle()
         
     
     def loot_drop(self, enemy_tier):

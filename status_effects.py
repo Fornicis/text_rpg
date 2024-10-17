@@ -126,33 +126,27 @@ DAMAGE_REFLECT = lambda duration, strength=1: StatusEffect("Damage Reflect", dur
 
 # New effect: Defence Break
 def defence_break_apply(character, strength):
-    if not hasattr(character, 'original_defence'):
-        character.original_defence = character.defence
-    defence_reduction = strength
-    character.defence = max(0, character.defence - defence_reduction)
-    print(f"{character.name}'s defence is reduced by {defence_reduction}!")
+    character.apply_debuff("defence", strength)
+    print(f"{character.name}'s defence is reduced by {strength}!")
+    return True
 
 def defence_break_remove(character, strength):
-    if hasattr(character, 'original_defence'):
-        character.defence = character.original_defence
-        del character.original_defence
-        print(f"{character.name}'s defence has been restored.")
+    character.remove_debuff("defence", strength)
+    print(f"{character.name}'s Defence Break effect has been removed.")
 
 DEFENCE_BREAK = lambda duration, strength: StatusEffect("Defence Break", duration, defence_break_apply, defence_break_remove, strength=strength, is_debuff=True)
 
 def defensive_stance_apply(character, strength):
-    if not hasattr(character, 'defensive_stance_boost'):
-        defence_boost = int(character.defence * strength / 100)
-        character.defensive_stance_boost = defence_boost
-        character.defence += defence_boost
-        return f"{character.name}'s defence increased by {defence_boost} due to Defensive Stance."
-    return ""
+    boost = int(character.base_defence * strength / 100)
+    character.combat_buff_modifiers["defence"] += boost
+    character.recalculate_stats()
+    print(f"{character.name}'s defence increased by {boost} due to Defensive Stance.")
+    return True
 
 def defensive_stance_remove(character, strength):
-    if hasattr(character, 'defensive_stance_boost'):
-        character.defence -= character.defensive_stance_boost
-        del character.defensive_stance_boost
-        return f"{character.name}'s Defensive Stance has worn off. Defence decreased to {character.defence}."
-    return ""
+    boost = int(character.base_defence * strength / 100)
+    character.combat_buff_modifiers["defence"] = max(0, character.combat_buff_modifiers.get("defence", 0) - boost)
+    character.recalculate_stats()
+    print(f"{character.name}'s Defensive Stance has worn off. Defence decreased by {boost}.")
 
 DEFENSIVE_STANCE = lambda duration, strength=25: StatusEffect("Defensive Stance", duration, defensive_stance_apply, defensive_stance_remove, strength=strength, is_debuff=False)

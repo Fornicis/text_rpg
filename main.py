@@ -440,7 +440,10 @@ class Game:
             elif action == "sa":
                 #Allows the player to save at any point in case of unexpected crashes, will look into making an autosave feature
                 save_file = self.choose_save_file()
-                save_game(self.player, self.current_location, self.player.days, save_file)
+                save_game(self.player, self.current_location, save_file)
+            elif action == "d":
+                self.player.print_debug_modifiers()
+                pause()
             else:
                 print("Invalid action. Try again.")
             

@@ -2,6 +2,7 @@ import json
 import os
 from player import Player
 from items import Item, initialise_items
+from status_effects import StatusEffect, BURN, POISON, FREEZE, STUN, SELF_DAMAGE, VAMPIRIC, STAMINA_DRAIN, DAMAGE_REFLECT, DEFENCE_BREAK, DEFENSIVE_STANCE
 
 SAVE_DIRECTORY = "saves"
 
@@ -13,7 +14,7 @@ def get_save_files():
     ensure_save_directory()
     return [f for f in os.listdir(SAVE_DIRECTORY) if f.endswith('.json')]
 
-def save_game(player, current_location, days, filename):
+def save_game(player, current_location, filename):
     ensure_save_directory()
     save_data = {
         "player": {
@@ -42,7 +43,11 @@ def save_game(player, current_location, days, filename):
             "visited_locations": list(player.visited_locations),
             "kill_tracker": player.kill_tracker,
             "weapon_stamina_cost": player.weapon_stamina_cost,
-            "defensive_stance": player.defensive_stance,
+            "equipment_modifiers": player.equipment_modifiers,
+            "buff_modifiers": player.buff_modifiers,
+            "combat_buff_modifiers": player.combat_buff_modifiers,
+            "weapon_buff_modifiers": player.weapon_buff_modifiers,
+            "debuff_modifiers": player.debuff_modifiers,
             "status_effects": [(effect.name, effect.remaining_duration, effect.strength, effect.stackable) for effect in player.status_effects]
         },
         "current_location": current_location,
@@ -85,14 +90,33 @@ def load_game(filename):
     player.visited_locations = set(player_data["visited_locations"])
     player.kill_tracker = player_data["kill_tracker"]
     player.weapon_stamina_cost = player_data["weapon_stamina_cost"]
-    player.defensive_stance = player_data["defensive_stance"]
+    
+    # Load new modifier dictionaries
+    player.equipment_modifiers = player_data["equipment_modifiers"]
+    player.buff_modifiers = player_data["buff_modifiers"]
+    player.combat_buff_modifiers = player_data["combat_buff_modifiers"]
+    player.weapon_buff_modifiers = player_data["weapon_buff_modifiers"]
+    player.debuff_modifiers = player_data["debuff_modifiers"]
     
     # Load status effects
-    from status_effects import StatusEffect
-    player.status_effects = [
-        StatusEffect(name, duration, lambda c, s: None, strength, stackable=stackable)
-        for name, duration, strength, stackable in player_data["status_effects"]
-    ]
+    effect_map = {
+        "Burn": BURN,
+        "Poison": POISON,
+        "Freeze": FREEZE,
+        "Stun": STUN,
+        "Self Damage": SELF_DAMAGE,
+        "Vampiric": VAMPIRIC,
+        "Stamina Drain": STAMINA_DRAIN,
+        "Damage Reflect": DAMAGE_REFLECT,
+        "Defence Break": DEFENCE_BREAK,
+        "Defensive Stance": DEFENSIVE_STANCE
+    }
+    player.status_effects = []
+    for name, duration, strength, stackable in player_data["status_effects"]:
+        if name in effect_map:
+            effect = effect_map[name](duration, strength)
+            effect.stackable = stackable
+            player.status_effects.append(effect)
 
     current_location = save_data["current_location"]
     
