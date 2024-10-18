@@ -124,7 +124,6 @@ def damage_reflect_apply(character, strength, damage_dealt=0):
 
 DAMAGE_REFLECT = lambda duration, strength=1: StatusEffect("Damage Reflect", duration, damage_reflect_apply, strength=strength, is_debuff=False)
 
-# New effect: Defence Break
 def defence_break_apply(character, strength):
     character.apply_debuff("defence", strength)
     print(f"{character.name}'s defence is reduced by {strength}!")
@@ -132,7 +131,7 @@ def defence_break_apply(character, strength):
 
 def defence_break_remove(character, strength):
     character.remove_debuff("defence", strength)
-    print(f"{character.name}'s Defence Break effect has been removed.")
+    print(f"{character.name}'s Defence Break effect has worn off.")
 
 DEFENCE_BREAK = lambda duration, strength: StatusEffect("Defence Break", duration, defence_break_apply, defence_break_remove, strength=strength, is_debuff=True)
 
@@ -150,3 +149,14 @@ def defensive_stance_remove(character, strength):
     print(f"{character.name}'s Defensive Stance has worn off. Defence decreased by {boost}.")
 
 DEFENSIVE_STANCE = lambda duration, strength=25: StatusEffect("Defensive Stance", duration, defensive_stance_apply, defensive_stance_remove, strength=strength, is_debuff=False)
+
+def weaken_apply(character, strength):
+    character.apply_debuff("attack", strength)
+    print(f"{character.name}'s attack is reduced by {strength}!")
+    return True
+
+def weaken_remove(character, strength):
+    character.remove_debuff("attack", strength)
+    print(f"{character.name}'s Attack weaken has worn off.")
+    
+ATTACK_WEAKEN = lambda duration, strength: StatusEffect("Attack Weaken", duration, weaken_apply, weaken_remove, strength=strength, is_debuff=True)

@@ -161,6 +161,9 @@ class Battle:
         elif effect_type == "defence_break":
             defence_break_effect = DEFENCE_BREAK(3, effect_strength)
             target.apply_status_effect(defence_break_effect)
+        elif effect_type == "attack_weaken":
+            attack_weaken_effect = ATTACK_WEAKEN(3, effect_strength)
+            target.apply_status_effect(attack_weaken_effect)
         # Add other effects as needed
     
     def battle(self, enemy):

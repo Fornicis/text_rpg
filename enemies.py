@@ -23,11 +23,9 @@ class Enemy(Character):
         
     """ Effects to add
             "confusion": f"{player.name} is confused! They might hurt themselves on their next turn.",
-            "defense_break": f"{player.name}'s armor is shattered! Their defense is temporarily lowered.",
             "execute_low_health": f"The attack deals extra damage due to {player.name}'s low health!",
             "damage_share": f"{player.name} is linked with {self.name}! They'll share some of the damage they deal.",
             "mana_drain": f"{player.name}'s energy is drained! They lose some stamina.",
-            "weaken": f"{player.name} has been cursed! Their attacks will be weaker for a few turns.",
             "absorb_buff": f"{self.name} absorbs some of {player.name}'s power, growing stronger!",
             "random_effect": "A chaotic energy surges through the battlefield!",
             # Add descriptions for boss-specific effects
@@ -55,11 +53,11 @@ def initialise_enemies():
             "Slime": Enemy("Slime", 38, 22, 9, 25, random.randrange(10, 20), "low", 2, ["normal", "poison", "stunning"]),
             "Frog": Enemy("Frog", 36, 26, 8, 30, random.randrange(12, 24), "low", 3, ["normal", "double", "poison"]),
             
-            "Tree Sprite": Enemy("Tree Sprite", 20, 24, 6, 10, random.randrange(3, 10), "low", 1, ["normal", "double", "draining", "freeze"]),
-            "Snake": Enemy("Snake", 24, 27, 5, 15, random.randrange(5, 15), "low", 1, ["normal", "double", "poison", "freeze"]),
-            "Forest Hawk": Enemy("Forest Hawk", 29, 25, 7, 20, random.randrange(8, 18), "low", 2, ["normal", "double", "stunning", "freeze"]),
-            "Locust": Enemy("Locust", 26, 26, 6, 25, random.randrange(10, 20), "low", 2, ["normal", "double", "poison", "freeze"]),
-            "Leprechaun": Enemy("Leprechaun", 41, 23, 9, 30, random.randrange(12, 24), "low", 3, ["normal", "double", "stunning", "freeze"]),
+            "Tree Sprite": Enemy("Tree Sprite", 20, 24, 6, 10, random.randrange(3, 10), "low", 1, ["normal", "double", "draining"]),
+            "Snake": Enemy("Snake", 24, 27, 5, 15, random.randrange(5, 15), "low", 1, ["normal", "double", "poison"]),
+            "Forest Hawk": Enemy("Forest Hawk", 29, 25, 7, 20, random.randrange(8, 18), "low", 2, ["normal", "double", "stunning"]),
+            "Locust": Enemy("Locust", 26, 26, 6, 25, random.randrange(10, 20), "low", 2, ["normal", "double", "poison"]),
+            "Leprechaun": Enemy("Leprechaun", 41, 23, 9, 30, random.randrange(12, 24), "low", 3, ["normal", "double", "stunning"]),
             
             "Wood Spirit": Enemy("Wood Spirit", 26, 24, 7, 10, random.randrange(3, 10), "low", 1, ["normal", "draining", "stunning"]),
             "Deepwood Stalker": Enemy("Deepwood Stalker", 32, 26, 9, 15, random.randrange(5, 15), "low", 2, ["normal", "double", "poison"]),
@@ -183,5 +181,6 @@ ENEMY_ATTACK_TYPES = {
     "freeze": {"name": "Frozen Strike", "damage_modifier": 0.9, "effect": "freeze"},
     "burn": {"name": "Burning Strike", "damage_modifier": 0.9, "effect": "burn"},
     "damage_reflect": {"name": "Reflective Shield", "damage_modifier": 0.5, "effect": "damage_reflect"},
-    "defence_break": {"name": "Defence Shatter", "damage_modifier": 0.7, "effect": "defence_break"}
+    "defence_break": {"name": "Defence Shatter", "damage_modifier": 0.7, "effect": "defence_break"},
+    "attack_weaken": {"name": "Attack Weaken", "damage_modifier": 0.7, "effect": "attack_weaken"}
 }

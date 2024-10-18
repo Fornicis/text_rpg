@@ -458,6 +458,14 @@ class Player(Character):
 
         self.recalculate_stats()
 
+    def apply_debuff(self, stat, value):
+        self.debuff_modifiers[stat] += value
+        self.recalculate_stats()
+
+    def remove_debuff(self, stat, value):
+        self.debuff_modifiers[stat] -= value
+        self.recalculate_stats()
+    
     def apply_weapon_buff(self, value, duration):
         self.weapon_buff_modifiers["attack"] += value
         self.weapon_buff = {'value': value, 'duration': duration}
@@ -479,14 +487,14 @@ class Player(Character):
         existing_effect = next((effect for effect in self.status_effects if effect.name == "Defensive Stance"), None)
         if existing_effect:
             existing_effect.reset_duration()
-            print(f"Your Defensive Stance has been refreshed for {attack_info['duration']} turns.")
+            #print(f"Your Defensive Stance has been refreshed for {attack_info['duration']} turns.")
         else:
             defensive_stance_effect = DEFENSIVE_STANCE(
                 attack_info["duration"], 
                 attack_info["defence_boost_percentage"]
             )
             self.apply_status_effect(defensive_stance_effect)
-            print(f"You've entered a Defensive Stance for {attack_info['duration']} turns.")
+            #print(f"You've entered a Defensive Stance for {attack_info['duration']} turns.")
     
     def update_buffs(self):
         #Reduces the duration of any duration based buffs (Such as HoTs or sharpening stones)
@@ -531,17 +539,7 @@ class Player(Character):
             else:
                 print(f"{hot_name} healed you for {heal_amount} HP and has worn off.")
                 del self.active_hots[hot_name]
-    
-    """def update_defensive_stance(self):
-        if self.defensive_stance["duration"] > 0:
-            self.defensive_stance["duration"] -= 1
-            if self.defensive_stance["duration"] == 0:
-                self.defence -= self.defensive_stance["boost"]
-                print(f"Your defence boost from Defensive Stance has worn off.")
-                self.defensive_stance = {"boost": 0, "duration": 0}
-            else:
-                print(f"\nDefensive Stance remains active for {self.defensive_stance['duration']} more turns.")"""
-    
+
     def update_weapon_coating(self):
         if self.weapon_coating:
             self.weapon_coating['remaining_duration'] -= 1
@@ -555,7 +553,7 @@ class Player(Character):
             self.combat_buff_modifiers[stat] -= buff_info['value']
         self.combat_buffs.clear()
         self.recalculate_stats()
-        print("Your combat buffs have worn off.")
+        print("Any combat buffs you had have worn off.")
         
     def use_item(self, item, game=None):
         #Allows the player to use an item based on current state, be that cooldown, combat_only items, teleport scrolls etc.
