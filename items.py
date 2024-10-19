@@ -1,11 +1,21 @@
 class Item:
-    def __init__(self, name, item_type, value, tier, attack=0, defence=0, effect_type=None, effect=0, cooldown=0, duration=0, tick_effect=0, weapon_type=None, stamina_restore=0, combat_only=False):
+    def __init__(self, name, item_type, value, tier,
+                 attack=0, defence=0, accuracy=0, crit_chance=0, crit_damage=0, armour_penetration=0, damage_reduction=0, evasion=0, block_chance=0,
+                 effect_type=None, effect=0, cooldown=0, duration=0, tick_effect=0,
+                 weapon_type=None, stamina_restore=0, combat_only=False):
         self.name = name
         self.type = item_type
         self.value = value
         self.tier = tier
         self.attack = attack
         self.defence = defence
+        self.accuracy = accuracy
+        self.crit_chance = crit_chance
+        self.crit_damage = crit_damage
+        self.armour_penetration = armour_penetration
+        self.damage_reduction = damage_reduction
+        self.evasion = evasion
+        self.block_chance = block_chance
         self.effect_type = effect_type
         self.effect = effect
         self.cooldown = cooldown
@@ -20,203 +30,378 @@ def initialise_items():
         # Starter items
         "Peasants Top": Item("Peasants Top", "chest", 0, "starter", defence=1),
         "Peasants Bottoms": Item("Peasants Bottoms", "legs", 0, "starter", defence=1),
-        "Wooden Sword": Item("Wooden Sword", "weapon", 0, "starter", attack=5, weapon_type="light"),
+        "Wooden Sword": Item("Wooden Sword", "weapon", 0, "starter", attack=5, accuracy=0, crit_chance=2, crit_damage=120, armour_penetration=0, weapon_type="light"),
 
         # Common (Bronze) Weapons level 1-3
-        "Bronze Dagger": Item("Bronze Dagger", "weapon", 20, "common", attack=10, weapon_type="light"),
-        "Bronze Shortsword": Item("Bronze Shortsword", "weapon", 25, "common", attack=12, weapon_type="light"),
-        "Bronze Sword": Item("Bronze Sword", "weapon", 30, "common", attack=14, weapon_type="medium"),
-        "Bronze Axe": Item("Bronze Axe", "weapon", 35, "common", attack=16, weapon_type="medium"),
-        "Bronze Longsword": Item("Bronze Longsword", "weapon", 40, "common", attack=18, weapon_type="heavy"),
-        "Bronze Mace": Item("Bronze Mace", "weapon", 45, "common", attack=20, weapon_type="heavy"),
+        "Bronze Dagger": Item("Bronze Dagger", "weapon", 20, "common", attack=10, accuracy=2, crit_chance=5, crit_damage=130, armour_penetration=3, weapon_type="light"),
+        "Bronze Shortsword": Item("Bronze Shortsword", "weapon", 25, "common", attack=12, accuracy=3, crit_chance=4, crit_damage=125, armour_penetration=1, weapon_type="light"),
+        "Bronze Sword": Item("Bronze Sword", "weapon", 30, "common", attack=14, accuracy=4, crit_chance=3, crit_damage=130, armour_penetration=1, weapon_type="medium"),
+        "Bronze Axe": Item("Bronze Axe", "weapon", 35, "common", attack=16, accuracy=-1, crit_chance=3, crit_damage=140, armour_penetration=2, weapon_type="medium"),
+        "Bronze Longsword": Item("Bronze Longsword", "weapon", 40, "common", attack=18, accuracy=2, crit_chance=2, crit_damage=135, armour_penetration=1, weapon_type="heavy"),
+        "Bronze Mace": Item("Bronze Mace", "weapon", 45, "common", attack=20, accuracy=-2, crit_chance=2, crit_damage=140, armour_penetration=3, weapon_type="heavy"),
 
         # Uncommon (Iron) Weapons level 4-6
-        "Iron Dagger": Item("Iron Dagger", "weapon", 80, "uncommon", attack=23, weapon_type="light"),
-        "Iron Shortsword": Item("Iron Shortsword", "weapon", 90, "uncommon", attack=25, weapon_type="light"),
-        "Iron Sword": Item("Iron Sword", "weapon", 100, "uncommon", attack=27, weapon_type="medium"),
-        "Iron Axe": Item("Iron Axe", "weapon", 110, "uncommon", attack=29, weapon_type="medium"),
-        "Iron Longsword": Item("Iron Longsword", "weapon", 120, "uncommon", attack=31, weapon_type="heavy"),
-        "Iron Mace": Item("Iron Mace", "weapon", 130, "uncommon", attack=33, weapon_type="heavy"),
+        "Iron Dagger": Item("Iron Dagger", "weapon", 80, "uncommon", attack=23, accuracy=3, crit_chance=6, crit_damage=135, armour_penetration=4, weapon_type="light"),
+        "Iron Shortsword": Item("Iron Shortsword", "weapon", 90, "uncommon", attack=25, accuracy=4, crit_chance=5, crit_damage=130, armour_penetration=2, weapon_type="light"),
+        "Iron Sword": Item("Iron Sword", "weapon", 100, "uncommon", attack=27, accuracy=5, crit_chance=4, crit_damage=135, armour_penetration=2, weapon_type="medium"),
+        "Iron Axe": Item("Iron Axe", "weapon", 110, "uncommon", attack=29, accuracy=0, crit_chance=4, crit_damage=145, armour_penetration=3, weapon_type="medium"),
+        "Iron Longsword": Item("Iron Longsword", "weapon", 120, "uncommon", attack=31, accuracy=3, crit_chance=3, crit_damage=140, armour_penetration=2, weapon_type="heavy"),
+        "Iron Mace": Item("Iron Mace", "weapon", 130, "uncommon", attack=33, accuracy=-1, crit_chance=3, crit_damage=145, armour_penetration=4, weapon_type="heavy"),
 
         # Rare (Steel) Weapons level 7-10
-        "Steel Dagger": Item("Steel Dagger", "weapon", 200, "rare", attack=36, weapon_type="light"),
-        "Steel Shortsword": Item("Steel Shortsword", "weapon", 220, "rare", attack=38, weapon_type="light"),
-        "Steel Sword": Item("Steel Sword", "weapon", 240, "rare", attack=40, weapon_type="medium"),
-        "Steel Axe": Item("Steel Axe", "weapon", 260, "rare", attack=42, weapon_type="medium"),
-        "Steel Longsword": Item("Steel Longsword", "weapon", 280, "rare", attack=44, weapon_type="heavy"),
-        "Steel Mace": Item("Steel Mace", "weapon", 300, "rare", attack=46, weapon_type="heavy"),
+        "Steel Dagger": Item("Steel Dagger", "weapon", 200, "rare", attack=36, accuracy=4, crit_chance=7, crit_damage=140, armour_penetration=5, weapon_type="light"),
+        "Steel Shortsword": Item("Steel Shortsword", "weapon", 220, "rare", attack=38, accuracy=5, crit_chance=6, crit_damage=135, armour_penetration=3, weapon_type="light"),
+        "Steel Sword": Item("Steel Sword", "weapon", 240, "rare", attack=40, accuracy=6, crit_chance=5, crit_damage=140, armour_penetration=3, weapon_type="medium"),
+        "Steel Axe": Item("Steel Axe", "weapon", 260, "rare", attack=42, accuracy=1, crit_chance=5, crit_damage=150, armour_penetration=4, weapon_type="medium"),
+        "Steel Longsword": Item("Steel Longsword", "weapon", 280, "rare", attack=44, accuracy=4, crit_chance=4, crit_damage=145, armour_penetration=3, weapon_type="heavy"),
+        "Steel Mace": Item("Steel Mace", "weapon", 300, "rare", attack=46, accuracy=0, crit_chance=4, crit_damage=150, armour_penetration=5, weapon_type="heavy"),
 
         # Epic (Mithril) Weapons level 11-14
-        "Mithril Dagger": Item("Mithril Dagger", "weapon", 500, "epic", attack=49, weapon_type="light"),
-        "Mithril Shortsword": Item("Mithril Shortsword", "weapon", 550, "epic", attack=51, weapon_type="light"),
-        "Mithril Sword": Item("Mithril Sword", "weapon", 600, "epic", attack=53, weapon_type="medium"),
-        "Mithril Axe": Item("Mithril Axe", "weapon", 650, "epic", attack=55, weapon_type="medium"),
-        "Mithril Longsword": Item("Mithril Longsword", "weapon", 700, "epic", attack=57, weapon_type="heavy"),
-        "Mithril Mace": Item("Mithril Mace", "weapon", 750, "epic", attack=59, weapon_type="heavy"),
+        "Mithril Dagger": Item("Mithril Dagger", "weapon", 500, "epic", attack=49, accuracy=5, crit_chance=8, crit_damage=145, armour_penetration=6, weapon_type="light"),
+        "Mithril Shortsword": Item("Mithril Shortsword", "weapon", 550, "epic", attack=51, accuracy=6, crit_chance=7, crit_damage=140, armour_penetration=4, weapon_type="light"),
+        "Mithril Sword": Item("Mithril Sword", "weapon", 600, "epic", attack=53, accuracy=7, crit_chance=6, crit_damage=145, armour_penetration=4, weapon_type="medium"),
+        "Mithril Axe": Item("Mithril Axe", "weapon", 650, "epic", attack=55, accuracy=2, crit_chance=6, crit_damage=155, armour_penetration=5, weapon_type="medium"),
+        "Mithril Longsword": Item("Mithril Longsword", "weapon", 700, "epic", attack=57, accuracy=5, crit_chance=5, crit_damage=150, armour_penetration=4, weapon_type="heavy"),
+        "Mithril Mace": Item("Mithril Mace", "weapon", 750, "epic", attack=59, accuracy=1, crit_chance=5, crit_damage=155, armour_penetration=6, weapon_type="heavy"),
 
         # Masterwork (Aluthril) Weapons level 15-19
-        "Aluthril Dagger": Item("Aluthril Dagger", "weapon", 1000, "masterwork", attack=62, weapon_type="light"),
-        "Aluthril Shortsword": Item("Aluthril Shortsword", "weapon", 1100, "masterwork", attack=64, weapon_type="light"),
-        "Aluthril Sword": Item("Aluthril Sword", "weapon", 1200, "masterwork", attack=66, weapon_type="medium"),
-        "Aluthril Axe": Item("Aluthril Axe", "weapon", 1300, "masterwork", attack=68, weapon_type="medium"),
-        "Aluthril Longsword": Item("Aluthril Longsword", "weapon", 1400, "masterwork", attack=70, weapon_type="heavy"),
-        "Aluthril Mace": Item("Aluthril Mace", "weapon", 1500, "masterwork", attack=72, weapon_type="heavy"),
+        "Aluthril Dagger": Item("Aluthril Dagger", "weapon", 1000, "masterwork", attack=62, accuracy=6, crit_chance=9, crit_damage=150, armour_penetration=7, weapon_type="light"),
+        "Aluthril Shortsword": Item("Aluthril Shortsword", "weapon", 1100, "masterwork", attack=64, accuracy=7, crit_chance=8, crit_damage=145, armour_penetration=5, weapon_type="light"),
+        "Aluthril Sword": Item("Aluthril Sword", "weapon", 1200, "masterwork", attack=66, accuracy=8, crit_chance=7, crit_damage=150, armour_penetration=5, weapon_type="medium"),
+        "Aluthril Axe": Item("Aluthril Axe", "weapon", 1300, "masterwork", attack=68, accuracy=3, crit_chance=7, crit_damage=160, armour_penetration=6, weapon_type="medium"),
+        "Aluthril Longsword": Item("Aluthril Longsword", "weapon", 1400, "masterwork", attack=70, accuracy=6, crit_chance=6, crit_damage=155, armour_penetration=5, weapon_type="heavy"),
+        "Aluthril Mace": Item("Aluthril Mace", "weapon", 1500, "masterwork", attack=72, accuracy=2, crit_chance=6, crit_damage=160, armour_penetration=7, weapon_type="heavy"),
 
         # Legendary (Adamantite) Weapons level 20-24
-        "Adamantite Dagger": Item("Adamantite Dagger", "weapon", 2000, "legendary", attack=75, weapon_type="light"),
-        "Adamantite Shortsword": Item("Adamantite Shortsword", "weapon", 2200, "legendary", attack=77, weapon_type="light"),
-        "Adamantite Sword": Item("Adamantite Sword", "weapon", 2400, "legendary", attack=79, weapon_type="medium"),
-        "Adamantite Axe": Item("Adamantite Axe", "weapon", 2600, "legendary", attack=81, weapon_type="medium"),
-        "Adamantite Longsword": Item("Adamantite Longsword", "weapon", 2800, "legendary", attack=83, weapon_type="heavy"),
-        "Adamantite Warhammer": Item("Adamantite Warhammer", "weapon", 3000, "legendary", attack=85, weapon_type="heavy"),
+        "Adamantite Dagger": Item("Adamantite Dagger", "weapon", 2000, "legendary", attack=75, accuracy=7, crit_chance=10, crit_damage=155, armour_penetration=8, weapon_type="light"),
+        "Adamantite Shortsword": Item("Adamantite Shortsword", "weapon", 2200, "legendary", attack=77, accuracy=8, crit_chance=9, crit_damage=150, armour_penetration=6, weapon_type="light"),
+        "Adamantite Sword": Item("Adamantite Sword", "weapon", 2400, "legendary", attack=79, accuracy=9, crit_chance=8, crit_damage=155, armour_penetration=6, weapon_type="medium"),
+        "Adamantite Axe": Item("Adamantite Axe", "weapon", 2600, "legendary", attack=81, accuracy=4, crit_chance=8, crit_damage=165, armour_penetration=7, weapon_type="medium"),
+        "Adamantite Longsword": Item("Adamantite Longsword", "weapon", 2800, "legendary", attack=83, accuracy=7, crit_chance=7, crit_damage=160, armour_penetration=6, weapon_type="heavy"),
+        "Adamantite Warhammer": Item("Adamantite Warhammer", "weapon", 3000, "legendary", attack=85, accuracy=3, crit_chance=7, crit_damage=165, armour_penetration=8, weapon_type="heavy"),
 
         # Mythical Weapons level 25+
-        "Whisper of the Void": Item("Whisper of the Void", "weapon", 5000, "mythical", attack=88, weapon_type="light"),
-        "Destiny's Call": Item("Destiny's Call", "weapon", 5200, "mythical", attack=90, weapon_type="medium"),
-        "Worldsplitter": Item("Worldsplitter", "weapon", 5400, "mythical", attack=92, weapon_type="heavy"),
-        "Fang of the Cosmos": Item("Fang of the Cosmos", "weapon", 5600, "mythical", attack=94, weapon_type="light"),
-        "Harmony's Discord": Item("Harmony's Discord", "weapon", 5800, "mythical", attack=96, weapon_type="medium"),
-        "Apocalypse Incarnate": Item("Apocalypse Incarnate", "weapon", 6000, "mythical", attack=98, weapon_type="heavy"),
+        "Whisper of the Void": Item("Whisper of the Void", "weapon", 5000, "mythical", attack=88, accuracy=8, crit_chance=11, crit_damage=160, armour_penetration=9, weapon_type="light"),
+        "Destiny's Call": Item("Destiny's Call", "weapon", 5200, "mythical", attack=90, accuracy=10, crit_chance=9, crit_damage=160, armour_penetration=7, weapon_type="medium"),
+        "Worldsplitter": Item("Worldsplitter", "weapon", 5400, "mythical", attack=92, accuracy=5, crit_chance=9, crit_damage=170, armour_penetration=9, weapon_type="heavy"),
+        "Fang of the Cosmos": Item("Fang of the Cosmos", "weapon", 5600, "mythical", attack=94, accuracy=9, crit_chance=12, crit_damage=165, armour_penetration=10, weapon_type="light"),
+        "Harmony's Discord": Item("Harmony's Discord", "weapon", 5800, "mythical", attack=96, accuracy=11, crit_chance=10, crit_damage=165, armour_penetration=8, weapon_type="medium"),
+        "Apocalypse Incarnate": Item("Apocalypse Incarnate", "weapon", 6000, "mythical", attack=98, accuracy=6, crit_chance=10, crit_damage=175, armour_penetration=10, weapon_type="heavy"),
         
-        # Helm
-        "Leather Cap": Item("Leather Cap", "helm", 9, "common", defence=1),
-        "Leather Helm": Item("Leather Helm", "helm", 10, "common", defence=2),
-        "Bronze Coif": Item("Bronze Coif", "helm", 38, "uncommon", defence=3),
-        "Iron Helm": Item("Iron Helm", "helm", 40, "uncommon", defence=4),
-        "Steel Helm": Item("Steel Helm", "helm", 80, "rare", defence=5),
-        "Steel Great Helm": Item("Steel Great Helm", "helm", 85, "rare", defence=6),
-        "Mithril Full Helm": Item("Mithril Full Helm", "helm", 280, "epic", defence=7),
-        "Mithril Crown": Item("Mithril Crown", "helm", 290, "epic", defence=8),
-        "Aluthril Full Helm": Item("Aluthril Full Helm", "helm", 580, "masterwork", defence=9),
-        "Aluthril Crown": Item("Aluthril Crown", "helm", 590, "masterwork", defence=10),
-        "Adamantite Crown": Item("Adamantite Crown", "helm", 1100, "legendary", defence=11),
-        "Adamantite Diadem": Item("Adamantite Diadem", "helm", 1150, "legendary", defence=12),
-        "Crown of Infinite Wisdom": Item("Crown of Infinite Wisdom", "helm", 5200, "mythical", defence=13),
-        "Diadem of Omniscient Thought": Item("Diadem of Omniscient Thought", "helm", 5250, "mythical", defence=14),
+        # Common Helms (4 points total)
+        "Sturdy Leather Cap": Item("Sturdy Leather Cap", "helm", 10, "common", defence=3, damage_reduction=1),
+        "Balanced Leather Helm": Item("Balanced Leather Helm", "helm", 10, "common", defence=2, accuracy=2),
+        "Sharpshooter's Leather Hood": Item("Sharpshooter's Leather Hood", "helm", 10, "common", defence=1, accuracy=2, crit_chance=1),
 
-        # Chest
-        "Leather Vest": Item("Leather Vest", "chest", 22, "common", defence=2),
-        "Leather Chest": Item("Leather Chest", "chest", 25, "common", defence=3),
-        "Bronze Chestplate": Item("Bronze Chestplate", "chest", 55, "uncommon", defence=5),
-        "Iron Cuirass": Item("Iron Cuirass", "chest", 58, "uncommon", defence=6),
-        "Steel Breastplate": Item("Steel Breastplate", "chest", 120, "rare", defence=7),
-        "Steel Hauberk": Item("Steel Hauberk", "chest", 125, "rare", defence=8),
-        "Mithril Plate Armour": Item("Mithril Plate Armour", "chest", 350, "epic", defence=9),
-        "Mithril Cuirass": Item("Mithril Cuirass", "chest", 360, "epic", defence=10),
-        "Aluthril Plate Armour": Item("Aluthril Plate Armour", "chest", 750, "masterwork", defence=11),
-        "Aluthril Cuirass": Item("Aluthril Cuirass", "chest", 760, "masterwork", defence=12),
-        "Adamantite Godplate": Item("Adamantite Godplate", "chest", 1300, "legendary", defence=13),
-        "Adamantite Vanguard": Item("Adamantite Vanguard", "chest", 1350, "legendary", defence=14),
-        "Vestment of Universal Constants": Item("Vestment of Universal Constants", "chest", 5500, "mythical", defence=15),
-        "Cuirass of the Unbreakable Will": Item("Cuirass of the Unbreakable Will", "chest", 5600, "mythical", defence=16),
+        # Uncommon Helms (7 points total)
+        "Bronze Greathelm": Item("Bronze Greathelm", "helm", 40, "uncommon", defence=5, damage_reduction=2),
+        "Bronze Sallet": Item("Bronze Sallet", "helm", 40, "uncommon", defence=3, accuracy=3, crit_chance=1),
+        "Bronze Hawk Helm": Item("Bronze Hawk Helm", "helm", 40, "uncommon", defence=2, accuracy=3, crit_chance=2),
 
-        # Belt
-        "Leather Belt": Item("Leather Belt", "belt", 10, "common", defence=1),
-        "Bronze Girdle": Item("Bronze Girdle", "belt", 33, "uncommon", defence=2),
-        "Iron Belt": Item("Iron Belt", "belt", 35, "uncommon", defence=3),
-        "Steel Girdle": Item("Steel Girdle", "belt", 85, "rare", defence=4),
-        "Steel Fauld": Item("Steel Fauld", "belt", 88, "rare", defence=5),
-        "Mithril Waistguard": Item("Mithril Waistguard", "belt", 290, "epic", defence=6),
-        "Mithril Tasset": Item("Mithril Tasset", "belt", 300, "epic", defence=7),
-        "Aluthril Waistguard": Item("Aluthril Waistguard", "belt", 590, "masterwork", defence=8),
-        "Aluthril Tasset": Item("Aluthril Tasset", "belt", 600, "masterwork", defence=9),
-        "Adamantite Cinch": Item("Adamantite Cinch", "belt", 1180, "legendary", defence=10),
-        "Adamantite Girdle": Item("Adamantite Girdle", "belt", 1200, "legendary", defence=11),
-        "Girdle of Worldly Axis": Item("Girdle of Worldly Axis", "belt", 5250, "mythical", defence=12),
-        "Cincture of Dimensional Stability": Item("Cincture of Dimensional Stability", "belt", 5300, "mythical", defence=13),
+        # Rare Helms (10 points total)
+        "Steel Fortress Helm": Item("Steel Fortress Helm", "helm", 80, "rare", defence=7, damage_reduction=3),
+        "Steel Armet": Item("Steel Armet", "helm", 80, "rare", defence=4, accuracy=4, crit_chance=2),
+        "Steel Sniper's Helm": Item("Steel Sniper's Helm", "helm", 80, "rare", defence=3, accuracy=4, crit_chance=3),
 
-        # Legs
-        "Leather Skirt": Item("Leather Skirt", "legs", 11, "common", defence=2),
-        "Leather Leggings": Item("Leather Leggings", "legs", 12, "common", defence=3),
-        "Bronze Greaves": Item("Bronze Greaves", "legs", 50, "uncommon", defence=5),
-        "Iron Cuisses": Item("Iron Cuisses", "legs", 48, "uncommon", defence=6),
-        "Steel Cuisses": Item("Steel Cuisses", "legs", 110, "rare", defence=7),
-        "Steel Tassets": Item("Steel Tassets", "legs", 115, "rare", defence=8),
-        "Mithril Leggings": Item("Mithril Leggings", "legs", 330, "epic", defence=9),
-        "Mithril Cuisses": Item("Mithril Cuisses", "legs", 340, "epic", defence=10),
-        "Aluthril Leggings": Item("Aluthril Leggings", "legs", 730, "masterwork", defence=11),
-        "Aluthril Cuisses": Item("Aluthril Cuisses", "legs", 740, "masterwork", defence=12),
-        "Adamantite Legguards": Item("Adamantite Legguards", "legs", 1280, "legendary", defence=13),
-        "Adamantite Cuisses": Item("Adamantite Cuisses", "legs", 1300, "legendary", defence=14),
-        "Leggings of Cosmic Balance": Item("Leggings of Cosmic Balance", "legs", 5350, "mythical", defence=15),
-        "Tassets of Reality's Anchor": Item("Tassets of Reality's Anchor", "legs", 5400, "mythical", defence=16),
+        # Epic Helms (13 points total)
+        "Mithril Juggernaut Helm": Item("Mithril Juggernaut Helm", "helm", 280, "epic", defence=9, damage_reduction=4),
+        "Mithril Winged Helm": Item("Mithril Winged Helm", "helm", 280, "epic", defence=5, accuracy=5, crit_chance=3),
+        "Mithril Crown of Precision": Item("Mithril Crown of Precision", "helm", 280, "epic", defence=4, accuracy=5, crit_chance=4),
 
-        # Boots
-        "Leather Sandals": Item("Leather Sandals", "boots", 11, "common", defence=1),
-        "Leather Boots": Item("Leather Boots", "boots", 12, "common", defence=1),
-        "Bronze Sabatons": Item("Bronze Sabatons", "boots", 33, "uncommon", defence=3),
-        "Iron Boots": Item("Iron Boots", "boots", 35, "uncommon", defence=3),
-        "Steel Sabatons": Item("Steel Sabatons", "boots", 75, "rare", defence=5),
-        "Steel Greaves": Item("Steel Greaves", "boots", 78, "rare", defence=5),
-        "Mithril Greaves": Item("Mithril Greaves", "boots", 300, "epic", defence=7),
-        "Mithril Sabatons": Item("Mithril Sabatons", "boots", 310, "epic", defence=7),
-        "Aluthril Greaves": Item("Aluthril Greaves", "boots", 600, "masterwork", defence=9),
-        "Aluthril Sabatons": Item("Aluthril Sabatons", "boots", 610, "masterwork", defence=9),
-        "Adamantite Striders": Item("Adamantite Striders", "boots", 1200, "legendary", defence=11),
-        "Adamantite Treads": Item("Adamantite Treads", "boots", 1220, "legendary", defence=11),
-        "Boots of Boundless Journey": Item("Boots of Boundless Journey", "boots", 5300, "mythical", defence=13),
-        "Sabatons of the Astral Strider": Item("Sabatons of the Astral Strider", "boots", 5350, "mythical", defence=13),
+        # Masterwork Helms (16 points total)
+        "Aluthril Titan's Visage": Item("Aluthril Titan's Visage", "helm", 580, "masterwork", defence=11, damage_reduction=5),
+        "Aluthril Helm of the Valiant": Item("Aluthril Helm of the Valiant", "helm", 580, "masterwork", defence=6, accuracy=6, crit_chance=4),
+        "Aluthril Crown of the Marksman": Item("Aluthril Crown of the Marksman", "helm", 580, "masterwork", defence=5, accuracy=6, crit_chance=5),
 
-        # Gloves
-        "Leather Bracers": Item("Leather Bracers", "gloves", 7, "common", defence=1),
-        "Leather Gloves": Item("Leather Gloves", "gloves", 8, "common", defence=1),
-        "Bronze Gauntlets": Item("Bronze Gauntlets", "gloves", 30, "uncommon", defence=3),
-        "Iron Vambraces": Item("Iron Vambraces", "gloves", 28, "uncommon", defence=3),
-        "Steel Gauntlets": Item("Steel Gauntlets", "gloves", 90, "rare", defence=5),
-        "Steel Fists": Item("Steel Fists", "gloves", 95, "rare", defence=5),
-        "Mithril Gauntlets": Item("Mithril Gauntlets", "gloves", 270, "epic", defence=7),
-        "Mithril Vambraces": Item("Mithril Vambraces", "gloves", 280, "epic", defence=7),
-        "Aluthril Gauntlets": Item("Aluthril Gauntlets", "gloves", 570, "masterwork", defence=9),
-        "Aluthril Vambraces": Item("Aluthril Vambraces", "gloves", 580, "masterwork", defence=9),
-        "Adamantite Fists": Item("Adamantite Fists", "gloves", 1150, "legendary", defence=11),
-        "Adamantite Crushers": Item("Adamantite Crushers", "gloves", 1180, "legendary", defence=11),
-        "Gauntlets of Primordial Might": Item("Gauntlets of Primordial Might", "gloves", 5100, "mythical", defence=13),
-        "Vambraces of Cosmic Manipulation": Item("Vambraces of Cosmic Manipulation", "gloves", 5150, "mythical", defence=13),
+        # Legendary Helms (19 points total)
+        "Adamantite Helm of the Unbreakable": Item("Adamantite Helm of the Unbreakable", "helm", 1100, "legendary", defence=13, damage_reduction=6),
+        "Adamantite Crown of the Conqueror": Item("Adamantite Crown of the Conqueror", "helm", 1100, "legendary", defence=7, accuracy=7, crit_chance=5),
+        "Adamantite Diadem of the Deadeye": Item("Adamantite Diadem of the Deadeye", "helm", 1100, "legendary", defence=6, accuracy=7, crit_chance=6),
 
-        # Shield
-        "Leather Shield": Item("Leather Shield", "shield", 15, "common", defence=2),
-        "Bronze Shield": Item("Bronze Shield", "shield", 30, "uncommon", defence=4),
-        "Iron Buckler": Item("Iron Buckler", "shield", 32, "uncommon", defence=5),
-        "Steel Kite Shield": Item("Steel Kite Shield", "shield", 45, "rare", defence=6),
-        "Steel Tower Shield": Item("Steel Tower Shield", "shield", 48, "rare", defence=7),
-        "Mithril Tower Shield": Item("Mithril Tower Shield", "shield", 220, "epic", defence=8),
-        "Mithril Aegis": Item("Mithril Aegis", "shield", 230, "epic", defence=9),
-        "Aluthril Tower Shield": Item("Aluthril Tower Shield", "shield", 520, "masterwork", defence=10),
-        "Aluthril Aegis": Item("Aluthril Aegis", "shield", 530, "masterwork", defence=11),
-        "Adamantite Bulwark": Item("Adamantite Bulwark", "shield", 950, "legendary", defence=12),
-        "Adamantite Aegis": Item("Adamantite Aegis", "shield", 980, "legendary", defence=13),
-        "Aegis of the Cosmos": Item("Aegis of the Cosmos", "shield", 4800, "mythical", defence=14),
-        "Bulwark of Eternal Defiance": Item("Bulwark of Eternal Defiance", "shield", 4900, "mythical", defence=15),
+        # Mythical Helms (22 points total)
+        "Crown of Eternal Fortitude": Item("Crown of Eternal Fortitude", "helm", 5200, "mythical", defence=15, damage_reduction=7),
+        "Diadem of Cosmic Balance": Item("Diadem of Cosmic Balance", "helm", 5200, "mythical", defence=8, accuracy=8, crit_chance=6),
+        "Crown of Infinite Precision": Item("Crown of Infinite Precision", "helm", 5200, "mythical", defence=7, accuracy=8, crit_chance=7),
 
-        # Back
-        "Leather Poncho": Item("Leather Poncho", "back", 13, "common", defence=1),
-        "Leather Cloak": Item("Leather Cloak", "back", 14, "common", defence=1),
-        "Bronze-Weave Mantle": Item("Bronze-Weave Mantle", "back", 43, "uncommon", defence=3),
-        "Iron-Trimmed Cloak": Item("Iron-Trimmed Cloak", "back", 45, "uncommon", defence=3),
-        "Reinforced Cloak": Item("Reinforced Cloak", "back", 100, "rare", defence=5),
-        "Steel-Threaded Cape": Item("Steel-Threaded Cape", "back", 105, "rare", defence=5),
-        "Mithril-Woven Cape": Item("Mithril-Woven Cape", "back", 320, "epic", defence=7),
-        "Mithril Shroud": Item("Mithril Shroud", "back", 330, "epic", defence=7),
-        "Aluthril-Woven Cape": Item("Aluthril-Woven Cape", "back", 620, "masterwork", defence=9),
-        "Aluthril Shroud": Item("Aluthril Shroud", "back", 630, "masterwork", defence=9),
-        "Adamantite Shadowcloak": Item("Adamantite Shadowcloak", "back", 1250, "legendary", defence=11),
-        "Adamantite Veil": Item("Adamantite Veil", "back", 1270, "legendary", defence=11),
-        "Cloak of Celestial Shadows": Item("Cloak of Celestial Shadows", "back", 5400, "mythical", defence=13),
-        "Mantle of Ethereal Whispers": Item("Mantle of Ethereal Whispers", "back", 5450, "mythical", defence=13),
+        # Common Chest (6 points total)
+        "Sturdy Leather Vest": Item("Sturdy Leather Vest", "chest", 25, "common", defence=4, damage_reduction=2),
+        "Reinforced Leather Chest": Item("Reinforced Leather Chest", "chest", 25, "common", defence=3, attack=3),
+        "Agile Leather Jerkin": Item("Agile Leather Jerkin", "chest", 25, "common", defence=2, attack=2, crit_chance=2),
 
-        # Ring
-        "Leather Armband": Item("Leather Armband", "ring", 18, "common", attack=1, defence=1),
-        "Leather Wristband": Item("Leather Wristband", "ring", 20, "common", attack=1, defence=1),
-        "Bronze Ring": Item("Bronze Ring", "ring", 60, "uncommon", attack=2, defence=1),
-        "Iron Band": Item("Iron Band", "ring", 58, "uncommon", attack=1, defence=2),
-        "Steel Signet": Item("Steel Signet", "ring", 150, "rare", attack=3, defence=2),
-        "Steel Circlet": Item("Steel Circlet", "ring", 155, "rare", attack=2, defence=3),
-        "Aluthril Band": Item("Aluthril Band", "ring", 400, "masterwork", attack=5, defence=3),
-        "Aluthril Signet": Item("Aluthril Signet", "ring", 410, "masterwork", attack=4, defence=4),
-        "Adamantite Loop": Item("Adamantite Loop", "ring", 1500, "legendary", attack=8, defence=5),
-        "Adamantite Seal": Item("Adamantite Seal", "ring", 1550, "legendary", attack=7, defence=6),
-        "Band of Divine Providence": Item("Band of Divine Providence", "ring", 6000, "mythical", attack=12, defence=8),
-        "Signet of Cosmic Influence": Item("Signet of Cosmic Influence", "ring", 6100, "mythical", attack=10, defence=10),
+        # Uncommon Chest (10 points total)
+        "Bronze Fortress Plate": Item("Bronze Fortress Plate", "chest", 60, "uncommon", defence=7, damage_reduction=3),
+        "Bronze Battle Cuirass": Item("Bronze Battle Cuirass", "chest", 60, "uncommon", defence=5, attack=4, crit_chance=1),
+        "Bronze Skirmisher's Mail": Item("Bronze Skirmisher's Mail", "chest", 60, "uncommon", defence=4, attack=3, crit_chance=3),
+
+        # Rare Chest (14 points total)
+        "Steel Bulwark Breastplate": Item("Steel Bulwark Breastplate", "chest", 125, "rare", defence=10, damage_reduction=4),
+        "Steel Warlord's Cuirass": Item("Steel Warlord's Cuirass", "chest", 125, "rare", defence=7, attack=5, crit_chance=2),
+        "Steel Assassin's Hauberk": Item("Steel Assassin's Hauberk", "chest", 125, "rare", defence=6, attack=4, crit_chance=4),
+
+        # Epic Chest (18 points total)
+        "Mithril Juggernaut Plate": Item("Mithril Juggernaut Plate", "chest", 360, "epic", defence=13, damage_reduction=5),
+        "Mithril Commander's Armor": Item("Mithril Commander's Armor", "chest", 360, "epic", defence=9, attack=6, crit_chance=3),
+        "Mithril Shadow Vest": Item("Mithril Shadow Vest", "chest", 360, "epic", defence=8, attack=5, crit_chance=5),
+
+        # Masterwork Chest (22 points total)
+        "Aluthril Titan's Chestguard": Item("Aluthril Titan's Chestguard", "chest", 760, "masterwork", defence=16, damage_reduction=6),
+        "Aluthril Dragonslayer Cuirass": Item("Aluthril Dragonslayer Cuirass", "chest", 760, "masterwork", defence=11, attack=7, crit_chance=4),
+        "Aluthril Nighthawk Vest": Item("Aluthril Nighthawk Vest", "chest", 760, "masterwork", defence=10, attack=6, crit_chance=6),
+
+        # Legendary Chest (26 points total)
+        "Adamantite Godplate of the Unassailable": Item("Adamantite Godplate of the Unassailable", "chest", 1350, "legendary", defence=19, damage_reduction=7),
+        "Adamantite Vanguard of the Conqueror": Item("Adamantite Vanguard of the Conqueror", "chest", 1350, "legendary", defence=13, attack=8, crit_chance=5),
+        "Adamantite Shadowmeld Armor": Item("Adamantite Shadowmeld Armor", "chest", 1350, "legendary", defence=12, attack=7, crit_chance=7),
+
+        # Mythical Chest (30 points total)
+        "Vestment of Cosmic Fortitude": Item("Vestment of Cosmic Fortitude", "chest", 5600, "mythical", defence=22, damage_reduction=8),
+        "Cuirass of Universal Dominion": Item("Cuirass of Universal Dominion", "chest", 5600, "mythical", defence=15, attack=9, crit_chance=6),
+        "Chestpiece of the Celestial Assassin": Item("Chestpiece of the Celestial Assassin", "chest", 5600, "mythical", defence=14, attack=8, crit_chance=8),
+
+        # Common Belts (3 points total)
+        "Sturdy Leather Belt": Item("Sturdy Leather Belt", "belt", 10, "common", defence=2, damage_reduction=1),
+        "Balanced Leather Girdle": Item("Balanced Leather Girdle", "belt", 10, "common", defence=1, crit_damage=2),
+        "Swift Leather Strap": Item("Swift Leather Strap", "belt", 10, "common", defence=1, evasion=2),
+
+        # Uncommon Belts (5 points total)
+        "Bronze Defender's Girdle": Item("Bronze Defender's Girdle", "belt", 35, "uncommon", defence=3, damage_reduction=2),
+        "Bronze Striker's Belt": Item("Bronze Striker's Belt", "belt", 35, "uncommon", defence=2, crit_damage=3),
+        "Bronze Skirmisher's Strap": Item("Bronze Skirmisher's Strap", "belt", 35, "uncommon", defence=2, evasion=3),
+
+        # Rare Belts (7 points total)
+        "Steel Bulwark Fauld": Item("Steel Bulwark Fauld", "belt", 88, "rare", defence=4, damage_reduction=3),
+        "Steel Ravager's Girdle": Item("Steel Ravager's Girdle", "belt", 88, "rare", defence=3, crit_damage=4),
+        "Steel Shadowdancer's Belt": Item("Steel Shadowdancer's Belt", "belt", 88, "rare", defence=3, evasion=4),
+
+        # Epic Belts (9 points total)
+        "Mithril Juggernaut Waistguard": Item("Mithril Juggernaut Waistguard", "belt", 300, "epic", defence=5, damage_reduction=4),
+        "Mithril Destroyer's Tasset": Item("Mithril Destroyer's Tasset", "belt", 300, "epic", defence=4, crit_damage=5),
+        "Mithril Whisperwind Cincture": Item("Mithril Whisperwind Cincture", "belt", 300, "epic", defence=4, evasion=5),
+
+        # Masterwork Belts (11 points total)
+        "Aluthril Titan's Waistguard": Item("Aluthril Titan's Waistguard", "belt", 600, "masterwork", defence=6, damage_reduction=5),
+        "Aluthril Executioner's Tasset": Item("Aluthril Executioner's Tasset", "belt", 600, "masterwork", defence=5, crit_damage=6),
+        "Aluthril Phantom Belt": Item("Aluthril Phantom Belt", "belt", 600, "masterwork", defence=5, evasion=6),
+
+        # Legendary Belts (13 points total)
+        "Adamantite Fortress Cinch": Item("Adamantite Fortress Cinch", "belt", 1200, "legendary", defence=7, damage_reduction=6),
+        "Adamantite Annihilator's Girdle": Item("Adamantite Annihilator's Girdle", "belt", 1200, "legendary", defence=6, crit_damage=7),
+        "Adamantite Shadowmeld Belt": Item("Adamantite Shadowmeld Belt", "belt", 1200, "legendary", defence=6, evasion=7),
+
+        # Mythical Belts (15 points total)
+        "Girdle of Cosmic Fortitude": Item("Girdle of Cosmic Fortitude", "belt", 5300, "mythical", defence=8, damage_reduction=7),
+        "Cincture of Devastating Strikes": Item("Cincture of Devastating Strikes", "belt", 5300, "mythical", defence=7, crit_damage=8),
+        "Belt of Dimensional Flux": Item("Belt of Dimensional Flux", "belt", 5300, "mythical", defence=7, evasion=8),
+
+        # Common Legs (5 points total)
+        "Sturdy Leather Leggings": Item("Sturdy Leather Leggings", "legs", 12, "common", defence=3, damage_reduction=2),
+        "Balanced Leather Cuisses": Item("Balanced Leather Cuisses", "legs", 12, "common", defence=3, attack=2),
+        "Agile Leather Pants": Item("Agile Leather Pants", "legs", 12, "common", defence=2, evasion=3),
+
+        # Uncommon Legs (8 points total)
+        "Bronze Defender Greaves": Item("Bronze Defender Greaves", "legs", 50, "uncommon", defence=5, damage_reduction=3),
+        "Bronze Warrior Cuisses": Item("Bronze Warrior Cuisses", "legs", 50, "uncommon", defence=4, attack=4),
+        "Bronze Skirmisher Pants": Item("Bronze Skirmisher Pants", "legs", 50, "uncommon", defence=3, evasion=5),
+
+        # Rare Legs (11 points total)
+        "Steel Bulwark Legplates": Item("Steel Bulwark Legplates", "legs", 115, "rare", defence=7, damage_reduction=4),
+        "Steel Berserker Cuisses": Item("Steel Berserker Cuisses", "legs", 115, "rare", defence=5, attack=4, crit_damage=2),
+        "Steel Shadowstep Leggings": Item("Steel Shadowstep Leggings", "legs", 115, "rare", defence=4, evasion=5, crit_chance=2),
+
+        # Epic Legs (14 points total)
+        "Mithril Juggernaut Legguards": Item("Mithril Juggernaut Legguards", "legs", 340, "epic", defence=9, damage_reduction=5),
+        "Mithril Warlord's Cuisses": Item("Mithril Warlord's Cuisses", "legs", 340, "epic", defence=7, attack=5, crit_damage=2),
+        "Mithril Shadowdancer Leggings": Item("Mithril Shadowdancer Leggings", "legs", 340, "epic", defence=6, evasion=6, crit_chance=2),
+
+        # Masterwork Legs (17 points total)
+        "Aluthril Titan's Legplates": Item("Aluthril Titan's Legplates", "legs", 740, "masterwork", defence=11, damage_reduction=6),
+        "Aluthril Conqueror's Cuisses": Item("Aluthril Conqueror's Cuisses", "legs", 740, "masterwork", defence=9, attack=5, crit_damage=3),
+        "Aluthril Phantom Leggings": Item("Aluthril Phantom Leggings", "legs", 740, "masterwork", defence=8, evasion=6, crit_chance=3),
+
+        # Legendary Legs (20 points total)
+        "Adamantite Fortress Legguards": Item("Adamantite Fortress Legguards", "legs", 1300, "legendary", defence=13, damage_reduction=7),
+        "Adamantite Annihilator Cuisses": Item("Adamantite Annihilator Cuisses", "legs", 1300, "legendary", defence=11, attack=6, crit_damage=3),
+        "Adamantite Voidwalker Leggings": Item("Adamantite Voidwalker Leggings", "legs", 1300, "legendary", defence=10, evasion=7, crit_chance=3),
+
+        # Mythical Legs (23 points total)
+        "Legplates of Cosmic Fortitude": Item("Legplates of Cosmic Fortitude", "legs", 5400, "mythical", defence=15, damage_reduction=8),
+        "Cuisses of Reality's Wrath": Item("Cuisses of Reality's Wrath", "legs", 5400, "mythical", defence=13, attack=7, crit_damage=3),
+        "Leggings of Dimensional Flux": Item("Leggings of Dimensional Flux", "legs", 5400, "mythical", defence=12, evasion=8, crit_chance=3),
+
+        # Common Boots (4 points total)
+        "Sturdy Leather Boots": Item("Sturdy Leather Boots", "boots", 12, "common", defence=2, damage_reduction=2),
+        "Balanced Leather Treads": Item("Balanced Leather Treads", "boots", 12, "common", defence=2, attack=2),
+        "Nimble Leather Sandals": Item("Nimble Leather Sandals", "boots", 12, "common", defence=1, evasion=3),
+
+        # Uncommon Boots (6 points total)
+        "Bronze Defender Sabatons": Item("Bronze Defender Sabatons", "boots", 35, "uncommon", defence=3, damage_reduction=3),
+        "Bronze Striker Boots": Item("Bronze Striker Boots", "boots", 35, "uncommon", defence=3, attack=3),
+        "Bronze Quickstep Shoes": Item("Bronze Quickstep Shoes", "boots", 35, "uncommon", defence=2, evasion=4),
+
+        # Rare Boots (8 points total)
+        "Steel Bulwark Greaves": Item("Steel Bulwark Greaves", "boots", 78, "rare", defence=4, damage_reduction=4),
+        "Steel Berserker Stompers": Item("Steel Berserker Stompers", "boots", 78, "rare", defence=4, attack=3, crit_chance=1),
+        "Steel Shadowstep Boots": Item("Steel Shadowstep Boots", "boots", 78, "rare", defence=3, evasion=5),
+
+        # Epic Boots (10 points total)
+        "Mithril Juggernaut Sabatons": Item("Mithril Juggernaut Sabatons", "boots", 310, "epic", defence=5, damage_reduction=5),
+        "Mithril Warlord's Treads": Item("Mithril Warlord's Treads", "boots", 310, "epic", defence=5, attack=4, crit_chance=1),
+        "Mithril Phantom Striders": Item("Mithril Phantom Striders", "boots", 310, "epic", defence=4, evasion=6),
+
+        # Masterwork Boots (12 points total)
+        "Aluthril Titan's Stompers": Item("Aluthril Titan's Stompers", "boots", 610, "masterwork", defence=6, damage_reduction=6),
+        "Aluthril Conqueror's Sabatons": Item("Aluthril Conqueror's Sabatons", "boots", 610, "masterwork", defence=6, attack=4, crit_chance=2),
+        "Aluthril Ghostwalker Treads": Item("Aluthril Ghostwalker Treads", "boots", 610, "masterwork", defence=5, evasion=7),
+
+        # Legendary Boots (14 points total)
+        "Adamantite Fortress Greaves": Item("Adamantite Fortress Greaves", "boots", 1220, "legendary", defence=7, damage_reduction=7),
+        "Adamantite Annihilator Boots": Item("Adamantite Annihilator Boots", "boots", 1220, "legendary", defence=7, attack=5, crit_chance=2),
+        "Adamantite Voidwalker Striders": Item("Adamantite Voidwalker Striders", "boots", 1220, "legendary", defence=6, evasion=8),
+
+        # Mythical Boots (16 points total)
+        "Sabatons of Cosmic Fortitude": Item("Sabatons of Cosmic Fortitude", "boots", 5350, "mythical", defence=8, damage_reduction=8),
+        "Treads of Reality's Wrath": Item("Treads of Reality's Wrath", "boots", 5350, "mythical", defence=8, attack=6, crit_chance=2),
+        "Boots of Dimensional Flux": Item("Boots of Dimensional Flux", "boots", 5350, "mythical", defence=7, evasion=9),
+
+        # Common Gloves (4 points total)
+        "Sturdy Leather Bracers": Item("Sturdy Leather Bracers", "gloves", 8, "common", defence=2, damage_reduction=2),
+        "Leather Fighting Gloves": Item("Leather Fighting Gloves", "gloves", 8, "common", defence=1, attack=3),
+        "Nimble Leather Handwraps": Item("Nimble Leather Handwraps", "gloves", 8, "common", defence=1, crit_chance=3),
+
+        # Uncommon Gloves (6 points total)
+        "Bronze Defender Gauntlets": Item("Bronze Defender Gauntlets", "gloves", 30, "uncommon", defence=3, damage_reduction=3),
+        "Bronze Striker Gloves": Item("Bronze Striker Gloves", "gloves", 30, "uncommon", defence=2, attack=4),
+        "Bronze Precision Vambraces": Item("Bronze Precision Vambraces", "gloves", 30, "uncommon", defence=2, crit_chance=4),
+
+        # Rare Gloves (8 points total)
+        "Steel Bulwark Gauntlets": Item("Steel Bulwark Gauntlets", "gloves", 95, "rare", defence=4, damage_reduction=4),
+        "Steel Crushing Fists": Item("Steel Crushing Fists", "gloves", 95, "rare", defence=3, attack=5),
+        "Steel Duelist's Handguards": Item("Steel Duelist's Handguards", "gloves", 95, "rare", defence=3, crit_chance=3, crit_damage=2),
+
+        # Epic Gloves (10 points total)
+        "Mithril Juggernaut Gauntlets": Item("Mithril Juggernaut Gauntlets", "gloves", 280, "epic", defence=5, damage_reduction=5),
+        "Mithril Warlord's Fists": Item("Mithril Warlord's Fists", "gloves", 280, "epic", defence=4, attack=6),
+        "Mithril Assassin's Handwraps": Item("Mithril Assassin's Handwraps", "gloves", 280, "epic", defence=3, crit_chance=4, crit_damage=3),
+
+        # Masterwork Gloves (12 points total)
+        "Aluthril Titan's Gauntlets": Item("Aluthril Titan's Gauntlets", "gloves", 580, "masterwork", defence=6, damage_reduction=6),
+        "Aluthril Conqueror's Fists": Item("Aluthril Conqueror's Fists", "gloves", 580, "masterwork", defence=5, attack=7),
+        "Aluthril Shadowstrike Gloves": Item("Aluthril Shadowstrike Gloves", "gloves", 580, "masterwork", defence=4, crit_chance=4, crit_damage=4),
+
+        # Legendary Gloves (14 points total)
+        "Adamantite Fortress Gauntlets": Item("Adamantite Fortress Gauntlets", "gloves", 1180, "legendary", defence=7, damage_reduction=7),
+        "Adamantite Worldbreaker Fists": Item("Adamantite Worldbreaker Fists", "gloves", 1180, "legendary", defence=6, attack=8),
+        "Adamantite Deathblow Handwraps": Item("Adamantite Deathblow Handwraps", "gloves", 1180, "legendary", defence=5, crit_chance=5, crit_damage=4),
+
+        # Mythical Gloves (16 points total)
+        "Gauntlets of Cosmic Fortitude": Item("Gauntlets of Cosmic Fortitude", "gloves", 5150, "mythical", defence=8, damage_reduction=8),
+        "Fists of Reality's Wrath": Item("Fists of Reality's Wrath", "gloves", 5150, "mythical", defence=7, attack=9),
+        "Handwraps of Dimensional Precision": Item("Handwraps of Dimensional Precision", "gloves", 5150, "mythical", defence=6, crit_chance=5, crit_damage=5),
+
+        # Common Shields (5 points total)
+        "Sturdy Leather Shield": Item("Sturdy Leather Shield", "shield", 15, "common", defence=3, damage_reduction=2),
+        "Balanced Wooden Shield": Item("Balanced Wooden Shield", "shield", 15, "common", defence=3, block_chance=2),
+        "Spiked Leather Buckler": Item("Spiked Leather Buckler", "shield", 15, "common", defence=2, attack=3),
+
+        # Uncommon Shields (7 points total)
+        "Bronze Tower Shield": Item("Bronze Tower Shield", "shield", 32, "uncommon", defence=4, damage_reduction=3),
+        "Bronze Kite Shield": Item("Bronze Kite Shield", "shield", 32, "uncommon", defence=4, block_chance=3),
+        "Bronze Spiked Shield": Item("Bronze Spiked Shield", "shield", 32, "uncommon", defence=3, attack=4),
+
+        # Rare Shields (9 points total)
+        "Steel Bulwark": Item("Steel Bulwark", "shield", 48, "rare", defence=5, damage_reduction=4),
+        "Steel Guardian Shield": Item("Steel Guardian Shield", "shield", 48, "rare", defence=5, block_chance=4),
+        "Steel Retaliation Shield": Item("Steel Retaliation Shield", "shield", 48, "rare", defence=4, attack=3, crit_chance=2),
+
+        # Epic Shields (11 points total)
+        "Mithril Fortress Shield": Item("Mithril Fortress Shield", "shield", 230, "epic", defence=6, damage_reduction=5),
+        "Mithril Aegis of Deflection": Item("Mithril Aegis of Deflection", "shield", 230, "epic", defence=6, block_chance=5),
+        "Mithril Counterattack Shield": Item("Mithril Counterattack Shield", "shield", 230, "epic", defence=5, attack=4, crit_chance=2),
+
+        # Masterwork Shields (13 points total)
+        "Aluthril Impenetrable Bulwark": Item("Aluthril Impenetrable Bulwark", "shield", 530, "masterwork", defence=7, damage_reduction=6),
+        "Aluthril Aegis of Warding": Item("Aluthril Aegis of Warding", "shield", 530, "masterwork", defence=7, block_chance=6),
+        "Aluthril Shield of Retribution": Item("Aluthril Shield of Retribution", "shield", 530, "masterwork", defence=6, attack=5, crit_chance=2),
+
+        # Legendary Shields (15 points total)
+        "Adamantite Invincible Rampart": Item("Adamantite Invincible Rampart", "shield", 980, "legendary", defence=8, damage_reduction=7),
+        "Adamantite Aegis of the Indomitable": Item("Adamantite Aegis of the Indomitable", "shield", 980, "legendary", defence=8, block_chance=7),
+        "Adamantite Shield of Reckoning": Item("Adamantite Shield of Reckoning", "shield", 980, "legendary", defence=7, attack=6, crit_chance=2),
+
+        # Mythical Shields (17 points total)
+        "Bulwark of Cosmic Fortitude": Item("Bulwark of Cosmic Fortitude", "shield", 4900, "mythical", defence=9, damage_reduction=8),
+        "Aegis of Reality's Denial": Item("Aegis of Reality's Denial", "shield", 4900, "mythical", defence=9, block_chance=8),
+        "Shield of Universal Vengeance": Item("Shield of Universal Vengeance", "shield", 4900, "mythical", defence=8, attack=7, crit_chance=2),
+
+        # Common Back Items (4 points total)
+        "Sturdy Leather Poncho": Item("Sturdy Leather Poncho", "back", 14, "common", defence=2, damage_reduction=2),
+        "Traveler's Cloak": Item("Traveler's Cloak", "back", 14, "common", defence=2, evasion=2),
+        "Concealing Scarf": Item("Concealing Scarf", "back", 14, "common", defence=1, crit_chance=3),
+
+        # Uncommon Back Items (6 points total)
+        "Bronze-Weave Mantle": Item("Bronze-Weave Mantle", "back", 45, "uncommon", defence=3, damage_reduction=3),
+        "Iron-Trimmed Cloak": Item("Iron-Trimmed Cloak", "back", 45, "uncommon", defence=3, evasion=3),
+        "Shadowed Cape": Item("Shadowed Cape", "back", 45, "uncommon", defence=2, crit_chance=4),
+
+        # Rare Back Items (8 points total)
+        "Reinforced Battle Cloak": Item("Reinforced Battle Cloak", "back", 105, "rare", defence=4, damage_reduction=4),
+        "Steel-Threaded Shadowcape": Item("Steel-Threaded Shadowcape", "back", 105, "rare", defence=4, evasion=4),
+        "Mantle of the Unseen Strike": Item("Mantle of the Unseen Strike", "back", 105, "rare", defence=3, crit_chance=5),
+
+        # Epic Back Items (10 points total)
+        "Mithril-Woven Defender's Cape": Item("Mithril-Woven Defender's Cape", "back", 330, "epic", defence=5, damage_reduction=5),
+        "Mithril Shroud of Obscurity": Item("Mithril Shroud of Obscurity", "back", 330, "epic", defence=5, evasion=5),
+        "Cloak of Deadly Precision": Item("Cloak of Deadly Precision", "back", 330, "epic", defence=4, crit_chance=6),
+
+        # Masterwork Back Items (12 points total)
+        "Aluthril-Woven Bulwark Cape": Item("Aluthril-Woven Bulwark Cape", "back", 630, "masterwork", defence=6, damage_reduction=6),
+        "Aluthril Shroud of the Unseen": Item("Aluthril Shroud of the Unseen", "back", 630, "masterwork", defence=6, evasion=6),
+        "Mantle of Lethal Shadows": Item("Mantle of Lethal Shadows", "back", 630, "masterwork", defence=5, crit_chance=7),
+
+        # Legendary Back Items (14 points total)
+        "Adamantite Shadowcloak of Fortitude": Item("Adamantite Shadowcloak of Fortitude", "back", 1270, "legendary", defence=7, damage_reduction=7),
+        "Adamantite Veil of Phantom Steps": Item("Adamantite Veil of Phantom Steps", "back", 1270, "legendary", defence=7, evasion=7),
+        "Cloak of Devastating Strikes": Item("Cloak of Devastating Strikes", "back", 1270, "legendary", defence=6, crit_chance=8),
+
+        # Mythical Back Items (16 points total)
+        "Mantle of Cosmic Resilience": Item("Mantle of Cosmic Resilience", "back", 5450, "mythical", defence=8, damage_reduction=8),
+        "Cloak of Celestial Shadows": Item("Cloak of Celestial Shadows", "back", 5450, "mythical", defence=8, evasion=8),
+        "Shroud of Universal Precision": Item("Shroud of Universal Precision", "back", 5450, "mythical", defence=7, crit_chance=9),
+
+        # Common Rings (4 points total)
+        "Leather Armband of Might": Item("Leather Armband of Might", "ring", 20, "common", attack=2, defence=2),
+        "Copper Ring of Precision": Item("Copper Ring of Precision", "ring", 20, "common", crit_chance=2, crit_damage=2),
+        "Wooden Band of Resilience": Item("Wooden Band of Resilience", "ring", 20, "common", damage_reduction=2, evasion=2),
+
+        # Uncommon Rings (6 points total)
+        "Bronze Ring of Power": Item("Bronze Ring of Power", "ring", 60, "uncommon", attack=3, defence=3),
+        "Silver Band of the Hawk": Item("Silver Band of the Hawk", "ring", 60, "uncommon", crit_chance=3, crit_damage=3),
+        "Iron Loop of Endurance": Item("Iron Loop of Endurance", "ring", 60, "uncommon", damage_reduction=3, evasion=3),
+
+        # Rare Rings (8 points total)
+        "Steel Signet of the Warrior": Item("Steel Signet of the Warrior", "ring", 155, "rare", attack=4, defence=4),
+        "Golden Ring of the Assassin": Item("Golden Ring of the Assassin", "ring", 155, "rare", crit_chance=4, crit_damage=4),
+        "Reinforced Band of the Guardian": Item("Reinforced Band of the Guardian", "ring", 155, "rare", damage_reduction=4, evasion=4),
+
+        # Epic Rings (10 points total)
+        "Mithril Ring of Conquest": Item("Mithril Ring of Conquest", "ring", 350, "epic", attack=5, defence=5),
+        "Opal Band of Deadly Precision": Item("Opal Band of Deadly Precision", "ring", 350, "epic", crit_chance=5, crit_damage=5),
+        "Enchanted Loop of Warding": Item("Enchanted Loop of Warding", "ring", 350, "epic", damage_reduction=5, evasion=5),
+
+        # Masterwork Rings (12 points total)
+        "Aluthril Signet of Dominance": Item("Aluthril Signet of Dominance", "ring", 410, "masterwork", attack=6, defence=6),
+        "Diamond Ring of Lethal Strikes": Item("Diamond Ring of Lethal Strikes", "ring", 410, "masterwork", crit_chance=6, crit_damage=6),
+        "Runic Band of Invincibility": Item("Runic Band of Invincibility", "ring", 410, "masterwork", damage_reduction=6, evasion=6),
+
+        # Legendary Rings (14 points total)
+        "Adamantite Loop of Supreme Power": Item("Adamantite Loop of Supreme Power", "ring", 1550, "legendary", attack=7, defence=7),
+        "Infused Ring of Deadly Mastery": Item("Infused Ring of Deadly Mastery", "ring", 1550, "legendary", crit_chance=7, crit_damage=7),
+        "Celestial Band of Divine Protection": Item("Celestial Band of Divine Protection", "ring", 1550, "legendary", damage_reduction=7, evasion=7),
+
+        # Mythical Rings (16 points total)
+        "Band of Divine Providence": Item("Band of Divine Providence", "ring", 6100, "mythical", attack=8, defence=8),
+        "Signet of Cosmic Devastation": Item("Signet of Cosmic Devastation", "ring", 6100, "mythical", crit_chance=8, crit_damage=8),
+        "Ring of Universal Harmony": Item("Ring of Universal Harmony", "ring", 6100, "mythical", damage_reduction=8, evasion=8),
 
         # Consumables
         ## Healing Items

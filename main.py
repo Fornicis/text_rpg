@@ -169,7 +169,7 @@ class Game:
         print(f"You rest and recover {heal_amount} HP and {stamina_restore} stamina.")
         print(f"It is now day {self.player.days}")
 
-    def equip_menu(self):
+    """def equip_menu(self):
         #Shows the menu for equipping items, shows the stats for the items as long as they are above 0
         while True:
             clear_screen()
@@ -259,8 +259,101 @@ class Game:
             except ValueError:
                 print("Invalid input. Please enter a number or 'q' to quit.")
 
+            input("\nPress Enter to continue...")"""
+
+    def equip_menu(self):
+        while True:
+            clear_screen()
+            print("\n=== Equipment Menu ===")
+            print("\nCurrently Equipped:")
+            for slot, item in self.player.equipped.items():
+                if item:
+                    print(f"{slot.capitalize()}: {item.name}")
+                    stats = [
+                        f"Attack: +{item.attack}" if item.attack > 0 else None,
+                        f"Defence: +{item.defence}" if item.defence > 0 else None,
+                        f"Damage Reduction: +{item.damage_reduction}" if hasattr(item, 'damage_reduction') and item.damage_reduction > 0 else None,
+                        f"Evasion: +{item.evasion}" if hasattr(item, 'evasion') and item.evasion > 0 else None,
+                        f"Crit Chance: +{item.crit_chance}%" if hasattr(item, 'crit_chance') and item.crit_chance > 0 else None,
+                        f"Crit Damage: +{item.crit_damage}%" if hasattr(item, 'crit_damage') and item.crit_damage > 0 else None,
+                        f"Block Chance: +{item.block_chance}%" if hasattr(item, 'block_chance') and item.block_chance > 0 else None,
+                    ]
+                    if slot == "weapon":
+                        stamina_cost = self.player.get_weapon_stamina_cost(item.weapon_type)
+                        stats.append(f"Stamina use: {stamina_cost}")
+                        stats.append(f"Weapon type: {item.weapon_type.title()}")
+                    print("  " + ", ".join(filter(None, stats)))
+                else:
+                    print(f"{slot.capitalize()}: None")
+
+            print("\nInventory:")
+            equippable_items = [item for item in self.player.inventory if item.type in self.player.equipped]
+            for i, item in enumerate(equippable_items, 1):
+                stats = [
+                    f"Attack: +{item.attack}" if item.attack > 0 else None,
+                    f"Defence: +{item.defence}" if item.defence > 0 else None,
+                    f"Damage Reduction: +{item.damage_reduction}" if hasattr(item, 'damage_reduction') and item.damage_reduction > 0 else None,
+                    f"Evasion: +{item.evasion}" if hasattr(item, 'evasion') and item.evasion > 0 else None,
+                    f"Crit Chance: +{item.crit_chance}%" if hasattr(item, 'crit_chance') and item.crit_chance > 0 else None,
+                    f"Crit Damage: +{item.crit_damage}%" if hasattr(item, 'crit_damage') and item.crit_damage > 0 else None,
+                    f"Block Chance: +{item.block_chance}%" if hasattr(item, 'block_chance') and item.block_chance > 0 else None,
+                ]
+                if item.type == "weapon":
+                    stamina_cost = self.player.get_weapon_stamina_cost(item.weapon_type)
+                    stats.append(f"Stamina Cost: {stamina_cost}")
+                    stats.append(f"Weapon type: {item.weapon_type.title()}")
+                print(f"{i}. {item.name} (Type: {item.type.capitalize()}) - " + ", ".join(filter(None, stats)))
+
+            choice = input("\nEnter the number of the item you want to equip (or 'q' to quit): ")
+            if choice.lower() == 'q':
+                break
+
+            try:
+                item_index = int(choice) - 1
+                if 0 <= item_index < len(equippable_items):
+                    selected_item = equippable_items[item_index]
+                    current_item = self.player.equipped[selected_item.type]
+                    print(f"\nComparing {selected_item.name} with current {selected_item.type}:")
+                    self.compare_items(current_item, selected_item)
+                    confirm = input("\nDo you want to equip this item? (y/n): ")
+                    if confirm.lower() == 'y':
+                        self.player.equip_item(selected_item)
+                        print(f"\n{selected_item.name} equipped!")
+                else:
+                    print("Invalid item number. Please try again.")
+            except ValueError:
+                print("Invalid input. Please enter a number or 'q' to quit.")
+
+            self.player.recalculate_stats()
             input("\nPress Enter to continue...")
 
+    def compare_items(self, current_item, new_item):
+        def print_stat_change(stat_name, current_val, new_val):
+            if current_val != new_val:
+                change = new_val - current_val
+                print(f"  {stat_name}: {current_val} -> {new_val} ({change:+d})")
+
+        stats = [
+            ("Attack", "attack"),
+            ("Defence", "defence"),
+            ("Damage Reduction", "damage_reduction"),
+            ("Evasion", "evasion"),
+            ("Crit Chance", "crit_chance"),
+            ("Crit Damage", "crit_damage"),
+            ("Block Chance", "block_chance"),
+        ]
+
+        for stat_name, stat_attr in stats:
+            current_val = getattr(current_item, stat_attr, 0) if current_item else 0
+            new_val = getattr(new_item, stat_attr, 0)
+            print_stat_change(stat_name, current_val, new_val)
+
+        if new_item.type == "weapon":
+            current_stamina_cost = self.player.get_weapon_stamina_cost(current_item.weapon_type) if current_item else 0
+            new_stamina_cost = self.player.get_weapon_stamina_cost(new_item.weapon_type)
+            print_stat_change("Stamina Cost", current_stamina_cost, new_stamina_cost)
+            print(f"  Weapon Type: {current_item.weapon_type.title() if current_item else 'None'} -> {new_item.weapon_type.title()}")
+    
     def use_item_menu(self, in_combat=False, enemy=None):
         #Enables player to use items and makes sure that only usable items are shown
         usable_items = self.player.show_usable_items()

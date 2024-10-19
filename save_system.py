@@ -27,6 +27,13 @@ def save_game(player, current_location, filename):
             "max_stamina": player.max_stamina,
             "attack": player.attack,
             "defence": player.defence,
+            "accuracy": player.accuracy,
+            "evasion": player.evasion,
+            "crit_chance": player.crit_chance,
+            "crit_damage": player.crit_damage,
+            "armour_penetration": player.armour_penetration,
+            "damage_reduction": player.damage_reduction,
+            "block_chance": player.block_chance,
             "gold": player.gold,
             "base_attack": player.base_attack,
             "base_defence": player.base_defence,
@@ -71,7 +78,7 @@ def load_game(filename):
     player = Player(player_data["name"])
     
     # Load basic attributes
-    for attr in ["level", "exp", "hp", "max_hp", "stamina", "max_stamina", "attack", "defence", "gold", 
+    for attr in ["level", "exp", "hp", "max_hp", "stamina", "max_stamina", "attack", "defence", "accuracy", "evasion", "crit_chance", "crit_damage", "armour_penetration", "damage_reduction", "block_chance", "gold", 
                  "base_attack", "base_defence", "respawn_counter", "days"]:
         setattr(player, attr, player_data[attr])
     

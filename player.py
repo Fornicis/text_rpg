@@ -4,7 +4,7 @@ from display import pause, title_screen
 from status_effects import *
 
 class Character:
-    def __init__(self, name, hp, attack, defence):
+    def __init__(self, name, hp, attack, defence, accuracy=80, evasion=5, crit_chance=5, crit_damage=150, armour_penetration=0, damage_reduction=0, block_chance=0):
         # Initialize basic character attributes
         self.name = name
         self.hp = hp
@@ -14,12 +14,15 @@ class Character:
             "normal": {"name": "Normal Attack", "stamina_modifier": 0, "damage_modifier": 1},
         }
         self.defence = defence
-        self.original_defence = defence
-        self.status_effects = []
-        self.poison_stack = 0
-        self.burn_stack = 0
-        #self.frozen = False
+        self.accuracy = accuracy
+        self.evasion = evasion
+        self.crit_chance = crit_chance
+        self.crit_damage = crit_damage
+        self.armour_penetration = armour_penetration
+        self.damage_reduction = damage_reduction
+        self.block_chance = block_chance
         self.stunned = False
+        self.status_effects = []
         self.pause = pause
         self.title_screen = title_screen
         
@@ -66,7 +69,7 @@ class Character:
         #Shows the status of the player, 
         print(f"\n{self.name} (Level {self.level}):")
         print(f"HP: {self.hp}/{self.max_hp}, EXP: {self.exp}/{self.level*100}, Gold: {self.gold}, "
-              f"Attack: {self.attack}, Defence: {self.defence}, Stamina: {self.stamina}/{self.max_stamina}")
+              f"Att: {self.attack}, Def: {self.defence}, Eva: {self.evasion}, Acc: {self.accuracy}, Crit Chance: {self.crit_chance}, Crit Damage: {self.crit_damage}, DR: {self.damage_reduction}, BC: {self.block_chance} Stamina: {self.stamina}/{self.max_stamina}")
         if self.active_buffs or self.combat_buffs:
             print("\nActive Buffs:")
             for stat, buff_info in self.active_buffs.items():
@@ -83,48 +86,72 @@ class Character:
                 for hot_name, hot_info in self.active_hots.items():
                     print(f"  {hot_name}: {hot_info['tick_effect']} HP/turn for {hot_info['duration']} more turns")
     
-    def calculate_damage(self, base_attack, attack_type):
-        attack_info = self.attack_types[attack_type]
-        modified_attack = base_attack * attack_info["damage_modifier"]
-        damage = random.randint(int(modified_attack * 0.8), int(modified_attack * 1.2))
-        is_critical = random.random() < 0.1  # Critical hit chance 10%
+    def calculate_damage(self, attacker, defender, attack_type):
+        # Check if the attack hits
+        if random.randint(1, 100) > (attacker.accuracy - defender.evasion):
+            return 0, "miss"  # Attack missed
+        elif random.randit(1,100) < (defender.block_chance):
+            return 0, "blocked" # Attack blocked
+
+        attack_info = attacker.attack_types[attack_type]
+        base_damage = attacker.attack * attack_info["damage_modifier"]
+        random_damage = random.randint(int(base_damage * 0.9), int(base_damage * 1.1))
+        
+        # Apply armour penetration
+        effective_defence = max(0, defender.defence - attacker.armour_penetration)
+        
+        # Calculate initial damage
+        damage = max(0, random_damage - effective_defence)
+        
+        # Check for critical hit
+        is_critical = random.randint(1, 100) <= attacker.crit_chance
         if is_critical:
-            damage = int(damage * 1.5)
-        return damage, is_critical
+            damage = int(damage * (attacker.crit_damage / 100))
+        
+        # Apply damage reduction
+        damage = int(damage * (1 - defender.damage_reduction / 100))
+        
+        # Ensure minimum damage of 1 if the attack hits
+        damage = max(1, damage)
+        
+        return damage, "critical" if is_critical else "normal"
 
     def perform_attack(self, target, attack_type):
         attack_info = self.attack_types[attack_type]
-        base_damage, is_critical = self.calculate_damage(self.attack, attack_type)
-        damage = max(0, base_damage - target.defence)
-        
-        target.take_damage(damage)
-        
-        message = f"{self.name} used {attack_info['name']} and dealt {damage} damage to {target.name}."
-        if is_critical:
-            message += f" Critical hit!"
+        message = f"{self.name} used {attack_info['name']}."
+        total_damage = 0
+        hits = 1 + attack_info.get("extra_attacks", 0)
 
-        extra_attacks = attack_info.get("extra_attacks", 0)
-        total_damage = damage
-
-        for i in range(extra_attacks):
-            extra_damage, extra_critical = self.calculate_damage(self.attack, attack_type)
-            extra_damage = max(0, extra_damage - target.defence)
-            target.take_damage(extra_damage)
-            total_damage += extra_damage
+        for i in range(hits):
+            damage, hit_type = self.calculate_damage(self, target, attack_type)
             
-            message += f"\n{self.name} dealt an additional {extra_damage} damage to {target.name}."
-            if extra_critical:
-                message += f" Critical hit on the extra attack!"
+            if hit_type == "miss":
+                message += f"\n{self.name}'s attack missed {target.name}!"
+            elif hit_type == "blocked":
+                message+= f"\n{self.name}'s attack was blocked by {target.name}!"
+            else:
+                target.take_damage(damage)
+                total_damage += damage
+                if i == 0:
+                    message += f"\n{self.name} dealt {damage} damage to {target.name}."
+                else:
+                    message += f"\n{self.name} dealt an additional {damage} damage to {target.name}."
+                
+                if hit_type == "critical":
+                    message += " Critical hit!"
 
-        if total_damage > damage:
+        if total_damage > 0 and hits > 1:
             message += f"\nTotal damage dealt: {total_damage}"
 
         self_damage_info = None
         if attack_type in ["reckless", "triple"]:
-            self_damage_info = {"type": attack_type, "damage": total_damage}
-        
+            self_damage = int(total_damage * 0.2)  # 20% of total damage as self-damage
+            self_damage_info = {"type": attack_type, "damage": self_damage}
+            self.take_damage(self_damage)
+            message += f"\n{self.name} takes {self_damage} self-damage from the {attack_type} attack!"
+
         self.remove_status_effect("Freeze")
-        
+
         return message, total_damage, self_damage_info
 
     def is_alive(self):
@@ -190,17 +217,24 @@ class Character:
 class Player(Character):
     def __init__(self, name):
         # Initialise player with default stats
-        super().__init__(name, hp=100, attack=10, defence=5)
+        super().__init__(name, hp=100, attack=10, defence=5, accuracy=80, evasion=5, crit_chance=5, crit_damage=0, armour_penetration=0, damage_reduction=0, block_chance=5)
         self.level = 1
         self.exp = 0
         self.gold = 0
         self.base_attack = 10
         self.base_defence = 5
-        self.equipment_modifiers = {"attack": 0, "defence": 0}
-        self.buff_modifiers = {"attack": 0, "defence": 0}
-        self.combat_buff_modifiers = {"attack": 0, "defence": 0}
-        self.debuff_modifiers = {"attack": 0, "defence": 0}
-        self.weapon_buff_modifiers = {"attack": 0}
+        self.base_accuracy = 80
+        self.base_evasion = 5
+        self.base_crit_chance = 5
+        self.base_crit_damage = 0
+        self.base_armour_penetration = 0
+        self.base_damage_reduction = 0
+        self.block_chance = 5
+        self.equipment_modifiers = {"attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, "damage_reduction": 0, "block_chance": 0}
+        self.buff_modifiers = {"attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, "damage_reduction": 0}
+        self.combat_buff_modifiers = {"attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, "damage_reduction": 0}
+        self.debuff_modifiers = {"attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, "damage_reduction": 0}
+        self.weapon_buff_modifiers = {"attack": 0, "accuracy": 0, "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, "block_chance": 0}
         self.cooldowns = {}
         self.active_buffs = {}
         self.active_hots = {}
@@ -376,16 +410,47 @@ class Player(Character):
                 print(f"  {enemy}: {count}")
     
     def recalculate_stats(self):
-        self.attack = self.base_attack
-        self.defence = self.base_defence
+        # Initialize stats with base values
+        stats = {
+            "attack": self.base_attack,
+            "defence": self.base_defence,
+            "accuracy": self.base_accuracy,
+            "crit_chance": self.base_crit_chance,
+            "crit_damage": self.base_crit_damage,
+            "armour_penetration": self.base_armour_penetration,
+            "block_chance": self.block_chance
+        }
 
-        for modifier_dict in [self.equipment_modifiers, self.buff_modifiers, self.combat_buff_modifiers, self.weapon_buff_modifiers]:
-            self.attack += modifier_dict["attack"]
-            if "defence" in modifier_dict:
-                self.defence += modifier_dict["defence"]
+        # Apply modifiers from various sources
+        modifier_sources = [
+            self.equipment_modifiers,
+            self.buff_modifiers,
+            self.combat_buff_modifiers,
+            self.weapon_buff_modifiers
+        ]
 
-        self.attack = max(0, self.attack - self.debuff_modifiers["attack"])
-        self.defence = max(0, self.defence - self.debuff_modifiers["defence"])
+        for modifier_dict in modifier_sources:
+            for stat in stats:
+                if stat in modifier_dict:
+                    stats[stat] += modifier_dict[stat]
+
+        # Apply debuffs
+        for stat in stats:
+            if stat in self.debuff_modifiers:
+                stats[stat] = max(0, stats[stat] - self.debuff_modifiers[stat])
+
+        # Update character stats
+        self.attack = stats["attack"]
+        self.defence = stats["defence"]
+        self.accuracy = stats["accuracy"]
+        self.crit_chance = stats["crit_chance"]
+        self.crit_damage = stats["crit_damage"]
+        self.armour_penetration = stats["armour_penetration"]
+        self.block_chance = stats["block_chance"]
+
+        # Ensure crit_chance and crit_damage stay within reasonable bounds
+        self.crit_chance = max(0, min(100, self.crit_chance))
+        self.crit_damage = max(100, self.crit_damage)  # Minimum 100% crit damage
     
     def cleanup_after_battle(self):
         for effect in self.status_effects[:]:
@@ -393,23 +458,41 @@ class Player(Character):
             self.remove_status_effect(effect.name)
         
         self.remove_combat_buffs()
-        self.combat_buff_modifiers = {"attack": 0, "defence": 0}
-        self.debuff_modifiers = {"attack": 0, "defence": 0}
+        self.combat_buff_modifiers = {"attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, "damage_reduction": 0}
+        self.debuff_modifiers = {"attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, "damage_reduction": 0}
         self.recalculate_stats()
     
     def equip_item(self, item):
-        # Equip an item and apply its stats to the appropriate dictionary
+    # Equip an item and apply its stats to the appropriate dictionary
         if item.type in self.equipped:
             if self.equipped[item.type]:
                 self.unequip_item(item.type)
             self.equipped[item.type] = item
             if item.type == "weapon":
-                self.equipment_modifiers["attack"] += item.attack
+                self.equipment_modifiers["attack"] += getattr(item, "attack", 0)
+                self.equipment_modifiers["accuracy"] += getattr(item, "accuracy", 0)
+                self.equipment_modifiers["crit_chance"] += getattr(item, "crit_chance", 0)
+                self.equipment_modifiers["crit_damage"] += getattr(item, "crit_damage", 0)
+                self.equipment_modifiers["armour_penetration"] += getattr(item, "armour_penetration", 0)
+                self.equipment_modifiers["block_chance"] += getattr(item, "block_chance", 0)
             elif item.type == "ring":
-                self.equipment_modifiers["attack"] += item.attack
-                self.equipment_modifiers["defence"] += item.defence
+                self.equipment_modifiers["attack"] += getattr(item, "attack", 0)
+                self.equipment_modifiers["crit_chance"] += getattr(item, "crit_chance", 0)
+                self.equipment_modifiers["crit_damage"] += getattr(item, "crit_damage", 0)
+                self.equipment_modifiers["defence"] += getattr(item, "defence", 0)
+                self.equipment_modifiers["evasion"] += getattr(item, "evasion", 0)
+                self.equipment_modifiers["damage_reduction"] += getattr(item, "damage_reduction", 0)
+                # Add any additional ring stats here if needed
             else:
-                self.equipment_modifiers["defence"] += item.defence
+                self.equipment_modifiers["attack"] += getattr(item, "attack", 0)
+                self.equipment_modifiers["defence"] += getattr(item, "defence", 0)
+                self.equipment_modifiers["accuracy"] += getattr(item, "accuracy", 0)
+                self.equipment_modifiers["crit_chance"] += getattr(item, "crit_chance", 0)
+                self.equipment_modifiers["crit_damage"] += getattr(item, "crit_damage", 0)
+                self.equipment_modifiers["evasion"] += getattr(item, "evasion", 0)
+                self.equipment_modifiers["damage_reduction"] += getattr(item, "damage_reduction", 0)
+                self.equipment_modifiers["block_chance"] += getattr(item, "block_chance", 0)
+                # Add any additional armour stats here if needed
             self.recalculate_stats()
             if item in self.inventory:
                 self.inventory.remove(item)
@@ -422,12 +505,30 @@ class Player(Character):
         item = self.equipped[slot]
         if item:
             if slot == "weapon":
-                self.equipment_modifiers["attack"] -= item.attack
+                self.equipment_modifiers["attack"] -= getattr(item, "attack", 0)
+                self.equipment_modifiers["accuracy"] -= getattr(item, "accuracy", 0)
+                self.equipment_modifiers["crit_chance"] -= getattr(item, "crit_chance", 0)
+                self.equipment_modifiers["crit_damage"] -= getattr(item, "crit_damage", 0)
+                self.equipment_modifiers["armour_penetration"] -= getattr(item, "armour_penetration", 0)
+                self.equipment_modifiers["block_chance"] -= getattr(item, "block_chance", 0)
             elif item.type == "ring":
-                self.equipment_modifiers["attack"] -= item.attack
-                self.equipment_modifiers["defence"] -= item.defence
+                self.equipment_modifiers["attack"] -= getattr(item, "attack", 0)
+                self.equipment_modifiers["crit_chance"] -= getattr(item, "crit_chance", 0)
+                self.equipment_modifiers["crit_damage"] -= getattr(item, "crit_damage", 0)
+                self.equipment_modifiers["defence"] -= getattr(item, "defence", 0)
+                self.equipment_modifiers["evasion"] -= getattr(item, "evasion", 0)
+                self.equipment_modifiers["damage_reduction"] -= getattr(item, "damage_reduction", 0)
+                # Remove any additional ring stats here if needed
             else:
-                self.equipment_modifiers["defence"] -= item.defence
+                self.equipment_modifiers["attack"] -= getattr(item, "attack", 0)
+                self.equipment_modifiers["defence"] -= getattr(item, "defence", 0)
+                self.equipment_modifiers["accuracy"] -= getattr(item, "accuracy", 0)
+                self.equipment_modifiers["crit_chance"] -= getattr(item, "crit_chance", 0)
+                self.equipment_modifiers["crit_damage"] -= getattr(item, "crit_damage", 0)
+                self.equipment_modifiers["evasion"] -= getattr(item, "evasion", 0)
+                self.equipment_modifiers["damage_reduction"] -= getattr(item, "damage_reduction", 0)
+                self.equipment_modifiers["block_chance"] -= getattr(item, "block_chance", 0)
+                # Remove any additional armour stats here if needed
             self.recalculate_stats()
             self.inventory.append(item)
             self.equipped[slot] = None
