@@ -46,7 +46,7 @@ class BaseShop:
         for i, item in enumerate(sellable_items, 1):
             print(f"{i}. {item.name} (Sell value: {item.value // 2} gold)")
     
-    def display_item_stats(self, item, player):
+    """def display_item_stats(self, item, player):
         print(f"   Type: {item.type.capitalize()}")
         print(f"   Tier: {item.tier.capitalize()}")
         if item.attack > 0:
@@ -99,7 +99,64 @@ class BaseShop:
                 print(f"   Poison Stacks: {stack} for {duration} turns")
             
         if item.cooldown:
+            print(f"   Cooldown: {item.cooldown} turns")"""
+            
+    def display_item_stats(self, item, player):
+        print(f"   Type: {item.type.capitalize()}")
+        print(f"   Tier: {item.tier.capitalize()}")
+
+        stats = [
+            ("Attack", item.attack),
+            ("Defence", item.defence),
+            ("Damage Reduction", getattr(item, 'damage_reduction', 0)),
+            ("Evasion", getattr(item, 'evasion', 0)),
+            ("Crit Chance", getattr(item, 'crit_chance', 0)),
+            ("Crit Damage", getattr(item, 'crit_damage', 0)),
+            ("Block Chance", getattr(item, 'block_chance', 0)),
+        ]
+
+        for stat_name, stat_value in stats:
+            if stat_value > 0:
+                if stat_name == "Crit Damage":
+                    print(f"   {stat_name}: +{stat_value}%")
+                else:
+                    print(f"   {stat_name}: +{stat_value}")
+
+        if item.type == "weapon":
+            stamina_cost = player.get_weapon_stamina_cost(item.weapon_type)
+            print(f"   Weapon Type: {item.weapon_type.capitalize()}")
+            print(f"   Stamina Cost: {stamina_cost}")
+
+        if item.stamina_restore > 0:
+            print(f"   Stamina Restore: {item.stamina_restore}")
+
+        if item.type in ["consumable", "food", "drink"]:
+            self.display_consumable_stats(item)
+        elif item.type == "weapon coating":
+            self.display_coating_stats(item)
+
+        if item.cooldown:
             print(f"   Cooldown: {item.cooldown} turns")
+
+    def display_consumable_stats(self, item):
+        if item.effect_type == "buff":
+            stat, value = item.effect if isinstance(item.effect, tuple) else ("Attack", item.effect)
+            print(f"   Buff: {stat.capitalize()} +{value} for {item.duration} turns")
+        elif item.effect_type == "healing":
+            print(f"   Effect: Healing ({item.effect} HP)")
+        elif item.effect_type == "hot":
+            total_healing = item.tick_effect * item.duration
+            print(f"   Effect: Heal {item.tick_effect} HP/turn for {item.duration} turns (Total: {total_healing} HP)")
+        elif item.effect_type == "damage":
+            print(f"   Effect: Damage ({item.effect})")
+        elif item.effect_type == "weapon_buff":
+            stat, value = item.effect if isinstance(item.effect, tuple) else ("Attack", item.effect)
+            print(f"   Effect: Increases weapon {stat} by {value} for {item.duration} turns")
+
+    def display_coating_stats(self, item):
+        if isinstance(item.effect, tuple):
+            stack, duration = item.effect
+            print(f"   Poison Stacks: {stack} for {duration} turns")
 
     def rotate_stock(self, player_level):
         #Helper function which increases the restock counter when called and calls stock_shop based on player level when counter reaches frequency, clears old stock
