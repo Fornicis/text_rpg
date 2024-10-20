@@ -1,10 +1,10 @@
-import random
+import random, time
 from items import Item, initialise_items
 from display import pause, title_screen
 from status_effects import *
 
 class Character:
-    def __init__(self, name, hp, attack, defence, accuracy=80, evasion=5, crit_chance=5, crit_damage=150, armour_penetration=0, damage_reduction=0, block_chance=0):
+    def __init__(self, name, hp, attack, defence, accuracy=90, evasion=5, crit_chance=5, crit_damage=150, armour_penetration=0, damage_reduction=0, block_chance=0):
         # Initialize basic character attributes
         self.name = name
         self.hp = hp
@@ -25,6 +25,13 @@ class Character:
         self.status_effects = []
         self.pause = pause
         self.title_screen = title_screen
+    
+    def display_attack_animation(self, attacker_name, attack_name):
+        #Shows the enemy attacking in a dramatic way!
+        print(f"\n{attacker_name} is preparing to attack...")
+        time.sleep(1)  # Pause for dramatic effect
+        print(f">>> {attack_name.upper()} <<<")
+        time.sleep(0.5)
         
     def show_status(self):
         #Shows the status and equipment of the player, 
@@ -69,7 +76,7 @@ class Character:
         #Shows the status of the player, 
         print(f"\n{self.name} (Level {self.level}):")
         print(f"HP: {self.hp}/{self.max_hp}, EXP: {self.exp}/{self.level*100}, Gold: {self.gold}, "
-              f"Att: {self.attack}, Def: {self.defence}, Eva: {self.evasion}, Acc: {self.accuracy}, Crit Chance: {self.crit_chance}, Crit Damage: {self.crit_damage}, DR: {self.damage_reduction}, BC: {self.block_chance} Stamina: {self.stamina}/{self.max_stamina}")
+              f"Att: {self.attack}, Def: {self.defence}, Eva: {int(self.evasion)}, Acc: {self.accuracy}, Crit%: {self.crit_chance}, Crit Dmg: {self.crit_damage}%, DR: {self.damage_reduction}, BC: {self.block_chance} Stamina: {self.stamina}/{self.max_stamina}")
         if self.active_buffs or self.combat_buffs:
             print("\nActive Buffs:")
             for stat, buff_info in self.active_buffs.items():
@@ -87,11 +94,16 @@ class Character:
                     print(f"  {hot_name}: {hot_info['tick_effect']} HP/turn for {hot_info['duration']} more turns")
     
     def calculate_damage(self, attacker, defender, attack_type):
+        # Calculate hit chance
+        hit_chance = max(5, min(95, attacker.accuracy - defender.evasion))
+        
         # Check if the attack hits
-        if random.randint(1, 100) > (attacker.accuracy - defender.evasion):
-            return 0, "miss"  # Attack missed
-        elif random.randit(1,100) < (defender.block_chance):
-            return 0, "blocked" # Attack blocked
+        if random.randint(1, 100) > hit_chance:
+            return 0, "miss", hit_chance  # Attack missed
+        
+        # Check if the attack is blocked
+        if random.randint(1, 100) <= defender.block_chance:
+            return 0, "blocked", hit_chance  # Attack blocked
 
         attack_info = attacker.attack_types[attack_type]
         base_damage = attacker.attack * attack_info["damage_modifier"]
@@ -114,22 +126,24 @@ class Character:
         # Ensure minimum damage of 1 if the attack hits
         damage = max(1, damage)
         
-        return damage, "critical" if is_critical else "normal"
+        return damage, "critical" if is_critical else "normal", hit_chance
 
     def perform_attack(self, target, attack_type):
         attack_info = self.attack_types[attack_type]
         message = f"{self.name} used {attack_info['name']}."
         total_damage = 0
         hits = 1 + attack_info.get("extra_attacks", 0)
+        attack_hit = False
 
         for i in range(hits):
-            damage, hit_type = self.calculate_damage(self, target, attack_type)
+            damage, hit_type, hit_chance = self.calculate_damage(self, target, attack_type)
             
             if hit_type == "miss":
                 message += f"\n{self.name}'s attack missed {target.name}!"
             elif hit_type == "blocked":
-                message+= f"\n{self.name}'s attack was blocked by {target.name}!"
+                message += f"\n{self.name}'s attack was blocked by {target.name}!"
             else:
+                attack_hit = True
                 target.take_damage(damage)
                 total_damage += damage
                 if i == 0:
@@ -143,16 +157,24 @@ class Character:
         if total_damage > 0 and hits > 1:
             message += f"\nTotal damage dealt: {total_damage}"
 
+        self.display_attack_animation(self.name, attack_info['name'])
+        
         self_damage_info = None
-        if attack_type in ["reckless", "triple"]:
+        if attack_hit and attack_type in ["reckless", "triple"]:
             self_damage = int(total_damage * 0.2)  # 20% of total damage as self-damage
             self_damage_info = {"type": attack_type, "damage": self_damage}
             self.take_damage(self_damage)
             message += f"\n{self.name} takes {self_damage} self-damage from the {attack_type} attack!"
-
+        
+        print(message.rstrip())
+        
+        if attack_hit == True and attack_type == "stunning":
+            stunning_effect = STUN(duration = 1, strength = 1)
+            target.apply_status_effect(stunning_effect)
+        
         self.remove_status_effect("Freeze")
 
-        return message, total_damage, self_damage_info
+        return message, total_damage, self_damage_info, attack_hit
 
     def is_alive(self):
         # Check if character is still alive
@@ -217,19 +239,20 @@ class Character:
 class Player(Character):
     def __init__(self, name):
         # Initialise player with default stats
-        super().__init__(name, hp=100, attack=10, defence=5, accuracy=80, evasion=5, crit_chance=5, crit_damage=0, armour_penetration=0, damage_reduction=0, block_chance=5)
+        super().__init__(name, hp=100, attack=10, defence=5, accuracy=90, evasion=5, crit_chance=5, crit_damage=0, armour_penetration=0, damage_reduction=0, block_chance=5)
         self.level = 1
         self.exp = 0
         self.gold = 0
         self.base_attack = 10
         self.base_defence = 5
-        self.base_accuracy = 80
+        self.base_accuracy = 90
         self.base_evasion = 5
         self.base_crit_chance = 5
         self.base_crit_damage = 0
         self.base_armour_penetration = 0
         self.base_damage_reduction = 0
         self.block_chance = 5
+        self.level_modifiers = {"attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, "crit_chance": 0, "crit_damage": 0}
         self.equipment_modifiers = {"attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, "damage_reduction": 0, "block_chance": 0}
         self.buff_modifiers = {"attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, "damage_reduction": 0}
         self.combat_buff_modifiers = {"attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, "damage_reduction": 0}
@@ -324,8 +347,12 @@ class Player(Character):
         self.level += 1
         self.max_hp += 10
         self.hp = self.max_hp
-        self.attack += 1
-        self.defence += 1
+        self.level_modifiers["attack"] += 1
+        self.level_modifiers["defence"] += 1
+        self.level_modifiers["accuracy"] += 2
+        self.level_modifiers["evasion"] += 0.5
+        self.level_modifiers["crit_chance"] += 1
+        self.level_modifiers["crit_damage"] += 2
         self.max_stamina += 5
         stamina_restore = self.max_stamina // 4
         self.restore_stamina(stamina_restore)
@@ -338,8 +365,12 @@ class Player(Character):
         if self.level > 1:
             self.level -= 1
             self.max_hp -= 10
-            self.attack = max(self.base_attack, self.attack - 1)
-            self.defence = max(self.base_defence, self.defence - 1)
+            self.level_modifiers["attack"] -= 1
+            self.level_modifiers["defence"] -= 1
+            self.level_modifiers["accuracy"] -= 2
+            self.level_modifiers["evasion"] -= 0.5
+            self.level_modifiers["crit_chance"] -= 1
+            self.level_modifiers["crit_damage"] -= 2
             self.max_stamina -= 5
             print(f"You've lost a level. You are now {self.level}")
         else:
@@ -423,6 +454,7 @@ class Player(Character):
 
         # Apply modifiers from various sources
         modifier_sources = [
+            self.level_modifiers,
             self.equipment_modifiers,
             self.buff_modifiers,
             self.combat_buff_modifiers,
@@ -772,19 +804,70 @@ class Player(Character):
                 print(f"- {item}: {cooldown} turns")
     
     def show_inventory(self):
-        # Display inventory and equipped items
         print("\nInventory:")
         for i, item in enumerate(self.inventory, 1):
+            stats = []
+            effects = []
+            
+            # Equipment stats
+            if item.attack > 0:
+                stats.append(f"Attack: {item.attack}")
+            if item.defence > 0:
+                stats.append(f"Defence: {item.defence}")
+            if hasattr(item, 'damage_reduction') and item.damage_reduction > 0:
+                stats.append(f"DR: {item.damage_reduction}")
+            if hasattr(item, 'evasion') and item.evasion > 0:
+                stats.append(f"Evasion: {item.evasion}")
+            if hasattr(item, 'crit_chance') and item.crit_chance > 0:
+                stats.append(f"Crit%: {item.crit_chance}")
+            if hasattr(item, 'crit_damage') and item.crit_damage > 0:
+                stats.append(f"CritDmg: {item.crit_damage}")
+            if hasattr(item, 'block_chance') and item.block_chance > 0:
+                stats.append(f"Block%: {item.block_chance}")
+            
+            # Weapon-specific info
             if item.type == "weapon":
                 weapon_type = getattr(item, 'weapon_type', 'light')
                 stamina_cost = self.get_weapon_stamina_cost(weapon_type)
-                print(f"{i}. {item.name} (Attack: {item.attack}) (Stamina use: {stamina_cost}) (Weapon type: {item.weapon_type.title()}) (Value: {item.value} gold)")
-            elif item.type == "ring":
-                print(f"{i}. {item.name} (Attack: {item.attack} Defence: {item.defence}) (Value: {item.value})")
-            elif item.type in ["helm", "chest", "belt", "legs", "shield", "back", "gloves", "boots"]:
-                print(f"{i}. {item.name} (Defence: {item.defence})(Value: {item.value} gold)")
-            else:
-                print(f"{i}. {item.name} (Value: {item.value} gold)")
+                stats.append(f"Stamina: {stamina_cost}")
+                stats.append(f"Type: {item.weapon_type.title()}")
+            
+            # Consumable effects
+            if item.type in ["consumable", "food", "drink"]:
+                if item.effect_type == "healing":
+                    effects.append(f"Heal: {item.effect}")
+                elif item.effect_type == "hot":
+                    effects.append(f"HoT: {item.tick_effect}/turn for {item.duration} turns")
+                elif item.effect_type == "damage":
+                    effects.append(f"Damage: {item.effect}")
+                elif item.effect_type == "buff":
+                    if isinstance(item.effect, tuple):
+                        stat, value = item.effect
+                        duration = "until end of combat" if item.duration == 0 else f"for {item.duration} turns"
+                        effects.append(f"Buff: {stat.capitalize()} +{value} {duration}")
+                    else:
+                        duration = "until end of combat" if item.duration == 0 else f"for {item.duration} turns"
+                        effects.append(f"Buff: Attack +{item.effect} {duration}")
+                elif item.effect_type == "weapon_buff":
+                    if isinstance(item.effect, tuple):
+                        stat, value = item.effect
+                        effects.append(f"Weapon Buff: {stat.capitalize()} +{value} for {item.duration} turns")
+            
+            # Weapon coating
+            elif item.type == "weapon coating":
+                if isinstance(item.effect, tuple):
+                    stack, duration = item.effect
+                    effects.append(f"Poison: {stack} stacks for {duration} turns")
+            
+            stats_str = ", ".join(stats)
+            effects_str = ", ".join(effects)
+            
+            print(f"{i}. {item.name} ", end="")
+            if stats_str:
+                print(f"({stats_str}) ", end="")
+            if effects_str:
+                print(f"[{effects_str}] ", end="")
+            print(f"(Value: {item.value} gold)")
             
     def show_consumables(self):
         # Display consumable items in inventory

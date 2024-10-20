@@ -1,7 +1,6 @@
 import random
 from player import Player
 from enemies import Enemy, ENEMY_ATTACK_TYPES
-import time
 from status_effects import *
 
 
@@ -52,14 +51,7 @@ class Battle:
 
         self.player.use_stamina(total_stamina_cost)
         
-        self.display_attack_animation(self.player.name, attack_info['name'])
-        
-        message, total_damage, self_damage_info = self.player.perform_attack(enemy, attack_type)
-        print(message.rstrip())
-        
-        if self_damage_info:
-            self_damage_effect = SELF_DAMAGE(self_damage_info["damage"], self_damage_info["type"])
-            self_damage_effect.apply(self.player)
+        message, total_damage, self_damage_info, attack_hit = self.player.perform_attack(enemy, attack_type)
         
         reflected_damage = 0
         for effect in enemy.status_effects:
@@ -74,12 +66,8 @@ class Battle:
             stance_message = self.player.apply_defensive_stance()
             if stance_message:
                 print(stance_message)
-            
-        if attack_type == "stunning":
-            stunning_effect = STUN(duration = 1, strength = 1)
-            enemy.apply_status_effect(stunning_effect)
-        
-        if self.player.weapon_coating:
+
+        if attack_hit and self.player.weapon_coating:
             print(f"{enemy.name} is poisoned by your coated weapon!\n")
             poison_effect = POISON(
                 duration=self.player.weapon_coating['duration'],
@@ -108,13 +96,7 @@ class Battle:
         attack_type = enemy.choose_attack()
         attack_info = ENEMY_ATTACK_TYPES[attack_type]
         effect_type = attack_info.get("effect")
-        message, total_damage, self_damage_info = enemy.perform_attack(self.player, attack_type)
-        self.display_attack_animation(enemy.name, attack_info['name'])
-        print(message.rstrip())
-        
-        if self_damage_info:
-            self_damage_effect = SELF_DAMAGE(self_damage_info["damage"], self_damage_info["type"])
-            self_damage_effect.apply(enemy)
+        message, total_damage, self_damage_info, attack_hit = enemy.perform_attack(self.player, attack_type)
         
         reflected_damage = 0
         for effect in self.player.status_effects:
@@ -125,7 +107,7 @@ class Battle:
             enemy.take_damage(reflected_damage)
             print(f"{enemy.name} takes {reflected_damage} reflected damage!")
         
-        if effect_type:
+        if attack_hit == True and effect_type:
             self.apply_attack_effect(effect_type, self.player, enemy, total_damage)
 
         if not self.player.is_alive():
@@ -165,6 +147,9 @@ class Battle:
             attack_weaken_effect = ATTACK_WEAKEN(3, effect_strength)
             target.apply_status_effect(attack_weaken_effect)
         # Add other effects as needed
+    
+    def chance_to_hit(self, attacker, target):
+        print(f"Chance to hit %: {attacker.accuracy - target.evasion}")
     
     def battle(self, enemy):
         #Battle logic, displays player and enemy stats, updates the cooldowns of any items and buffs
@@ -286,18 +271,17 @@ class Battle:
             self.game.current_location = "Village"
         else:
             self.player.game_over()
-    
-    def display_attack_animation(self, attacker_name, attack_name):
-        #Shows the enemy attacking in a dramatic way!
-        print(f"\n{attacker_name} is preparing to attack...")
-        time.sleep(1)  # Pause for dramatic effect
-        print(f">>> {attack_name.upper()} <<<")
-        time.sleep(0.5)
 
     def display_battle_status(self, enemy):
         #Shows the defined info below whenever player attacks, helps to keep track of info
         self.player.show_stats()
         
+        # Calculate and display hit chances
+        player_hit_chance = max(5, min(95, self.player.accuracy - enemy.evasion))
+        enemy_hit_chance = max(5, min(95, enemy.accuracy - self.player.evasion))
+        print(f"\nYour chance to hit: {player_hit_chance}%")
+        print(f"{enemy.name}'s chance to hit you: {enemy_hit_chance}%")
+            
         if self.player.status_effects:
             print("\nPlayer Status Effects:")
             effect_messages = []
@@ -312,9 +296,9 @@ class Battle:
             print(f"\nYour weapon is coated with {self.player.weapon_coating['name']} ({self.player.weapon_coating['remaining_duration']} attacks remaining)")
         
         print(f"\n{enemy.name} HP: {enemy.hp}")
-        print(f"Attack: {enemy.attack}")
-        print(f"Defence: {enemy.defence}")
-        print(f"Level: {enemy.level}")
+        print(f"Atk: {enemy.attack}")
+        print(f"Def: {enemy.defence}")
+        print(f"Lvl: {enemy.level}")
         
         if enemy.status_effects:
             print(f"\n{enemy.name} Status Effects:")

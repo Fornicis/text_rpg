@@ -142,6 +142,13 @@ class Game:
                 hp=enemy_template.hp,
                 attack=enemy_template.attack,
                 defence=enemy_template.defence,
+                accuracy=enemy_template.accuracy,
+                evasion=enemy_template.evasion,
+                crit_chance=enemy_template.crit_chance,
+                crit_damage=enemy_template.crit_damage,
+                armour_penetration=enemy_template.armour_penetration,
+                damage_reduction=enemy_template.damage_reduction,
+                block_chance=enemy_template.block_chance,
                 exp=enemy_template.exp,
                 gold=enemy_template.gold,
                 tier=enemy_template.tier,
@@ -168,98 +175,6 @@ class Game:
         self.player.days += 1
         print(f"You rest and recover {heal_amount} HP and {stamina_restore} stamina.")
         print(f"It is now day {self.player.days}")
-
-    """def equip_menu(self):
-        #Shows the menu for equipping items, shows the stats for the items as long as they are above 0
-        while True:
-            clear_screen()
-            print("\n=== Equipment Menu ===")
-            print("\nCurrently Equipped:")
-            for slot, item in self.player.equipped.items():
-                if item:
-                    print(f"{slot.capitalize()}: {item.name}")
-                    if item.attack > 0:
-                        stamina_cost = self.player.get_weapon_stamina_cost(item.weapon_type)
-                        if slot == "weapon":
-                            print(f"  Attack: +{item.attack} Stamina use: {stamina_cost} Weapon type: {item.weapon_type.title()}")
-                        else:
-                            print(f"  Attack: +{item.attack}")
-                    if item.defence > 0:
-                        print(f"  Defence: +{item.defence}")
-                else:
-                    print(f"{slot.capitalize()}: None")
-
-            print("\nInventory:")
-            #Creates a list of equippable items and numbers them for ease of access
-            equippable_items = [item for item in self.player.inventory if item.type in self.player.equipped]
-            for i, item in enumerate(equippable_items, 1):
-                if item.type == "weapon":
-                    stamina_cost = self.player.get_weapon_stamina_cost(item.weapon_type)
-                    print(f"{i}. {item.name} (Type: {item.weapon_type.capitalize()} weapon, Attack: +{item.attack}, Stamina Cost: {stamina_cost})")
-                elif item.type in ["helm", "chest", "waist", "legs", "boots", "gloves", "shield", "back"]:
-                    print(f"{i}. {item.name} (Type: {item.type.capitalize()}), Defence: +{item.defence})")
-                else:
-                    print(f"{i}. {item.name} (Type: {item.type.capitalize()}), Attack: {item.attack}, Defence: {item.defence})")
-
-            choice = input("\nEnter the number of the item you want to equip (or 'q' to quit): ")
-            #Allows the player to just enter the associated item number instead of typing full item name
-            if choice.lower() == 'q':
-                break
-
-            try:
-                #Checks to see that choice is within range of items index
-                item_index = int(choice) - 1
-                if 0 <= item_index < len(equippable_items):
-                    selected_item = equippable_items[item_index]
-                    current_item = self.player.equipped[selected_item.type]
-                    #Shows a comparison of the current items stats with the chosen item to equip, making it easier for the player to visualise changes
-                    print(f"\nComparing {selected_item.name} with current {selected_item.type}:")
-                    print(f"Current {selected_item.type.capitalize()}: ", end="")
-                    if current_item:
-                        print(f"{current_item.name}")
-                        print(f"  Attack: +{current_item.attack}")
-                        print(f"  Defence: +{current_item.defence}")
-                        if current_item.type == "weapon":
-                            current_stamina_cost = self.player.get_weapon_stamina_cost(current_item.weapon_type)
-                            print(f"  Stamina Cost: {current_stamina_cost}")
-                    else:
-                        print("None")
-
-                    print(f"New {selected_item.type.capitalize()}: {selected_item.name}")
-                    print(f"  Attack: +{selected_item.attack}")
-                    print(f"  Defence: +{selected_item.defence}")
-                    if selected_item.type == "weapon":
-                        new_stamina_cost = self.player.get_weapon_stamina_cost(selected_item.weapon_type)
-                        print(f"  Stamina Cost: {new_stamina_cost}")
-
-                    if current_item:
-                        attack_change = selected_item.attack - current_item.attack
-                        defence_change = selected_item.defence - current_item.defence
-                    else:
-                        attack_change = selected_item.attack
-                        defence_change = selected_item.defence
-
-                    print(f"\nChanges if equipped:")
-                    print(f"  Attack: {attack_change:+d}")
-                    print(f"  Defence: {defence_change:+d}")
-                    if selected_item.type == "weapon":
-                        if current_item and current_item.type == "weapon":
-                            stamina_cost_change = new_stamina_cost - current_stamina_cost
-                        else:
-                            stamina_cost_change = new_stamina_cost
-                        print(f"  Stamina Cost: {stamina_cost_change:+d}")
-
-                    confirm = input("\nDo you want to equip this item? (y/n): ")
-                    #Ensures the player really wants to equip the item
-                    if confirm.lower() == 'y':
-                        self.player.equip_item(selected_item)
-                        print(f"\n{selected_item.name} equipped!")
-                else:
-                    print("Invalid item number. Please try again.")
-            except ValueError:
-                print("Invalid input. Please enter a number or 'q' to quit.")
-
-            input("\nPress Enter to continue...")"""
 
     def equip_menu(self):
         while True:

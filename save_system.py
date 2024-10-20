@@ -50,6 +50,7 @@ def save_game(player, current_location, filename):
             "visited_locations": list(player.visited_locations),
             "kill_tracker": player.kill_tracker,
             "weapon_stamina_cost": player.weapon_stamina_cost,
+            "level_modifiers": player.level_modifiers,
             "equipment_modifiers": player.equipment_modifiers,
             "buff_modifiers": player.buff_modifiers,
             "combat_buff_modifiers": player.combat_buff_modifiers,
@@ -99,6 +100,7 @@ def load_game(filename):
     player.weapon_stamina_cost = player_data["weapon_stamina_cost"]
     
     # Load new modifier dictionaries
+    player.level_modifiers = player_data["level_modifiers"]
     player.equipment_modifiers = player_data["equipment_modifiers"]
     player.buff_modifiers = player_data["buff_modifiers"]
     player.combat_buff_modifiers = player_data["combat_buff_modifiers"]
