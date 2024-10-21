@@ -292,7 +292,9 @@ class Player(Character):
             "power": {"name": "Power Attack", "stamina_modifier": 3, "damage_modifier": 1.5},
             "quick": {"name": "Quick Attack", "stamina_modifier": 1, "damage_modifier": 0.8, "extra_attacks": 1},
             "stunning": {"name": "Stunning Blow", "stamina_modifier": 2, "damage_modifier": 0.8},
-            "defensive": {"name": "Defensive Stance", "stamina_modifier": 2, "damage_modifier": 0, "defence_boost_percentage": 25, "duration": 5}
+            "defensive": {"name": "Defensive Stance", "stamina_modifier": 2, "damage_modifier": 0, "defence_boost_percentage": 33, "duration": 5},
+            "power_stance": {"name": "Power Stance", "stamina_modifier": 2, "damage_modifier": 0, "attack_boost_percentage": 33, "duration": 5},
+            "accuracy_stance": {"name": "Accuracy Stance", "stamina_modifier": 2, "damage_modifier": 0, "accuracy_boost_percentage": 33, "duration": 5}
         }
     
     def give_starter_items(self):
@@ -628,6 +630,34 @@ class Player(Character):
             )
             self.apply_status_effect(defensive_stance_effect)
             #print(f"You've entered a Defensive Stance for {attack_info['duration']} turns.")
+            
+    def apply_power_stance(self):
+        attack_info = self.attack_types["power_stance"]
+        existing_effect = next((effect for effect in self.status_effects if effect.name == "Power Stance"), None)
+        if existing_effect:
+            existing_effect.reset_duration()
+            #print(f"Your Power Stance has been refreshed for {attack_info['duration']} turns.")
+        else:
+            power_stance_effect = POWER_STANCE(
+                attack_info["duration"], 
+                attack_info["attack_boost_percentage"]
+            )
+            self.apply_status_effect(power_stance_effect)
+            #print(f"You've entered a power Stance for {attack_info['duration']} turns.")
+            
+    def apply_accuracy_stance(self):
+        attack_info = self.attack_types["accuracy_stance"]
+        existing_effect = next((effect for effect in self.status_effects if effect.name == "Accuracy Stance"), None)
+        if existing_effect:
+            existing_effect.reset_duration()
+            #print(f"Your Accuracy Stance has been refreshed for {attack_info['duration']} turns.")
+        else:
+            accuracy_stance_effect = ACCURACY_STANCE(
+                attack_info["duration"], 
+                attack_info["accuracy_boost_percentage"]
+            )
+            self.apply_status_effect(accuracy_stance_effect)
+            #print(f"You've entered a accuracy Stance for {attack_info['duration']} turns.")
     
     def update_buffs(self):
         #Reduces the duration of any duration based buffs (Such as HoTs or sharpening stones)
@@ -940,6 +970,10 @@ class Player(Character):
     def get_available_attack_types(self):
         if any(effect.name == "Defensive Stance" for effect in self.status_effects):
             return {"normal": self.attack_types["normal"]}
+        if any(effect.name == "Power Stance" for effect in self.status_effects):
+            return {"normal": self.attack_types["normal"], "power": self.attack_types["power"]}
+        if any(effect.name == "Accuracy Stance" for effect in self.status_effects):
+            return {"normal": self.attack_types["normal"], "quick": self.attack_types["quick"], "stunning": self.attack_types["stunning"]}
         return self.attack_types
 
     def display_attack_options(self):

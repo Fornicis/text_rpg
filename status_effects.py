@@ -136,19 +136,49 @@ def defence_break_remove(character, strength):
 DEFENCE_BREAK = lambda duration, strength: StatusEffect("Defence Break", duration, defence_break_apply, defence_break_remove, strength=strength, is_debuff=True)
 
 def defensive_stance_apply(character, strength):
-    boost = int(character.base_defence * strength / 100)
+    boost = int((character.base_defence + character.level_modifiers["defence"] + character.equipment_modifiers["defence"]) * strength / 100)
     character.combat_buff_modifiers["defence"] += boost
     character.recalculate_stats()
     print(f"{character.name}'s defence increased by {boost} due to Defensive Stance.")
     return True
 
 def defensive_stance_remove(character, strength):
-    boost = int(character.base_defence * strength / 100)
+    boost = int((character.base_defence + character.level_modifiers["defence"] + character.equipment_modifiers["defence"]) * strength / 100)
     character.combat_buff_modifiers["defence"] = max(0, character.combat_buff_modifiers.get("defence", 0) - boost)
     character.recalculate_stats()
     print(f"{character.name}'s Defensive Stance has worn off. Defence decreased by {boost}.")
 
 DEFENSIVE_STANCE = lambda duration, strength=25: StatusEffect("Defensive Stance", duration, defensive_stance_apply, defensive_stance_remove, strength=strength, is_debuff=False)
+
+def power_stance_apply(character, strength):
+    boost = int((character.base_attack + character.level_modifiers["attack"] + character.weapon_buff_modifiers["attack"] + character.equipment_modifiers["attack"]) * strength / 100)
+    character.combat_buff_modifiers["attack"] += boost
+    character.recalculate_stats()
+    print(f"{character.name}'s attack is increased by {boost} due to Power Stance.")
+    return True
+    
+def power_stance_remove(character, strength):
+    boost = int((character.base_attack + character.level_modifiers["attack"] + character.weapon_buff_modifiers["attack"] + character.equipment_modifiers["attack"]) * strength / 100)
+    character.combat_buff_modifiers["attack"] = max(0, character.combat_buff_modifiers.get("attack", 0) - boost)
+    character.recalculate_stats()
+    print(f"{character.name}'s Power Stance has worn off. Attack decreased by {boost}.")
+    
+POWER_STANCE = lambda duration, strength=25: StatusEffect("Power Stance", duration, power_stance_apply, power_stance_remove, strength=strength, is_debuff=False)
+
+def accuracy_stance_apply(character, strength):
+    boost = int((character.base_accuracy + character.level_modifiers["accuracy"] + character.weapon_buff_modifiers["accuracy"] + character.equipment_modifiers["accuracy"]) * strength / 100)
+    character.combat_buff_modifiers["accuracy"] += boost
+    character.recalculate_stats()
+    print(f"{character.name}'s accuracy is increased by {boost} due to Accuracy Stance.")
+    return True
+    
+def accuracy_stance_remove(character, strength):
+    boost = int((character.base_accuracy + character.level_modifiers["accuracy"] + character.weapon_buff_modifiers["accuracy"] + character.equipment_modifiers["accuracy"]) * strength / 100)
+    character.combat_buff_modifiers["accuracy"] = max(0, character.combat_buff_modifiers.get("accuracy", 0) - boost)
+    character.recalculate_stats()
+    print(f"{character.name}'s Accuracy Stance has worn off. Accuracy decreased by {boost}.")
+    
+ACCURACY_STANCE = lambda duration, strength=25: StatusEffect("Accuracy Stance", duration, accuracy_stance_apply, accuracy_stance_remove, strength=strength, is_debuff=False)
 
 def weaken_apply(character, strength):
     character.apply_debuff("attack", strength)
