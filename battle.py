@@ -18,6 +18,19 @@ class Battle:
             self.player.stunned = False
             self.player.remove_status_effect("Stun")
             return False, None
+        confusion_effect = next((effect for effect in self.player.status_effects if effect.name == "Confusion"), None)
+        if confusion_effect:
+            if random.random() < 0.5:
+                print("You're confused and attack yourself!")
+                damage, hit_type, _ = self.player.calculate_damage(self.player, self.player, "normal")
+                self.player.take_damage(damage)
+                print(f"You dealt {damage} damage to yourself!")
+                print("Your attack on yourself snaps you out of your confusion!")
+                self.player.remove_status_effect("Confusion")
+                return False, None
+            else:
+                print(f"{self.player.name} snaps out of their confusion!")
+                self.player.remove_status_effect("Confusion")
         frozen_effect = next((effect for effect in self.player.status_effects if effect.name == "Freeze"), None)
         if frozen_effect:
             if random.random() < 0.5:
@@ -141,6 +154,9 @@ class Battle:
         elif effect_type == "stun":
             stun_effect = STUN(2, effect_strength)
             target.apply_status_effect(stun_effect)
+        elif effect_type == "confusion":
+            confusion_effect = CONFUSION(3, effect_strength)
+            target.apply_status_effect(confusion_effect)
         elif effect_type == "stamina_drain":
             stamina_drain_effect = STAMINA_DRAIN(damage)
             target.apply_status_effect(stamina_drain_effect)

@@ -80,11 +80,26 @@ POISON = lambda duration, strength=1: StatusEffect("Poison", duration,
     create_dot_effect("Poison", lambda char, str: str),
     strength=strength, is_debuff=True, stackable=True)
 
-freeze_apply, freeze_remove = create_chance_effect("Freeze", lambda str: 0.8 * str, lambda char, frozen: setattr(char, 'frozen', frozen))
+freeze_apply, freeze_remove = create_chance_effect("Freeze", lambda str: 0.3 * str, lambda char, frozen: setattr(char, 'frozen', frozen))
 FREEZE = lambda duration, strength=1: StatusEffect("Freeze", duration, freeze_apply, freeze_remove, strength=strength, is_debuff=True)
 
-stun_apply, stun_remove = create_chance_effect("Stun", lambda str: 0.8 * str, lambda char, stunned: setattr(char, 'stunned', stunned))
+stun_apply, stun_remove = create_chance_effect("Stun", lambda str: 0.5 * str, lambda char, stunned: setattr(char, 'stunned', stunned))
 STUN = lambda duration, strength=1: StatusEffect("Stun", duration, stun_apply, stun_remove, strength=strength, is_debuff=True)
+
+def confusion_apply(character, strength):
+    if random.random() < 0.5:  # 50% chance to apply confusion
+        character.confused = True
+        print(f"{character.name} is confused!")
+        return True
+    else:
+        print(f"{character.name} resists the confusion!")
+        return False
+
+def confusion_remove(character, strength):
+    character.confused = False
+    print(f"{character.name} is no longer confused.")
+
+CONFUSION = lambda duration, strength=1: StatusEffect("Confusion", duration, confusion_apply, confusion_remove, strength=strength, is_debuff=True)
 
 def self_damage_apply(character, strength, attack_type="reckless"):
     damage = int(strength * 0.2)

@@ -22,6 +22,7 @@ class Character:
         self.damage_reduction = damage_reduction
         self.block_chance = block_chance
         self.stunned = False
+        self.confused = False
         self.status_effects = []
         self.pause = pause
         self.title_screen = title_screen

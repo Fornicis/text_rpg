@@ -372,6 +372,7 @@ ENEMY_ATTACK_TYPES = {
     "reckless": {"name": "Reckless Assault", "damage_modifier": 2},
     "draining": {"name": "Draining Touch", "damage_modifier": 0.9, "effect": "stamina_drain"},
     "stunning": {"name": "Stunning Blow", "damage_modifier": 0.7, "effect": "stun"},
+    "confusion": {"name": "Confounding Blow", "damage_modifier": 0.8, "effect": "confusion"},
     "poison": {"name": "Poison Strike", "damage_modifier": 0.9, "effect": "poison"},
     "freeze": {"name": "Frozen Strike", "damage_modifier": 0.9, "effect": "freeze"},
     "burn": {"name": "Burning Strike", "damage_modifier": 0.9, "effect": "burn"},
