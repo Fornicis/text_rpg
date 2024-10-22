@@ -4,7 +4,7 @@ from display import pause, title_screen
 from status_effects import *
 
 class Character:
-    def __init__(self, name, hp, attack, defence, accuracy=90, evasion=5, crit_chance=5, crit_damage=150, armour_penetration=0, damage_reduction=0, block_chance=0):
+    def __init__(self, name, hp, attack, defence, accuracy=70, evasion=5, crit_chance=5, crit_damage=150, armour_penetration=0, damage_reduction=0, block_chance=0):
         # Initialize basic character attributes
         self.name = name
         self.hp = hp
@@ -169,10 +169,6 @@ class Character:
         
         print(message.rstrip())
         
-        if attack_hit == True and attack_type == "stunning":
-            stunning_effect = STUN(duration = 1, strength = 1)
-            target.apply_status_effect(stunning_effect)
-        
         self.remove_status_effect("Freeze")
 
         return message, total_damage, self_damage_info, attack_hit
@@ -216,7 +212,6 @@ class Character:
                 else:
                     print(f"{self.name} is affected by {new_effect.name} for {new_effect.remaining_duration} turns!")
             else:
-                #print(f"{self.name} resists the {new_effect.name} effect!")
                 self.status_effects.remove(new_effect)
 
     def update_status_effects(self, character):
@@ -240,13 +235,13 @@ class Character:
 class Player(Character):
     def __init__(self, name):
         # Initialise player with default stats
-        super().__init__(name, hp=100, attack=10, defence=5, accuracy=90, evasion=5, crit_chance=5, crit_damage=0, armour_penetration=0, damage_reduction=0, block_chance=5)
+        super().__init__(name, hp=100, attack=10, defence=5, accuracy=70, evasion=5, crit_chance=5, crit_damage=0, armour_penetration=0, damage_reduction=0, block_chance=5)
         self.level = 1
         self.exp = 0
         self.gold = 0
         self.base_attack = 10
         self.base_defence = 5
-        self.base_accuracy = 90
+        self.base_accuracy = 70
         self.base_evasion = 5
         self.base_crit_chance = 5
         self.base_crit_damage = 0
@@ -661,26 +656,43 @@ class Player(Character):
             #print(f"You've entered a accuracy Stance for {attack_info['duration']} turns.")
     
     def update_buffs(self):
-        #Reduces the duration of any duration based buffs (Such as HoTs or sharpening stones)
+        """
+        Updates duration-based buffs and removes expired ones.
+        Handles all possible player stats and modifiers.
+        """
+        # Define all possible stats that can be buffed
+        all_stats = [
+            "attack", "defence", "accuracy", "evasion", "crit_chance",
+            "crit_damage", "armour_penetration", "damage_reduction"
+        ]
+
         # Update regular buffs
         for stat, buff_info in list(self.active_buffs.items()):
             if isinstance(buff_info, dict) and 'duration' in buff_info:
                 buff_info['duration'] -= 1
+                
                 if buff_info['duration'] <= 0:
-                    if stat == "attack" or stat == "all stats":
-                        self.buff_modifiers["attack"] -= buff_info['value']
-                    if stat == "defence" or stat == "all stats":
-                        self.buff_modifiers["defence"] -= buff_info['value']
+                    # Handle "all stats" buff
+                    if stat == "all stats":
+                        for base_stat in ["attack", "defence"]:  # Keep all stats limited to basic stats
+                            self.buff_modifiers[base_stat] -= buff_info['value']
+                    # Handle individual stat buffs
+                    elif stat in all_stats:
+                        self.buff_modifiers[stat] -= buff_info['value']
+                    
                     del self.active_buffs[stat]
-                    print(f"Your {stat} buff has worn off.")
+                    # Format the stat name for display
+                    display_stat = stat.replace('_', ' ').title()
+                    print(f"Your {display_stat} buff has worn off.")
 
         # Update weapon buff
         if self.weapon_buff['duration'] > 0:
             self.weapon_buff['duration'] -= 1
             if self.weapon_buff['duration'] <= 0:
                 self.weapon_buff_modifiers["attack"] -= self.weapon_buff['value']
-                print(f"Your weapon's sharpening effect has worn off")
+                print("Your weapon's sharpening effect has worn off")
                 self.weapon_buff = {'value': 0, 'duration': 0}
+        
         self.recalculate_stats()            
     
     def update_cooldowns(self):
@@ -843,6 +855,8 @@ class Player(Character):
             # Equipment stats
             if item.attack > 0:
                 stats.append(f"Attack: {item.attack}")
+            if item.accuracy > 0:
+                stats.append(f"Accuracy: {item.accuracy}")
             if item.defence > 0:
                 stats.append(f"Defence: {item.defence}")
             if hasattr(item, 'damage_reduction') and item.damage_reduction > 0:

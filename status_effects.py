@@ -83,7 +83,7 @@ POISON = lambda duration, strength=1: StatusEffect("Poison", duration,
 freeze_apply, freeze_remove = create_chance_effect("Freeze", lambda str: 0.3 * str, lambda char, frozen: setattr(char, 'frozen', frozen))
 FREEZE = lambda duration, strength=1: StatusEffect("Freeze", duration, freeze_apply, freeze_remove, strength=strength, is_debuff=True)
 
-stun_apply, stun_remove = create_chance_effect("Stun", lambda str: 0.5 * str, lambda char, stunned: setattr(char, 'stunned', stunned))
+stun_apply, stun_remove = create_chance_effect("Stun", lambda str: 0.8 * str, lambda char, stunned: setattr(char, 'stunned', stunned))
 STUN = lambda duration, strength=1: StatusEffect("Stun", duration, stun_apply, stun_remove, strength=strength, is_debuff=True)
 
 def confusion_apply(character, strength):

@@ -45,61 +45,6 @@ class BaseShop:
         sellable_items = self.get_sellable_items(player)
         for i, item in enumerate(sellable_items, 1):
             print(f"{i}. {item.name} (Sell value: {item.value // 2} gold)")
-    
-    """def display_item_stats(self, item, player):
-        print(f"   Type: {item.type.capitalize()}")
-        print(f"   Tier: {item.tier.capitalize()}")
-        if item.attack > 0:
-            print(f"   Attack: +{item.attack}")
-            if item.type == "weapon":
-                stamina_cost = player.get_weapon_stamina_cost(item.weapon_type)
-                print(f"   Stamina Cost: {stamina_cost}")
-            
-        if item.defence > 0:
-            print(f"   Defence: +{item.defence}")
-            
-        if item.stamina_restore > 0:
-            print(f"   Stamina Restore: {item.stamina_restore}")
-            
-        if item.type == "consumable":
-            if item.effect_type == "buff":
-                if isinstance(item.effect, tuple):
-                    stat, value = item.effect
-                    print(f"   Buff: {stat.capitalize()} +{value} until end of next combat.")
-                else:
-                    print(f"   Buff: Attack +{item.effect} until end of next combat.")
-            elif item.effect_type == "healing":
-                print(f"   Effect: Healing ({item.effect} HP)")
-            elif item.effect_type == "hot":
-                print(f"   Effect: Heal over time ({item.tick_effect} HP per turn) for {item.duration} turns. Total Healing: {item.tick_effect * item.duration} HP")
-            elif item.effect_type == "damage":
-                print(f"   Effect: Damage ({item.effect})")
-            elif item.effect_type == "weapon_buff":
-                if isinstance(item.effect, tuple):
-                    stat, value = item.effect
-                    print(f"   Effect: Increases weapon {stat} by {value} for {item.duration} turns")
-                
-        elif item.type in ["food", "drink"]:
-            if item.effect_type == "buff":
-                if isinstance(item.effect, tuple):
-                    stat, value = item.effect
-                    print(f"   Buff: {stat.capitalize()} +{value} for {item.duration} turns")
-                else:
-                    print(f"   Buff: Attack +{item.effect} for {item.duration} turns")
-            if item.effect_type == "healing":
-                print(f"   Effect: Healing ({item.effect} HP)")
-            if item.effect_type == "hot":
-                print(f"   Effect: Heal over time ({item.tick_effect} HP per turn) for {item.duration} turns. Total Healing: {item.tick_effect * item.duration} HP")
-            if item.effect_type == "damage":
-                print(f"   Effect: Damage ({item.effect})")
-        
-        elif item.type == "weapon coating":
-            if isinstance(item.effect, tuple):
-                stack, duration = item.effect
-                print(f"   Poison Stacks: {stack} for {duration} turns")
-            
-        if item.cooldown:
-            print(f"   Cooldown: {item.cooldown} turns")"""
             
     def display_item_stats(self, item, player):
         print(f"   Type: {item.type.capitalize()}")
@@ -108,6 +53,7 @@ class BaseShop:
         stats = [
             ("Attack", item.attack),
             ("Defence", item.defence),
+            ("Accuracy", item.accuracy),
             ("Damage Reduction", getattr(item, 'damage_reduction', 0)),
             ("Evasion", getattr(item, 'evasion', 0)),
             ("Crit Chance", getattr(item, 'crit_chance', 0)),

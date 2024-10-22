@@ -187,6 +187,7 @@ class Game:
                     stats = [
                         f"Attack: +{item.attack}" if item.attack > 0 else None,
                         f"Defence: +{item.defence}" if item.defence > 0 else None,
+                        f"Accuracy: +{item.accuracy}" if item.accuracy > 0 else None,
                         f"Damage Reduction: +{item.damage_reduction}" if hasattr(item, 'damage_reduction') and item.damage_reduction > 0 else None,
                         f"Evasion: +{item.evasion}" if hasattr(item, 'evasion') and item.evasion > 0 else None,
                         f"Crit Chance: +{item.crit_chance}%" if hasattr(item, 'crit_chance') and item.crit_chance > 0 else None,

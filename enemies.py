@@ -22,9 +22,7 @@ class Enemy(Character):
         return random.choice(list(self.attack_types.keys()))
         
     """ Effects to add
-            "confusion": f"{player.name} is confused! They might hurt themselves on their next turn.",
             "execute_low_health": f"The attack deals extra damage due to {player.name}'s low health!",
-            "damage_share": f"{player.name} is linked with {self.name}! They'll share some of the damage they deal.",
             "mana_drain": f"{player.name}'s energy is drained! They lose some stamina.",
             "absorb_buff": f"{self.name} absorbs some of {player.name}'s power, growing stronger!",
             "random_effect": "A chaotic energy surges through the battlefield!",

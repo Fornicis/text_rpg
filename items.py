@@ -30,63 +30,63 @@ def initialise_items():
         # Starter items
         "Peasants Top": Item("Peasants Top", "chest", 0, "starter", defence=1),
         "Peasants Bottoms": Item("Peasants Bottoms", "legs", 0, "starter", defence=1),
-        "Wooden Sword": Item("Wooden Sword", "weapon", 0, "starter", attack=5, accuracy=0, crit_chance=2, crit_damage=120, armour_penetration=0, weapon_type="light"),
+        "Wooden Sword": Item("Wooden Sword", "weapon", 0, "starter", attack=5, accuracy=20, crit_chance=2, crit_damage=120, armour_penetration=0, weapon_type="light"),
 
         # Common (Bronze) Weapons level 1-3
-        "Bronze Dagger": Item("Bronze Dagger", "weapon", 20, "common", attack=10, accuracy=2, crit_chance=5, crit_damage=130, armour_penetration=3, weapon_type="light"),
-        "Bronze Shortsword": Item("Bronze Shortsword", "weapon", 25, "common", attack=12, accuracy=3, crit_chance=4, crit_damage=125, armour_penetration=1, weapon_type="light"),
-        "Bronze Sword": Item("Bronze Sword", "weapon", 30, "common", attack=14, accuracy=4, crit_chance=3, crit_damage=130, armour_penetration=1, weapon_type="medium"),
-        "Bronze Axe": Item("Bronze Axe", "weapon", 35, "common", attack=16, accuracy=-1, crit_chance=3, crit_damage=140, armour_penetration=2, weapon_type="medium"),
-        "Bronze Longsword": Item("Bronze Longsword", "weapon", 40, "common", attack=18, accuracy=2, crit_chance=2, crit_damage=135, armour_penetration=1, weapon_type="heavy"),
-        "Bronze Mace": Item("Bronze Mace", "weapon", 45, "common", attack=20, accuracy=-2, crit_chance=2, crit_damage=140, armour_penetration=3, weapon_type="heavy"),
+        "Bronze Dagger": Item("Bronze Dagger", "weapon", 20, "common", attack=10, accuracy=23, crit_chance=5, crit_damage=130, armour_penetration=3, weapon_type="light"),
+        "Bronze Shortsword": Item("Bronze Shortsword", "weapon", 25, "common", attack=12, accuracy=22, crit_chance=4, crit_damage=125, armour_penetration=1, weapon_type="light"),
+        "Bronze Sword": Item("Bronze Sword", "weapon", 30, "common", attack=14, accuracy=20, crit_chance=3, crit_damage=130, armour_penetration=1, weapon_type="medium"),
+        "Bronze Axe": Item("Bronze Axe", "weapon", 35, "common", attack=16, accuracy=18, crit_chance=3, crit_damage=140, armour_penetration=2, weapon_type="medium"),
+        "Bronze Longsword": Item("Bronze Longsword", "weapon", 40, "common", attack=18, accuracy=17, crit_chance=2, crit_damage=135, armour_penetration=1, weapon_type="heavy"),
+        "Bronze Mace": Item("Bronze Mace", "weapon", 45, "common", attack=20, accuracy=15, crit_chance=2, crit_damage=140, armour_penetration=3, weapon_type="heavy"),
 
         # Uncommon (Iron) Weapons level 4-6
-        "Iron Dagger": Item("Iron Dagger", "weapon", 80, "uncommon", attack=23, accuracy=3, crit_chance=6, crit_damage=135, armour_penetration=4, weapon_type="light"),
-        "Iron Shortsword": Item("Iron Shortsword", "weapon", 90, "uncommon", attack=25, accuracy=4, crit_chance=5, crit_damage=130, armour_penetration=2, weapon_type="light"),
-        "Iron Sword": Item("Iron Sword", "weapon", 100, "uncommon", attack=27, accuracy=5, crit_chance=4, crit_damage=135, armour_penetration=2, weapon_type="medium"),
-        "Iron Axe": Item("Iron Axe", "weapon", 110, "uncommon", attack=29, accuracy=0, crit_chance=4, crit_damage=145, armour_penetration=3, weapon_type="medium"),
-        "Iron Longsword": Item("Iron Longsword", "weapon", 120, "uncommon", attack=31, accuracy=3, crit_chance=3, crit_damage=140, armour_penetration=2, weapon_type="heavy"),
-        "Iron Mace": Item("Iron Mace", "weapon", 130, "uncommon", attack=33, accuracy=-1, crit_chance=3, crit_damage=145, armour_penetration=4, weapon_type="heavy"),
+        "Iron Dagger": Item("Iron Dagger", "weapon", 80, "uncommon", attack=23, accuracy=24, crit_chance=6, crit_damage=135, armour_penetration=4, weapon_type="light"),
+        "Iron Shortsword": Item("Iron Shortsword", "weapon", 90, "uncommon", attack=25, accuracy=23, crit_chance=5, crit_damage=130, armour_penetration=2, weapon_type="light"),
+        "Iron Sword": Item("Iron Sword", "weapon", 100, "uncommon", attack=27, accuracy=22, crit_chance=4, crit_damage=135, armour_penetration=2, weapon_type="medium"),
+        "Iron Axe": Item("Iron Axe", "weapon", 110, "uncommon", attack=29, accuracy=19, crit_chance=4, crit_damage=145, armour_penetration=3, weapon_type="medium"),
+        "Iron Longsword": Item("Iron Longsword", "weapon", 120, "uncommon", attack=31, accuracy=18, crit_chance=3, crit_damage=140, armour_penetration=2, weapon_type="heavy"),
+        "Iron Mace": Item("Iron Mace", "weapon", 130, "uncommon", attack=33, accuracy=17, crit_chance=3, crit_damage=145, armour_penetration=4, weapon_type="heavy"),
 
         # Rare (Steel) Weapons level 7-10
-        "Steel Dagger": Item("Steel Dagger", "weapon", 200, "rare", attack=36, accuracy=4, crit_chance=7, crit_damage=140, armour_penetration=5, weapon_type="light"),
-        "Steel Shortsword": Item("Steel Shortsword", "weapon", 220, "rare", attack=38, accuracy=5, crit_chance=6, crit_damage=135, armour_penetration=3, weapon_type="light"),
-        "Steel Sword": Item("Steel Sword", "weapon", 240, "rare", attack=40, accuracy=6, crit_chance=5, crit_damage=140, armour_penetration=3, weapon_type="medium"),
-        "Steel Axe": Item("Steel Axe", "weapon", 260, "rare", attack=42, accuracy=1, crit_chance=5, crit_damage=150, armour_penetration=4, weapon_type="medium"),
-        "Steel Longsword": Item("Steel Longsword", "weapon", 280, "rare", attack=44, accuracy=4, crit_chance=4, crit_damage=145, armour_penetration=3, weapon_type="heavy"),
-        "Steel Mace": Item("Steel Mace", "weapon", 300, "rare", attack=46, accuracy=0, crit_chance=4, crit_damage=150, armour_penetration=5, weapon_type="heavy"),
+        "Steel Dagger": Item("Steel Dagger", "weapon", 200, "rare", attack=36, accuracy=26, crit_chance=7, crit_damage=140, armour_penetration=5, weapon_type="light"),
+        "Steel Shortsword": Item("Steel Shortsword", "weapon", 220, "rare", attack=38, accuracy=25, crit_chance=6, crit_damage=135, armour_penetration=3, weapon_type="light"),
+        "Steel Sword": Item("Steel Sword", "weapon", 240, "rare", attack=40, accuracy=23, crit_chance=5, crit_damage=140, armour_penetration=3, weapon_type="medium"),
+        "Steel Axe": Item("Steel Axe", "weapon", 260, "rare", attack=42, accuracy=21, crit_chance=5, crit_damage=150, armour_penetration=4, weapon_type="medium"),
+        "Steel Longsword": Item("Steel Longsword", "weapon", 280, "rare", attack=44, accuracy=20, crit_chance=4, crit_damage=145, armour_penetration=3, weapon_type="heavy"),
+        "Steel Mace": Item("Steel Mace", "weapon", 300, "rare", attack=46, accuracy=18, crit_chance=4, crit_damage=150, armour_penetration=5, weapon_type="heavy"),
 
         # Epic (Mithril) Weapons level 11-14
-        "Mithril Dagger": Item("Mithril Dagger", "weapon", 500, "epic", attack=49, accuracy=5, crit_chance=8, crit_damage=145, armour_penetration=6, weapon_type="light"),
-        "Mithril Shortsword": Item("Mithril Shortsword", "weapon", 550, "epic", attack=51, accuracy=6, crit_chance=7, crit_damage=140, armour_penetration=4, weapon_type="light"),
-        "Mithril Sword": Item("Mithril Sword", "weapon", 600, "epic", attack=53, accuracy=7, crit_chance=6, crit_damage=145, armour_penetration=4, weapon_type="medium"),
-        "Mithril Axe": Item("Mithril Axe", "weapon", 650, "epic", attack=55, accuracy=2, crit_chance=6, crit_damage=155, armour_penetration=5, weapon_type="medium"),
-        "Mithril Longsword": Item("Mithril Longsword", "weapon", 700, "epic", attack=57, accuracy=5, crit_chance=5, crit_damage=150, armour_penetration=4, weapon_type="heavy"),
-        "Mithril Mace": Item("Mithril Mace", "weapon", 750, "epic", attack=59, accuracy=1, crit_chance=5, crit_damage=155, armour_penetration=6, weapon_type="heavy"),
+        "Mithril Dagger": Item("Mithril Dagger", "weapon", 500, "epic", attack=49, accuracy=27, crit_chance=8, crit_damage=145, armour_penetration=6, weapon_type="light"),
+        "Mithril Shortsword": Item("Mithril Shortsword", "weapon", 550, "epic", attack=51, accuracy=26, crit_chance=7, crit_damage=140, armour_penetration=4, weapon_type="light"),
+        "Mithril Sword": Item("Mithril Sword", "weapon", 600, "epic", attack=53, accuracy=25, crit_chance=6, crit_damage=145, armour_penetration=4, weapon_type="medium"),
+        "Mithril Axe": Item("Mithril Axe", "weapon", 650, "epic", attack=55, accuracy=22, crit_chance=6, crit_damage=155, armour_penetration=5, weapon_type="medium"),
+        "Mithril Longsword": Item("Mithril Longsword", "weapon", 700, "epic", attack=57, accuracy=21, crit_chance=5, crit_damage=150, armour_penetration=4, weapon_type="heavy"),
+        "Mithril Mace": Item("Mithril Mace", "weapon", 750, "epic", attack=59, accuracy=20, crit_chance=5, crit_damage=155, armour_penetration=6, weapon_type="heavy"),
 
         # Masterwork (Aluthril) Weapons level 15-19
-        "Aluthril Dagger": Item("Aluthril Dagger", "weapon", 1000, "masterwork", attack=62, accuracy=6, crit_chance=9, crit_damage=150, armour_penetration=7, weapon_type="light"),
-        "Aluthril Shortsword": Item("Aluthril Shortsword", "weapon", 1100, "masterwork", attack=64, accuracy=7, crit_chance=8, crit_damage=145, armour_penetration=5, weapon_type="light"),
-        "Aluthril Sword": Item("Aluthril Sword", "weapon", 1200, "masterwork", attack=66, accuracy=8, crit_chance=7, crit_damage=150, armour_penetration=5, weapon_type="medium"),
-        "Aluthril Axe": Item("Aluthril Axe", "weapon", 1300, "masterwork", attack=68, accuracy=3, crit_chance=7, crit_damage=160, armour_penetration=6, weapon_type="medium"),
-        "Aluthril Longsword": Item("Aluthril Longsword", "weapon", 1400, "masterwork", attack=70, accuracy=6, crit_chance=6, crit_damage=155, armour_penetration=5, weapon_type="heavy"),
-        "Aluthril Mace": Item("Aluthril Mace", "weapon", 1500, "masterwork", attack=72, accuracy=2, crit_chance=6, crit_damage=160, armour_penetration=7, weapon_type="heavy"),
+        "Aluthril Dagger": Item("Aluthril Dagger", "weapon", 1000, "masterwork", attack=62, accuracy=29, crit_chance=9, crit_damage=150, armour_penetration=7, weapon_type="light"),
+        "Aluthril Shortsword": Item("Aluthril Shortsword", "weapon", 1100, "masterwork", attack=64, accuracy=28, crit_chance=8, crit_damage=145, armour_penetration=5, weapon_type="light"),
+        "Aluthril Sword": Item("Aluthril Sword", "weapon", 1200, "masterwork", attack=66, accuracy=26, crit_chance=7, crit_damage=150, armour_penetration=5, weapon_type="medium"),
+        "Aluthril Axe": Item("Aluthril Axe", "weapon", 1300, "masterwork", attack=68, accuracy=24, crit_chance=7, crit_damage=160, armour_penetration=6, weapon_type="medium"),
+        "Aluthril Longsword": Item("Aluthril Longsword", "weapon", 1400, "masterwork", attack=70, accuracy=23, crit_chance=6, crit_damage=155, armour_penetration=5, weapon_type="heavy"),
+        "Aluthril Mace": Item("Aluthril Mace", "weapon", 1500, "masterwork", attack=72, accuracy=21, crit_chance=6, crit_damage=160, armour_penetration=7, weapon_type="heavy"),
 
         # Legendary (Adamantite) Weapons level 20-24
-        "Adamantite Dagger": Item("Adamantite Dagger", "weapon", 2000, "legendary", attack=75, accuracy=7, crit_chance=10, crit_damage=155, armour_penetration=8, weapon_type="light"),
-        "Adamantite Shortsword": Item("Adamantite Shortsword", "weapon", 2200, "legendary", attack=77, accuracy=8, crit_chance=9, crit_damage=150, armour_penetration=6, weapon_type="light"),
-        "Adamantite Sword": Item("Adamantite Sword", "weapon", 2400, "legendary", attack=79, accuracy=9, crit_chance=8, crit_damage=155, armour_penetration=6, weapon_type="medium"),
-        "Adamantite Axe": Item("Adamantite Axe", "weapon", 2600, "legendary", attack=81, accuracy=4, crit_chance=8, crit_damage=165, armour_penetration=7, weapon_type="medium"),
-        "Adamantite Longsword": Item("Adamantite Longsword", "weapon", 2800, "legendary", attack=83, accuracy=7, crit_chance=7, crit_damage=160, armour_penetration=6, weapon_type="heavy"),
-        "Adamantite Warhammer": Item("Adamantite Warhammer", "weapon", 3000, "legendary", attack=85, accuracy=3, crit_chance=7, crit_damage=165, armour_penetration=8, weapon_type="heavy"),
+        "Adamantite Dagger": Item("Adamantite Dagger", "weapon", 2000, "legendary", attack=75, accuracy=30, crit_chance=10, crit_damage=155, armour_penetration=8, weapon_type="light"),
+        "Adamantite Shortsword": Item("Adamantite Shortsword", "weapon", 2200, "legendary", attack=77, accuracy=29, crit_chance=9, crit_damage=150, armour_penetration=6, weapon_type="light"),
+        "Adamantite Sword": Item("Adamantite Sword", "weapon", 2400, "legendary", attack=79, accuracy=28, crit_chance=8, crit_damage=155, armour_penetration=6, weapon_type="medium"),
+        "Adamantite Axe": Item("Adamantite Axe", "weapon", 2600, "legendary", attack=81, accuracy=25, crit_chance=8, crit_damage=165, armour_penetration=7, weapon_type="medium"),
+        "Adamantite Longsword": Item("Adamantite Longsword", "weapon", 2800, "legendary", attack=83, accuracy=24, crit_chance=7, crit_damage=160, armour_penetration=6, weapon_type="heavy"),
+        "Adamantite Warhammer": Item("Adamantite Warhammer", "weapon", 3000, "legendary", attack=85, accuracy=23, crit_chance=7, crit_damage=165, armour_penetration=8, weapon_type="heavy"),
 
         # Mythical Weapons level 25+
-        "Whisper of the Void": Item("Whisper of the Void", "weapon", 5000, "mythical", attack=88, accuracy=8, crit_chance=11, crit_damage=160, armour_penetration=9, weapon_type="light"),
-        "Destiny's Call": Item("Destiny's Call", "weapon", 5200, "mythical", attack=90, accuracy=10, crit_chance=9, crit_damage=160, armour_penetration=7, weapon_type="medium"),
-        "Worldsplitter": Item("Worldsplitter", "weapon", 5400, "mythical", attack=92, accuracy=5, crit_chance=9, crit_damage=170, armour_penetration=9, weapon_type="heavy"),
-        "Fang of the Cosmos": Item("Fang of the Cosmos", "weapon", 5600, "mythical", attack=94, accuracy=9, crit_chance=12, crit_damage=165, armour_penetration=10, weapon_type="light"),
-        "Harmony's Discord": Item("Harmony's Discord", "weapon", 5800, "mythical", attack=96, accuracy=11, crit_chance=10, crit_damage=165, armour_penetration=8, weapon_type="medium"),
-        "Apocalypse Incarnate": Item("Apocalypse Incarnate", "weapon", 6000, "mythical", attack=98, accuracy=6, crit_chance=10, crit_damage=175, armour_penetration=10, weapon_type="heavy"),
+        "Whisper of the Void": Item("Whisper of the Void", "weapon", 5000, "mythical", attack=88, accuracy=32, crit_chance=11, crit_damage=160, armour_penetration=9, weapon_type="light"),
+        "Destiny's Call": Item("Destiny's Call", "weapon", 5200, "mythical", attack=90, accuracy=29, crit_chance=9, crit_damage=160, armour_penetration=7, weapon_type="medium"),
+        "Worldsplitter": Item("Worldsplitter", "weapon", 5400, "mythical", attack=92, accuracy=25, crit_chance=9, crit_damage=170, armour_penetration=9, weapon_type="heavy"),
+        "Fang of the Cosmos": Item("Fang of the Cosmos", "weapon", 5600, "mythical", attack=94, accuracy=33, crit_chance=12, crit_damage=165, armour_penetration=10, weapon_type="light"),
+        "Harmony's Discord": Item("Harmony's Discord", "weapon", 5800, "mythical", attack=96, accuracy=30, crit_chance=10, crit_damage=165, armour_penetration=8, weapon_type="medium"),
+        "Apocalypse Incarnate": Item("Apocalypse Incarnate", "weapon", 6000, "mythical", attack=98, accuracy=26, crit_chance=10, crit_damage=175, armour_penetration=10, weapon_type="heavy"),
         
         # Common Helms (4 points total)
         "Sturdy Leather Cap": Item("Sturdy Leather Cap", "helm", 10, "common", defence=3, damage_reduction=1),
@@ -533,10 +533,10 @@ def initialise_items():
         "Divine Warrior's Infusion": Item("Divine Warrior's Infusion", "consumable", 7500, "mythical", effect_type="buff", effect=("all stats", 48), cooldown=7, combat_only=True),
         
         #Sharpening Stones
-        "Basic Sharpening Stone": Item("Basic Sharpening Stone", "consumable", 100, "common", effect_type="weapon_buff", effect=("attack", 5), cooldown=0, duration=150),
-        "Quality Sharpening Stone": Item("Quality Sharpening Stone", "consumable", 250, "uncommon", effect_type="weapon_buff", effect=("attack", 10), cooldown=0, duration=150),
-        "Superior Sharpening Stone": Item("Superior Sharpening Stone", "consumable", 500, "rare", effect_type="weapon_buff", effect=("attack", 15), cooldown=0, duration=150),
-        "Master Sharpening Stone": Item("Master Sharpening Stone", "consumable", 1000, "epic", effect_type="weapon_buff", effect=("attack", 20), cooldown=0, duration=150),
+        "Basic Sharpening Stone": Item("Basic Sharpening Stone", "consumable", 100, "common", effect_type="weapon_buff", effect=("attack", 5), cooldown=0, duration=20),
+        "Quality Sharpening Stone": Item("Quality Sharpening Stone", "consumable", 250, "uncommon", effect_type="weapon_buff", effect=("attack", 10), cooldown=0, duration=20),
+        "Superior Sharpening Stone": Item("Superior Sharpening Stone", "consumable", 500, "rare", effect_type="weapon_buff", effect=("attack", 15), cooldown=0, duration=20),
+        "Master Sharpening Stone": Item("Master Sharpening Stone", "consumable", 1000, "epic", effect_type="weapon_buff", effect=("attack", 20), cooldown=0, duration=20),
         
         #Weapon Coatings
         ##Poison Coatings

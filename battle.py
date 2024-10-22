@@ -17,6 +17,8 @@ class Battle:
             print("You're stunned and lose your turn.")
             self.player.stunned = False
             self.player.remove_status_effect("Stun")
+            if self.player.status_effects:  # Update any remaining effects
+                self.player.update_status_effects(self.player)
             return False, None
         confusion_effect = next((effect for effect in self.player.status_effects if effect.name == "Confusion"), None)
         if confusion_effect:
@@ -31,6 +33,8 @@ class Battle:
             else:
                 print(f"{self.player.name} snaps out of their confusion!")
                 self.player.remove_status_effect("Confusion")
+        if self.player.status_effects:  # Update any remaining effects
+                self.player.update_status_effects(self.player)
         frozen_effect = next((effect for effect in self.player.status_effects if effect.name == "Freeze"), None)
         if frozen_effect:
             if random.random() < 0.5:
