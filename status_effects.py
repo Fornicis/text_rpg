@@ -151,17 +151,52 @@ def defence_break_remove(character, strength):
 DEFENCE_BREAK = lambda duration, strength: StatusEffect("Defence Break", duration, defence_break_apply, defence_break_remove, strength=strength, is_debuff=True)
 
 def defensive_stance_apply(character, strength):
-    boost = int((character.base_defence + character.level_modifiers["defence"] + character.equipment_modifiers["defence"]) * strength / 100)
-    character.combat_buff_modifiers["defence"] += boost
+    # Calculate boosts
+    defence_boost = int((character.base_defence + character.level_modifiers["defence"] + character.equipment_modifiers["defence"]) * strength / 100)
+    block_boost = int((character.base_block_chance + character.level_modifiers.get("block_chance", 0) + character.equipment_modifiers.get("block_chance", 0)) * strength / 100)
+    dr_boost = int((character.base_block_chance + character.level_modifiers.get("damage_reduction", 0) + character.equipment_modifiers.get("damage_reduction", 0)) * strength / 100)
+    
+    # Update combat buff modifiers using the get() method with default value
+    current_defence = character.combat_buff_modifiers.get("defence", 0)
+    current_block = character.combat_buff_modifiers.get("block_chance", 0)
+    current_dr = character.combat_buff_modifiers.get("damage_reduction", 0)
+    
+    character.combat_buff_modifiers["defence"] = current_defence + defence_boost
+    character.combat_buff_modifiers["block_chance"] = current_block + block_boost
+    character.combat_buff_modifiers["damage_reduction"] = current_dr + dr_boost
+    
     character.recalculate_stats()
-    print(f"{character.name}'s defence increased by {boost} due to Defensive Stance.")
+    message = [
+        f"{character.name}'s defensive stats increased:",
+        f"Defence: +{defence_boost}",
+        f"Damage Reduction: +{dr_boost}",
+        f"Block Chance: +{block_boost}"
+    ]
+    print("\n".join(message))
     return True
 
 def defensive_stance_remove(character, strength):
-    boost = int((character.base_defence + character.level_modifiers["defence"] + character.equipment_modifiers["defence"]) * strength / 100)
-    character.combat_buff_modifiers["defence"] = max(0, character.combat_buff_modifiers.get("defence", 0) - boost)
+    defence_boost = int((character.base_defence + character.level_modifiers["defence"] + character.equipment_modifiers["defence"]) * strength / 100)
+    block_boost = int((character.base_block_chance + character.level_modifiers.get("block_chance", 0) + character.equipment_modifiers.get("block_chance", 0)) * strength / 100)
+    dr_boost = int((character.base_block_chance + character.level_modifiers.get("damage_reduction", 0) + character.equipment_modifiers.get("damage_reduction", 0)) * strength / 100)
+    
+    # Update combat buff modifiers using the get() method with default value
+    current_defence = character.combat_buff_modifiers.get("defence", 0)
+    current_block = character.combat_buff_modifiers.get("block_chance", 0)
+    current_dr = character.combat_buff_modifiers.get("damage_reduction", 0)
+    
+    character.combat_buff_modifiers["defence"] = max(0, current_defence - defence_boost)
+    character.combat_buff_modifiers["block_chance"] = max(0, current_block - block_boost)
+    character.combat_buff_modifiers["damage_reduction"] = max(0, current_dr - dr_boost)
+    
     character.recalculate_stats()
-    print(f"{character.name}'s Defensive Stance has worn off. Defence decreased by {boost}.")
+    message = [
+        f"{character.name}'s defensive stats decreased:",
+        f"Defence: -{defence_boost}",
+        f"Damage Reduction: -{dr_boost}",
+        f"Block Chance: -{block_boost}"
+    ]
+    print("\n".join(message))
 
 DEFENSIVE_STANCE = lambda duration, strength=25: StatusEffect("Defensive Stance", duration, defensive_stance_apply, defensive_stance_remove, strength=strength, is_debuff=False)
 

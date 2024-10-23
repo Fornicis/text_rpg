@@ -40,7 +40,7 @@ def initialise_enemies():
     return {
             # Easy Enemies (Levels 1-4)
             "Rat": Enemy("Rat", 21, 21, 5, 76, 12, 5, 118, 0, 0, 0, 10, random.randrange(3, 10), "low", 1, 
-                        ["normal", "double", "poison", "double"]),
+                        ["normal", "double", "poison", "defence_break"]),
 
             "Boar": Enemy("Boar", 30, 24, 7, 71, 6, 7, 128, 2, 4, 0, 15, random.randrange(5, 15), "low", 2, 
                         ["normal", "power", "reckless", "stunning"]),
@@ -73,7 +73,7 @@ def initialise_enemies():
                                 ["normal", "double", "draining", "stunning"]),
 
             "Snake": Enemy("Snake", 24, 27, 5, 82, 18, 7, 136, 2, 0, 0, 15, random.randrange(5, 15), "low", 1, 
-                        ["normal", "double", "poison", "double"]),
+                        ["normal", "double", "poison", "attack_weaken"]),
 
             "Forest Hawk": Enemy("Forest Hawk", 29, 25, 7, 87, 21, 8, 141, 1, 0, 0, 20, random.randrange(8, 18), "low", 2, 
                                 ["normal", "double", "stunning", "triple"]),

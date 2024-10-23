@@ -246,13 +246,13 @@ class Player(Character):
         self.base_crit_chance = 5
         self.base_crit_damage = 0
         self.base_armour_penetration = 0
-        self.base_damage_reduction = 0
-        self.block_chance = 5
-        self.level_modifiers = {"attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, "crit_chance": 0, "crit_damage": 0}
+        self.base_damage_reduction = 5
+        self.base_block_chance = 5
+        self.level_modifiers = {"attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, "damage_reduction": 0, "block_chance": 0}
         self.equipment_modifiers = {"attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, "damage_reduction": 0, "block_chance": 0}
-        self.buff_modifiers = {"attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, "damage_reduction": 0}
-        self.combat_buff_modifiers = {"attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, "damage_reduction": 0}
-        self.debuff_modifiers = {"attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, "damage_reduction": 0}
+        self.buff_modifiers = {"attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, "damage_reduction": 0, "block_chance": 0}
+        self.combat_buff_modifiers = {"attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, "damage_reduction": 0, "block_chance": 0}
+        self.debuff_modifiers = {"attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, "damage_reduction": 0, "block_chance": 0}
         self.weapon_buff_modifiers = {"attack": 0, "accuracy": 0, "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, "block_chance": 0}
         self.cooldowns = {}
         self.active_buffs = {}
@@ -443,11 +443,13 @@ class Player(Character):
         stats = {
             "attack": self.base_attack,
             "defence": self.base_defence,
+            "evasion": self.base_evasion,
             "accuracy": self.base_accuracy,
             "crit_chance": self.base_crit_chance,
             "crit_damage": self.base_crit_damage,
+            "damage_reduction": self.base_damage_reduction,
             "armour_penetration": self.base_armour_penetration,
-            "block_chance": self.block_chance
+            "block_chance": self.base_block_chance
         }
 
         # Apply modifiers from various sources
@@ -472,9 +474,11 @@ class Player(Character):
         # Update character stats
         self.attack = stats["attack"]
         self.defence = stats["defence"]
+        self.evasion = stats["evasion"]
         self.accuracy = stats["accuracy"]
         self.crit_chance = stats["crit_chance"]
         self.crit_damage = stats["crit_damage"]
+        self.damage_reduction = stats["damage_reduction"]
         self.armour_penetration = stats["armour_penetration"]
         self.block_chance = stats["block_chance"]
 
@@ -488,8 +492,8 @@ class Player(Character):
             self.remove_status_effect(effect.name)
         
         self.remove_combat_buffs()
-        self.combat_buff_modifiers = {"attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, "damage_reduction": 0}
-        self.debuff_modifiers = {"attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, "damage_reduction": 0}
+        self.combat_buff_modifiers = {"attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, "damage_reduction": 0, "block_chance": 0}
+        self.debuff_modifiers = {"attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, "damage_reduction": 0, "block_chance": 0}
         self.recalculate_stats()
     
     def equip_item(self, item):
