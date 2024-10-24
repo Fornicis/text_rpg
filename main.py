@@ -207,6 +207,8 @@ class Game:
             for i, item in enumerate(equippable_items, 1):
                 stats = [
                     f"Attack: +{item.attack}" if item.attack > 0 else None,
+                    f"Accuracy: +{item.accuracy}" if item.accuracy > 0 else None,
+                    f"Armour Penetration: +{item.armour_penetration}" if item.armour_penetration > 0 else None,
                     f"Defence: +{item.defence}" if item.defence > 0 else None,
                     f"Damage Reduction: +{item.damage_reduction}" if hasattr(item, 'damage_reduction') and item.damage_reduction > 0 else None,
                     f"Evasion: +{item.evasion}" if hasattr(item, 'evasion') and item.evasion > 0 else None,
@@ -251,6 +253,8 @@ class Game:
 
         stats = [
             ("Attack", "attack"),
+            ("Accuracy", "accuracy"),
+            ("Armour Penetration", "armour_penetration"),
             ("Defence", "defence"),
             ("Damage Reduction", "damage_reduction"),
             ("Evasion", "evasion"),
@@ -364,6 +368,7 @@ class Game:
                         self.player = loaded_player
                         self.current_location = loaded_location
                         #self.player.days = loaded_days
+                        self.player.recalculate_stats()
                         self.initialise_battle()
                         break
                     else:
