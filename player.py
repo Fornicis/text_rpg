@@ -77,7 +77,7 @@ class Character:
         #Shows the status of the player, 
         print(f"\n{self.name} (Level {self.level}):")
         print(f"HP: {self.hp}/{self.max_hp}, EXP: {self.exp}/{self.level*100}, Gold: {self.gold}, "
-              f"Att: {self.attack}, Def: {self.defence}, Eva: {int(self.evasion)}, Acc: {self.accuracy}, Crit%: {self.crit_chance}, Crit Dmg: {self.crit_damage}%, DR: {self.damage_reduction}, BC: {self.block_chance} Stamina: {self.stamina}/{self.max_stamina}")
+              f"Att: {self.attack}, AP: {self.armour_penetration}, Def: {self.defence}, Eva: {int(self.evasion)}, Acc: {self.accuracy}, Crit%: {self.crit_chance}, Crit Dmg: {self.crit_damage}%, DR: {self.damage_reduction}, BC: {self.block_chance} Stamina: {self.stamina}/{self.max_stamina}")
         if self.active_buffs or self.combat_buffs:
             print("\nActive Buffs:")
             for stat, buff_info in self.active_buffs.items():
