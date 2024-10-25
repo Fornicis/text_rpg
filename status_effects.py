@@ -155,78 +155,157 @@ def defensive_stance_apply(character, strength):
     defence_boost = int((character.base_defence + character.level_modifiers["defence"] + character.equipment_modifiers["defence"]) * strength / 100)
     block_boost = int((character.base_block_chance + character.level_modifiers.get("block_chance", 0) + character.equipment_modifiers.get("block_chance", 0)) * strength / 100)
     dr_boost = int((character.base_block_chance + character.level_modifiers.get("damage_reduction", 0) + character.equipment_modifiers.get("damage_reduction", 0)) * strength / 100)
+    atk_reduce = int((character.base_attack + character.level_modifiers["attack"] + character.equipment_modifiers["attack"]) * strength / 100)
     
     # Update combat buff modifiers using the get() method with default value
     current_defence = character.combat_buff_modifiers.get("defence", 0)
     current_block = character.combat_buff_modifiers.get("block_chance", 0)
     current_dr = character.combat_buff_modifiers.get("damage_reduction", 0)
+    current_atk = character.combat_buff_modifiers.get("attack", 0)
     
+    # Add on new boost to combat_buff_modifiers
     character.combat_buff_modifiers["defence"] = current_defence + defence_boost
     character.combat_buff_modifiers["block_chance"] = current_block + block_boost
     character.combat_buff_modifiers["damage_reduction"] = current_dr + dr_boost
+    character.combat_buff_modifiers["attack"] = current_atk - atk_reduce
     
     character.recalculate_stats()
     message = [
         f"{character.name}'s defensive stats increased:",
         f"Defence: +{defence_boost}",
         f"Damage Reduction: +{dr_boost}",
-        f"Block Chance: +{block_boost}"
+        f"Block Chance: +{block_boost}",
+        f"Attack reduced by: -{atk_reduce}"
     ]
     print("\n".join(message))
     return True
 
 def defensive_stance_remove(character, strength):
+    # Calculate the boosts
     defence_boost = int((character.base_defence + character.level_modifiers["defence"] + character.equipment_modifiers["defence"]) * strength / 100)
     block_boost = int((character.base_block_chance + character.level_modifiers.get("block_chance", 0) + character.equipment_modifiers.get("block_chance", 0)) * strength / 100)
     dr_boost = int((character.base_block_chance + character.level_modifiers.get("damage_reduction", 0) + character.equipment_modifiers.get("damage_reduction", 0)) * strength / 100)
+    atk_reduce = int((character.base_attack + character.level_modifiers["attack"] + character.equipment_modifiers["attack"]) * strength / 100)
     
     # Update combat buff modifiers using the get() method with default value
     current_defence = character.combat_buff_modifiers.get("defence", 0)
     current_block = character.combat_buff_modifiers.get("block_chance", 0)
     current_dr = character.combat_buff_modifiers.get("damage_reduction", 0)
+    current_atk = character.combat_buff_modifiers.get("attack", 0)
     
+    # Add on new boost to combat_buff_modifiers
     character.combat_buff_modifiers["defence"] = max(0, current_defence - defence_boost)
     character.combat_buff_modifiers["block_chance"] = max(0, current_block - block_boost)
     character.combat_buff_modifiers["damage_reduction"] = max(0, current_dr - dr_boost)
+    character.combat_buff_modifiers["attack"] = max(0, current_atk + atk_reduce)
     
     character.recalculate_stats()
     message = [
         f"{character.name}'s defensive stats decreased:",
         f"Defence: -{defence_boost}",
         f"Damage Reduction: -{dr_boost}",
-        f"Block Chance: -{block_boost}"
+        f"Block Chance: -{block_boost}",
+        f"Attack increased by: +{atk_reduce}"
     ]
     print("\n".join(message))
 
 DEFENSIVE_STANCE = lambda duration, strength=25: StatusEffect("Defensive Stance", duration, defensive_stance_apply, defensive_stance_remove, strength=strength, is_debuff=False)
 
 def power_stance_apply(character, strength):
-    boost = int((character.base_attack + character.level_modifiers["attack"] + character.weapon_buff_modifiers["attack"] + character.equipment_modifiers["attack"]) * strength / 100)
-    character.combat_buff_modifiers["attack"] += boost
+    # Calculate the boosts
+    att_boost = int((character.base_attack + character.level_modifiers["attack"] + character.weapon_buff_modifiers["attack"] + character.equipment_modifiers["attack"]) * strength / 100)
+    armour_pen_boost = int((character.base_armour_penetration + character.level_modifiers.get("armour_penetration", 0) + character.equipment_modifiers.get("armour_penetration", 0)) * strength / 100)
+    crit_damage_boost = int((character.base_crit_damage + character.level_modifiers.get("crit_damage", 0) + character.equipment_modifiers.get("crit_damage", 0)) * strength / 100)
+    
+    # Update the combat_buff_modifiers with current value
+    current_att = character.combat_buff_modifiers.get("attack", 0)
+    current_armour_pen = character.combat_buff_modifiers.get("armour_penetration", 0)
+    current_crit_damage = character.combat_buff_modifiers.get("crit_damage", 0)
+    
+    # Add on new boost to the combat_buff_modifier
+    character.combat_buff_modifiers["attack"] = current_att + att_boost
+    character.combat_buff_modifiers["armour_penetration"] = current_armour_pen + armour_pen_boost
+    character.combat_buff_modifiers["crit_damage"] = current_crit_damage + crit_damage_boost
+    
     character.recalculate_stats()
-    print(f"{character.name}'s attack is increased by {boost} due to Power Stance.")
+    message = [
+        f"{character.name}'s offensive stats increased:",
+        f"Attack: +{att_boost}",
+        f"Armour Penetration: +{armour_pen_boost}",
+        f"Crit Damage: +{crit_damage_boost}"
+    ]
+    print("\n".join(message))
     return True
     
 def power_stance_remove(character, strength):
-    boost = int((character.base_attack + character.level_modifiers["attack"] + character.weapon_buff_modifiers["attack"] + character.equipment_modifiers["attack"]) * strength / 100)
-    character.combat_buff_modifiers["attack"] = max(0, character.combat_buff_modifiers.get("attack", 0) - boost)
+    # Calculate the boosts
+    att_boost = int((character.base_attack + character.level_modifiers["attack"] + character.weapon_buff_modifiers["attack"] + character.equipment_modifiers["attack"]) * strength / 100)
+    armour_pen_boost = int((character.base_armour_penetration + character.level_modifiers.get("armour_penetration", 0) + character.equipment_modifiers.get("armour_penetration", 0)) * strength / 100)
+    crit_damage_boost = crit_damage_boost = int((character.base_crit_damage + character.level_modifiers.get("crit_damage", 0) + character.equipment_modifiers.get("crit_damage", 0)) * strength / 100)
+    
+    # Update the combat_buff_modifiers with current value
+    current_att = character.combat_buff_modifiers.get("attack", 0)
+    current_armour_pen = character.combat_buff_modifiers.get("armour_penetration", 0)
+    current_crit_damage = character.combat_buff_modifiers.get("crit_damage", 0)
+    
+    # Add on new boost to the combat_buff_modifier
+    character.combat_buff_modifiers["attack"] = max(0, current_att - att_boost)
+    character.combat_buff_modifiers["armour_penetration"] = max(0, current_armour_pen - armour_pen_boost)
+    character.combat_buff_modifiers["crit_damage"] = max(0, current_crit_damage - crit_damage_boost)
+    
     character.recalculate_stats()
-    print(f"{character.name}'s Power Stance has worn off. Attack decreased by {boost}.")
+    message = [
+        f"{character.name}'s offensive stats decreased:",
+        f"Attack: -{att_boost}",
+        f"Armour Penetration: -{armour_pen_boost}",
+        f"Crit Damage: -{crit_damage_boost}"
+    ]
+    print("\n".join(message))
     
 POWER_STANCE = lambda duration, strength=25: StatusEffect("Power Stance", duration, power_stance_apply, power_stance_remove, strength=strength, is_debuff=False)
 
 def accuracy_stance_apply(character, strength):
-    boost = int((character.base_accuracy + character.level_modifiers["accuracy"] + character.weapon_buff_modifiers["accuracy"] + character.equipment_modifiers["accuracy"]) * strength / 100)
-    character.combat_buff_modifiers["accuracy"] += boost
+    # Calculate the boosts
+    acc_boost = int((character.base_accuracy + character.level_modifiers["accuracy"] + character.weapon_buff_modifiers["accuracy"] + character.equipment_modifiers["accuracy"]) * strength / 100)
+    crit_chance_boost = int((character.base_crit_chance + character.level_modifiers["crit_chance"] + character.weapon_buff_modifiers.get("crit_chance", 0) + character.equipment_modifiers.get("crit_chance", 0) * strength / 100))
+    
+    # Update the combat_buff_modifiers with the current boost
+    current_acc = character.combat_buff_modifiers.get("accuracy", 0)
+    current_crit_chance = character.combat_buff_modifiers.get("crit_chance", 0)
+    
+    # Add on the boost to the combat_buff_modifiers
+    character.combat_buff_modifiers["accuracy"] = current_acc + acc_boost
+    character.combat_buff_modifiers["crit_chance"] = current_crit_chance + crit_chance_boost
+    
     character.recalculate_stats()
-    print(f"{character.name}'s accuracy is increased by {boost} due to Accuracy Stance.")
+    message = [
+        f"{character.name}'s accuracy stats increased:",
+        f"Accuracy: +{acc_boost}",
+        f"Crit Chance: +{crit_chance_boost}"
+    ]
+    print("\n".join(message))
     return True
     
 def accuracy_stance_remove(character, strength):
-    boost = int((character.base_accuracy + character.level_modifiers["accuracy"] + character.weapon_buff_modifiers["accuracy"] + character.equipment_modifiers["accuracy"]) * strength / 100)
-    character.combat_buff_modifiers["accuracy"] = max(0, character.combat_buff_modifiers.get("accuracy", 0) - boost)
+    # Calculate the boosts
+    acc_boost = int((character.base_accuracy + character.level_modifiers["accuracy"] + character.weapon_buff_modifiers["accuracy"] + character.equipment_modifiers["accuracy"]) * strength / 100)
+    crit_chance_boost = int((character.base_crit_chance + character.level_modifiers["crit_chance"] + character.weapon_buff_modifiers.get("crit_chance", 0) + character.equipment_modifiers.get("crit_chance", 0) * strength / 100))
+    
+    # Update the combat_buff_modifiers with the current boost
+    current_acc = character.combat_buff_modifiers.get("accuracy", 0)
+    current_crit_chance = character.combat_buff_modifiers.get("crit_chance", 0)
+    
+    # Add on the boost to the combat_buff_modifiers
+    character.combat_buff_modifiers["accuracy"] = max(0, current_acc - acc_boost)
+    character.combat_buff_modifiers["crit_chance"] = max(0, current_crit_chance - crit_chance_boost)
+    
     character.recalculate_stats()
-    print(f"{character.name}'s Accuracy Stance has worn off. Accuracy decreased by {boost}.")
+    message = [
+        f"{character.name}'s accuracy stats decreased:",
+        f"Accuracy: -{acc_boost}",
+        f"Crit Chance: -{crit_chance_boost}"
+    ]
+    print("\n".join(message))
     
 ACCURACY_STANCE = lambda duration, strength=25: StatusEffect("Accuracy Stance", duration, accuracy_stance_apply, accuracy_stance_remove, strength=strength, is_debuff=False)
 

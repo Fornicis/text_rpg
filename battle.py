@@ -33,8 +33,7 @@ class Battle:
             else:
                 print(f"{self.player.name} snaps out of their confusion!")
                 self.player.remove_status_effect("Confusion")
-        if self.player.status_effects:  # Update any remaining effects
-                self.player.update_status_effects(self.player)
+        
         frozen_effect = next((effect for effect in self.player.status_effects if effect.name == "Freeze"), None)
         if frozen_effect:
             if random.random() < 0.5:
@@ -102,6 +101,9 @@ class Battle:
             )
             enemy.apply_status_effect(poison_effect)
             self.player.update_weapon_coating()
+        
+        if self.player.status_effects:  # Update any remaining effects
+                self.player.update_status_effects(self.player)
         
         if not enemy.is_alive():
             self.end_battle("enemy_defeat", enemy)
@@ -190,8 +192,7 @@ class Battle:
             self.player.update_cooldowns()
             self.player.update_hots()
             self.player.update_buffs()
-            #self.player.update_defensive_stance()
-            self.player.update_status_effects(self.player)
+            #self.player.update_status_effects(self.player)
             enemy.update_status_effects(enemy)
             self.display_battle_status(enemy)
             
@@ -205,6 +206,8 @@ class Battle:
             
             if self.player.stunned:
                 print("You're stunned and lose your turn.")
+                self.player.update_status_effects(self.player)
+                self.player.remove_status_effect("Stun")
                 self.player.stunned = False
                 self.enemy_attack(enemy)
                 continue
@@ -229,16 +232,20 @@ class Battle:
                         print(f"You gained {enemy.gold} gold.")
                         return
                     else:
+                        self.player.update_status_effects(self.player)
                         self.enemy_attack(enemy)
                 else:
                     print("No item used. You lose your turn.")
+                    self.player.update_status_effects(self.player)
                     self.enemy_attack(enemy)
             elif action == "r":
                 #Handles the player trying to run away
                 if self.run_away(enemy):
+                    self.player.update_status_effects(self.player)
                     return
             else:
                 print("Invalid action. You lose your turn.")
+                self.player.update_status_effects(self.player)
             
     def end_battle(self, reason, enemy=None):
         self.battle_ended = True
