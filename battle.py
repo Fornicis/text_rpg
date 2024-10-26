@@ -92,6 +92,11 @@ class Battle:
             stance_message = self.player.apply_accuracy_stance()
             if stance_message:
                 print(stance_message)
+                
+        if attack_type == "evasion_stance":
+            stance_message = self.player.apply_evasion_stance()
+            if stance_message:
+                print(stance_message)
         
         if attack_hit and self.player.weapon_coating:
             print(f"{enemy.name} is poisoned by your coated weapon!\n")

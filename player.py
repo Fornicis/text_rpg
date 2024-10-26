@@ -290,7 +290,8 @@ class Player(Character):
             "stunning": {"name": "Stunning Blow", "stamina_modifier": 2, "damage_modifier": 0.8},
             "defensive": {"name": "Defensive Stance", "stamina_modifier": 2, "damage_modifier": 0, "defence_boost_percentage": 33, "duration": 5},
             "power_stance": {"name": "Power Stance", "stamina_modifier": 2, "damage_modifier": 0, "attack_boost_percentage": 33, "duration": 5},
-            "accuracy_stance": {"name": "Accuracy Stance", "stamina_modifier": 2, "damage_modifier": 0, "accuracy_boost_percentage": 33, "duration": 5}
+            "accuracy_stance": {"name": "Accuracy Stance", "stamina_modifier": 2, "damage_modifier": 0, "accuracy_boost_percentage": 33, "duration": 5},
+            "evasion_stance": {"name": "Evasion Stance", "stamina_modifier": 2, "damage_modifier": 0, "evasion_boost_percentage": 33, "duration": 5}
         }
     
     def give_starter_items(self):
@@ -658,7 +659,19 @@ class Player(Character):
             )
             self.apply_status_effect(accuracy_stance_effect)
             #print(f"You've entered a accuracy Stance for {attack_info['duration']} turns.")
-    
+            
+    def apply_evasion_stance(self):
+        attack_info = self.attack_types["evasion_stance"]
+        existing_effect = next((effect for effect in self.status_effects if effect.name == "Evasion Stance"), None)
+        if existing_effect:
+            existing_effect.reset_duration()
+        else:
+            evasion_stance_effect = EVASION_STANCE(
+                attack_info["duration"],
+                attack_info["evasion_boost_percentage"]
+            )
+            self.apply_status_effect(evasion_stance_effect)
+            
     def update_buffs(self):
         """
         Updates duration-based buffs and removes expired ones.
@@ -993,6 +1006,8 @@ class Player(Character):
             return {"normal": self.attack_types["normal"], "power": self.attack_types["power"]}
         if any(effect.name == "Accuracy Stance" for effect in self.status_effects):
             return {"normal": self.attack_types["normal"], "quick": self.attack_types["quick"], "stunning": self.attack_types["stunning"]}
+        if any(effect.name == "Evasion Stance" for effect in self.status_effects):
+            return{"normal": self.attack_types["normal"], "quick": self.attack_types["quick"]}
         return self.attack_types
 
     def display_attack_options(self):
