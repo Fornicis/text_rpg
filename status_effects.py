@@ -359,7 +359,7 @@ def evasion_stance_apply(character, strength):
     # Calculate boosts and negatives
     eva_boost = int((character.base_evasion + character.level_modifiers.get("evasion", 0) + character.equipment_modifiers.get("evasion", 0)) * strength / 50)
     crit_chance_boost = int((character.base_crit_chance + character.level_modifiers.get("crit_chance", 0) + character.equipment_modifiers.get("crit_chance", 0)) * strength / 75)
-    crit_damage_boost = int((character.crit_damage + character.level_modifiers.get("crit_damage", 0) + character.equipment_modifiers.get("crit_damage", 0)) * strength / 75)
+    crit_damage_boost = int((character.base_crit_damage + character.level_modifiers.get("crit_damage", 0) + character.equipment_modifiers.get("crit_damage", 0)) * strength / 75)
     def_reduce = int((character.base_defence + character.level_modifiers.get("defence", 0) + character.equipment_modifiers.get("defence", 0)) * strength / 50)
     bc_reduce = int((character.base_block_chance + character.level_modifiers.get("block_chance", 0) + character.equipment_modifiers.get("block_chance", 0)) * strength / 50)
     dr_reduce = int((character.base_damage_reduction + character.level_modifiers.get("damage_reduction", 0) + character.equipment_modifiers.get("damage_reduction", 0)) * strength / 50)
@@ -398,7 +398,7 @@ def evasion_stance_remove(character, strength):
     # Calculate boosts and negatives
     eva_boost = int((character.base_evasion + character.level_modifiers.get("evasion", 0) + character.equipment_modifiers.get("evasion", 0)) * strength / 50)
     crit_chance_boost = int((character.base_crit_chance + character.level_modifiers.get("crit_chance", 0) + character.equipment_modifiers.get("crit_chance", 0)) * strength / 75)
-    crit_damage_boost = int((character.crit_damage + character.level_modifiers.get("crit_damage", 0) + character.equipment_modifiers.get("crit_damage", 0)) * strength / 75)
+    crit_damage_boost = int((character.base_crit_damage + character.level_modifiers.get("crit_damage", 0) + character.equipment_modifiers.get("crit_damage", 0)) * strength / 75)
     def_reduce = int((character.base_defence + character.level_modifiers.get("defence", 0) + character.equipment_modifiers.get("defence", 0)) * strength / 50)
     bc_reduce = int((character.base_block_chance + character.level_modifiers.get("block_chance", 0) + character.equipment_modifiers.get("block_chance", 0)) * strength / 50)
     dr_reduce = int((character.base_damage_reduction + character.level_modifiers.get("damage_reduction", 0) + character.equipment_modifiers.get("damage_reduction", 0)) * strength / 50)
