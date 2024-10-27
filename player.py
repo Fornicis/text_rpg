@@ -154,7 +154,7 @@ class Character:
                 
                 if hit_type == "critical":
                     message += " Critical hit!"
-
+                    
         if total_damage > 0 and hits > 1:
             message += f"\nTotal damage dealt: {total_damage}"
 
@@ -168,6 +168,10 @@ class Character:
             message += f"\n{self.name} takes {self_damage} self-damage from the {attack_type} attack!"
         
         print(message.rstrip())
+        
+        if attack_type == "stunning" and attack_hit:
+                    stun_effect = STUN(1, 1)
+                    target.apply_status_effect(stun_effect)
         
         self.remove_status_effect("Freeze")
 
@@ -1000,6 +1004,10 @@ class Player(Character):
         return self.stamina >= stamina_cost
     
     def get_available_attack_types(self):
+        # Get the current weapon_type
+        equipped_weapon = self.equipped.get("weapon")
+        weapon_type = equipped_weapon.weapon_type
+        
         if any(effect.name == "Defensive Stance" for effect in self.status_effects):
             return {"normal": self.attack_types["normal"]}
         if any(effect.name == "Power Stance" for effect in self.status_effects):
@@ -1008,6 +1016,25 @@ class Player(Character):
             return {"normal": self.attack_types["normal"], "quick": self.attack_types["quick"], "stunning": self.attack_types["stunning"]}
         if any(effect.name == "Evasion Stance" for effect in self.status_effects):
             return{"normal": self.attack_types["normal"], "quick": self.attack_types["quick"]}
+        
+        if weapon_type == "light":
+            available_attacks = {
+                "normal": self.attack_types["normal"],
+                "quick": self.attack_types["quick"],
+                "accuracy_stance": self.attack_types["accuracy_stance"],
+                "evasion_stance": self.attack_types["evasion_stance"]
+            }
+            return available_attacks
+        elif weapon_type in ["medium", "heavy"]:
+            available_attacks = {
+                "normal": self.attack_types["normal"],
+                "power": self.attack_types["power"],
+                "stunning": self.attack_types["stunning"],
+                "defensive": self.attack_types["defensive"],
+                "power_stance": self.attack_types["power_stance"]
+            }
+            return available_attacks
+        
         return self.attack_types
 
     def display_attack_options(self):

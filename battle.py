@@ -11,15 +11,44 @@ class Battle:
         self.game = game
         self.turn_counter = 0
         self.battle_ended = False
-
+        
     def player_attack(self, enemy):
+        # First check for status effects that prevent attacking
+        if self.handle_pre_attack_effects(enemy):
+            return False, None
+
+        # Get and validate attack choice
+        attack_type, available_attacks = self.get_player_attack_choice()
+        if not attack_type:
+            return False, None
+
+        # Handle stamina cost
+        if not self.handle_stamina_cost(attack_type, available_attacks):
+            return False, None
+
+        # Perform the attack and get results
+        message, total_damage, self_damage_info, attack_hit = self.player.perform_attack(enemy, attack_type)
+
+        # Handle post-attack effects
+        self.handle_post_attack_effects(enemy, attack_hit, total_damage, attack_type)
+
+        # Check battle ending conditions
+        if self.check_battle_end(enemy):
+            return True, None
+
+        return False, self_damage_info
+
+    def handle_pre_attack_effects(self, enemy):
+        # Handle stun
         if self.player.stunned:
             print("You're stunned and lose your turn.")
             self.player.stunned = False
             self.player.remove_status_effect("Stun")
-            if self.player.status_effects:  # Update any remaining effects
+            if self.player.status_effects:
                 self.player.update_status_effects(self.player)
-            return False, None
+            return True
+
+        # Handle confusion
         confusion_effect = next((effect for effect in self.player.status_effects if effect.name == "Confusion"), None)
         if confusion_effect:
             if random.random() < 0.5:
@@ -29,33 +58,37 @@ class Battle:
                 print(f"You dealt {damage} damage to yourself!")
                 print("Your attack on yourself snaps you out of your confusion!")
                 self.player.remove_status_effect("Confusion")
-                return False, None
+                return True
             else:
                 print(f"{self.player.name} snaps out of their confusion!")
                 self.player.remove_status_effect("Confusion")
-        
+
+        # Handle freeze
         frozen_effect = next((effect for effect in self.player.status_effects if effect.name == "Freeze"), None)
         if frozen_effect:
             if random.random() < 0.5:
                 print("You're frozen and cannot attack!")
                 self.enemy_attack(enemy)
-                return False, None
+                return True
             else:
                 print(f"{self.player.name} thaws out from the ice and attacks!")
                 self.player.remove_status_effect("Freeze")
-        
+
+        return False
+
+    def get_player_attack_choice(self):
         self.player.display_attack_options()
-        
         available_attacks = self.player.get_available_attack_types()
         
         while True:
             choice = input(f"\nEnter your choice (1-{len(available_attacks)}): ")
             if choice.isdigit() and 1 <= int(choice) <= len(available_attacks):
                 attack_type = list(available_attacks.keys())[int(choice) - 1]
-                break
+                return attack_type, available_attacks
             else:
                 print("Invalid choice. Please try again.")
 
+    def handle_stamina_cost(self, attack_type, available_attacks):
         attack_info = available_attacks[attack_type]
         weapon_type = self.player.equipped.get("weapon", {"weapon_type": "light"}).weapon_type
         base_stamina_cost = self.player.get_weapon_stamina_cost(weapon_type)
@@ -66,9 +99,10 @@ class Battle:
             return False
 
         self.player.use_stamina(total_stamina_cost)
-        
-        message, total_damage, self_damage_info, attack_hit = self.player.perform_attack(enemy, attack_type)
-        
+        return True
+
+    def handle_post_attack_effects(self, enemy, attack_hit, total_damage, attack_type):
+        # Handle damage reflection
         reflected_damage = 0
         for effect in enemy.status_effects:
             if effect.name == "Damage Reflect":
@@ -77,27 +111,26 @@ class Battle:
         if reflected_damage > 0:
             self.player.take_damage(reflected_damage)
             print(f"{self.player.name} takes {reflected_damage} reflected damage!\n")
-        
+
+        # Handle stance effects
         if attack_type == "defensive":
             stance_message = self.player.apply_defensive_stance()
             if stance_message:
                 print(stance_message)
-                
-        if attack_type == "power_stance":
+        elif attack_type == "power_stance":
             stance_message = self.player.apply_power_stance()
             if stance_message:
                 print(stance_message)
-
-        if attack_type == "accuracy_stance":
+        elif attack_type == "accuracy_stance":
             stance_message = self.player.apply_accuracy_stance()
             if stance_message:
                 print(stance_message)
-                
-        if attack_type == "evasion_stance":
+        elif attack_type == "evasion_stance":
             stance_message = self.player.apply_evasion_stance()
             if stance_message:
                 print(stance_message)
-        
+
+        # Handle weapon coating
         if attack_hit and self.player.weapon_coating:
             print(f"{enemy.name} is poisoned by your coated weapon!\n")
             poison_effect = POISON(
@@ -106,13 +139,11 @@ class Battle:
             )
             enemy.apply_status_effect(poison_effect)
             self.player.update_weapon_coating()
-        
-        if self.player.status_effects:  # Update any remaining effects
-                self.player.update_status_effects(self.player)
-        
+
+    def check_battle_end(self, enemy):
         if not enemy.is_alive():
             self.end_battle("enemy_defeat", enemy)
-            return True, None
+            return True
         
         if enemy.stunned:
             print(f"{enemy.name} is stunned and loses their turn!")
@@ -122,9 +153,9 @@ class Battle:
         
         if not self.player.is_alive():
             self.end_battle("player_defeat")
-            return True, None
+            return True
         
-        return False, self_damage_info
+        return False
 
     def enemy_attack(self, enemy):
         attack_type = enemy.choose_attack()
@@ -224,6 +255,7 @@ class Battle:
             if action == "a":
                 #Runs the player_attack method when selected
                 battle_over, self_damage_info = self.player_attack(enemy)
+                self.player.update_status_effects(self.player)
                 if battle_over:
                     return
             elif action == "u":
