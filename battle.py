@@ -121,6 +121,10 @@ class Battle:
             stance_message = self.player.apply_power_stance()
             if stance_message:
                 print(stance_message)
+        elif attack_type == "berserker_stance":
+            stance_message = self.player.apply_berserker_stance()
+            if stance_message:
+                print(stance_message)
         elif attack_type == "accuracy_stance":
             stance_message = self.player.apply_accuracy_stance()
             if stance_message:

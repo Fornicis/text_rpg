@@ -150,11 +150,44 @@ def defence_break_remove(character, strength):
 
 DEFENCE_BREAK = lambda duration, strength: StatusEffect("Defence Break", duration, defence_break_apply, defence_break_remove, strength=strength, is_debuff=True)
 
+def create_stance_message(character_name, stat_changes):
+    """
+    Creates a formatted message for stance changes.
+    
+    Args:
+        character_name: Name of the character
+        stat_changes: Dictionary of stat changes in the format:
+            {
+                "increases": {"category_name": [(stat_name, value), ...]},
+                "decreases": {"category_name": [(stat_name, value), ...]}
+            }
+    """
+    message = []
+    
+    # Handle increases
+    for category, changes in stat_changes["increases"].items():
+        # Filter out zero changes
+        valid_changes = [(stat, val) for stat, val in changes if val > 0]
+        if valid_changes:
+            message.append(f"{character_name}'s {category} increased:")
+            message.extend(f"{stat}: +{val}" for stat, val in valid_changes)
+    
+    # Handle decreases
+    for category, changes in stat_changes["decreases"].items():
+        # Filter out zero changes
+        valid_changes = [(stat, val) for stat, val in changes if val > 0]
+        if valid_changes:
+            message.append(f"{character_name}'s {category} reduced:")
+            message.extend(f"{stat}: -{val}" for stat, val in valid_changes)
+    
+    if message:
+        print("\n".join(message))
+
 def defensive_stance_apply(character, strength):
     # Calculate boosts and negatives
-    defence_boost = int((character.base_defence + character.level_modifiers["defence"] + character.equipment_modifiers["defence"]) * strength / 100)
-    block_boost = int((character.base_block_chance + character.level_modifiers.get("block_chance", 0) + character.equipment_modifiers.get("block_chance", 0)) * strength / 100)
-    dr_boost = int((character.base_block_chance + character.level_modifiers.get("damage_reduction", 0) + character.equipment_modifiers.get("damage_reduction", 0)) * strength / 100)
+    defence_boost = int((character.base_defence + character.level_modifiers["defence"] + character.equipment_modifiers["defence"]) * strength / 75)
+    block_boost = int((character.base_block_chance + character.level_modifiers.get("block_chance", 0) + character.equipment_modifiers.get("block_chance", 0)) * strength / 75)
+    dr_boost = int((character.base_block_chance + character.level_modifiers.get("damage_reduction", 0) + character.equipment_modifiers.get("damage_reduction", 0)) * strength / 75)
     atk_reduce = int((character.base_attack + character.level_modifiers["attack"] + character.equipment_modifiers["attack"]) * strength / 100)
     crit_chance_reduce = int((character.base_crit_chance + character.level_modifiers["crit_chance"] + character.weapon_buff_modifiers.get("crit_chance", 0) + character.equipment_modifiers.get("crit_chance", 0) * strength / 100))
     
@@ -173,23 +206,30 @@ def defensive_stance_apply(character, strength):
     character.combat_buff_modifiers["crit_chance"] = current_crit_chance - crit_chance_reduce
     
     character.recalculate_stats()
-    message = [
-        f"{character.name}'s defensive stats increased:",
-        f"Defence: +{defence_boost}",
-        f"Damage Reduction: +{dr_boost}",
-        f"Block Chance: +{block_boost}",
-        f"{character.name}'s offensive stats reduced:",
-        f"Attack: -{atk_reduce}",
-        f"Crit %: -{crit_chance_reduce}"
-    ]
-    print("\n".join(message))
+    # Create stat changes dictionary
+    stat_changes = {
+        "increases": {
+            "defensive stats": [
+                ("Defence", defence_boost),
+                ("Damage Reduction", dr_boost),
+                ("Block Chance", block_boost)
+            ]
+        },
+        "decreases": {
+            "offensive stats": [
+                ("Attack", atk_reduce),
+                ("Crit %", crit_chance_reduce)
+            ]
+        }
+    }
+    create_stance_message(character.name, stat_changes)
     return True
 
 def defensive_stance_remove(character, strength):
     # Calculate the boosts and negatives
-    defence_boost = int((character.base_defence + character.level_modifiers["defence"] + character.equipment_modifiers["defence"]) * strength / 100)
-    block_boost = int((character.base_block_chance + character.level_modifiers.get("block_chance", 0) + character.equipment_modifiers.get("block_chance", 0)) * strength / 100)
-    dr_boost = int((character.base_block_chance + character.level_modifiers.get("damage_reduction", 0) + character.equipment_modifiers.get("damage_reduction", 0)) * strength / 100)
+    defence_boost = int((character.base_defence + character.level_modifiers["defence"] + character.equipment_modifiers["defence"]) * strength / 75)
+    block_boost = int((character.base_block_chance + character.level_modifiers.get("block_chance", 0) + character.equipment_modifiers.get("block_chance", 0)) * strength / 75)
+    dr_boost = int((character.base_block_chance + character.level_modifiers.get("damage_reduction", 0) + character.equipment_modifiers.get("damage_reduction", 0)) * strength / 75)
     atk_reduce = int((character.base_attack + character.level_modifiers["attack"] + character.equipment_modifiers["attack"]) * strength / 100)
     crit_chance_reduce = int((character.base_crit_chance + character.level_modifiers["crit_chance"] + character.weapon_buff_modifiers.get("crit_chance", 0) + character.equipment_modifiers.get("crit_chance", 0) * strength / 100))
     
@@ -208,16 +248,25 @@ def defensive_stance_remove(character, strength):
     character.combat_buff_modifiers["crit_chance"] = max(0, current_crit_chance + crit_chance_reduce)
     
     character.recalculate_stats()
-    message = [
-        f"{character.name}'s defensive stats decreased:",
-        f"Defence: -{defence_boost}",
-        f"Damage Reduction: -{dr_boost}",
-        f"Block Chance: -{block_boost}",
-        f"{character.name}'s offensive stats restored:",
-        f"Attack: +{atk_reduce}",
-        f"Crit %: +{crit_chance_reduce}"
-    ]
-    print("\n".join(message))
+    
+    # Create stat changes dictionary
+    stat_changes = {
+        "decreases": {
+            "defensive stats": [
+                ("Defence", defence_boost),
+                ("Damage Reduction", dr_boost),
+                ("Block Chance", block_boost)
+            ]
+        },
+        "increases": {
+            "offensive stats": [
+                ("Attack", atk_reduce),
+                ("Crit %", crit_chance_reduce)
+            ]
+        }
+    }
+    create_stance_message(character.name, stat_changes)
+
 
 DEFENSIVE_STANCE = lambda duration, strength=25: StatusEffect("Defensive Stance", duration, defensive_stance_apply, defensive_stance_remove, strength=strength, is_debuff=False)
 
@@ -244,23 +293,31 @@ def power_stance_apply(character, strength):
     character.combat_buff_modifiers["evasion"] = current_eva - eva_reduce
     
     character.recalculate_stats()
-    message = [
-        f"{character.name}'s offensive stats increased:",
-        f"Attack: +{att_boost}",
-        f"Armour Penetration: +{armour_pen_boost}",
-        f"Crit Damage: +{crit_damage_boost}",
-        f"{character.name}'s defensive stats reduced:",
-        f"Defence: -{def_reduce}",
-        f"Evasion: -{eva_reduce}"
-    ]
-    print("\n".join(message))
+    
+    # Create stat changes dictionary
+    stat_changes = {
+        "increases": {
+            "offensive stats": [
+                ("Attack", att_boost),
+                ("Armour Penetration", armour_pen_boost),
+                ("Crit Dmg", crit_damage_boost)
+            ]
+        },
+        "decreases": {
+            "defensive stats": [
+                ("Defence", def_reduce),
+                ("Evasion", eva_reduce)
+            ]
+        }
+    }
+    create_stance_message(character.name, stat_changes)
     return True
     
 def power_stance_remove(character, strength):
     # Calculate the boosts and negatives
     att_boost = int((character.base_attack + character.level_modifiers["attack"] + character.weapon_buff_modifiers["attack"] + character.equipment_modifiers["attack"]) * strength / 100)
     armour_pen_boost = int((character.base_armour_penetration + character.level_modifiers.get("armour_penetration", 0) + character.equipment_modifiers.get("armour_penetration", 0)) * strength / 100)
-    crit_damage_boost = crit_damage_boost = int((character.base_crit_damage + character.level_modifiers.get("crit_damage", 0) + character.equipment_modifiers.get("crit_damage", 0)) * strength / 100)
+    crit_damage_boost = int((character.base_crit_damage + character.level_modifiers.get("crit_damage", 0) + character.equipment_modifiers.get("crit_damage", 0)) * strength / 100)
     def_reduce = int((character.base_defence + character.level_modifiers.get("defence", 0) + character.equipment_modifiers.get("defence", 0)) * strength / 100)
     eva_reduce = int((character.base_evasion + character.level_modifiers.get("evasion", 0) + character.equipment_modifiers.get("evasion", 0)) * strength / 100)
     
@@ -279,25 +336,146 @@ def power_stance_remove(character, strength):
     character.combat_buff_modifiers["evasion"] = max(0, current_eva + eva_reduce)
     
     character.recalculate_stats()
-    message = [
-        f"{character.name}'s offensive stats restored:",
-        f"Attack: -{att_boost}",
-        f"Armour Penetration: -{armour_pen_boost}",
-        f"Crit Damage: -{crit_damage_boost}",
-        f"{character.name}'s defensive stats restored:",
-        f"Defence: +{def_reduce}",
-        f"Evasion: +{eva_reduce}"
-    ]
-    print("\n".join(message))
+    
+    # Create stat changes dictionary
+    stat_changes = {
+        "decreases": {
+            "offensive stats": [
+                ("Attack", att_boost),
+                ("Armour Penetration", armour_pen_boost),
+                ("Crit Dmg", crit_damage_boost)
+            ]
+        },
+        "increases": {
+            "defensive stats": [
+                ("Defence", def_reduce),
+                ("Evasion", eva_reduce)
+            ]
+        }
+    }
+    create_stance_message(character.name, stat_changes)
+
     
 POWER_STANCE = lambda duration, strength=25: StatusEffect("Power Stance", duration, power_stance_apply, power_stance_remove, strength=strength, is_debuff=False)
 
+def berserker_stance_apply(character, strength):
+    # Calculate the boosts and negatives
+    att_boost = int((character.base_attack + character.level_modifiers["attack"] + character.weapon_buff_modifiers["attack"] + character.equipment_modifiers["attack"]))
+    armour_pen_boost = int((character.base_armour_penetration + character.level_modifiers.get("armour_penetration", 0) + character.equipment_modifiers.get("armour_penetration", 0)))
+    crit_damage_boost = int((character.base_crit_damage + character.level_modifiers.get("crit_damage", 0) + character.equipment_modifiers.get("crit_damage", 0)))
+    crit_chance_boost = int((character.base_crit_chance + character.level_modifiers.get("crit_chance", 0) + character.equipment_modifiers.get("crit_chance", 0)))
+    def_reduce = int((character.base_defence + character.level_modifiers.get("defence", 0) + character.equipment_modifiers.get("defence", 0)))
+    eva_reduce = int((character.base_evasion + character.level_modifiers.get("evasion", 0) + character.equipment_modifiers.get("evasion", 0)))
+    bc_reduce = int((character.base_block_chance + character.level_modifiers.get("block_chance", 0) + character.equipment_modifiers.get("block_chance", 0)))
+    dr_reduce = int((character.base_damage_reduction + character.level_modifiers.get("damage_reduction", 0) + character.equipment_modifiers.get("damage_reduction", 0)))
+    
+    # Update the combat_buff_modifiers with current value
+    current_att = character.combat_buff_modifiers.get("attack", 0)
+    current_armour_pen = character.combat_buff_modifiers.get("armour_penetration", 0)
+    current_crit_damage = character.combat_buff_modifiers.get("crit_damage", 0)
+    current_crit_chance = character.combat_buff_modifiers.get("crit_chance", 0)
+    current_def = character.combat_buff_modifiers.get("defence", 0)
+    current_eva = character.combat_buff_modifiers.get("evasion", 0)
+    current_bc = character.combat_buff_modifiers.get("block_chance", 0)
+    current_dr = character.combat_buff_modifiers.get("damage_reduction", 0)
+    
+    # Add on the boost or reduction to the combat_buff_modifiers
+    character.combat_buff_modifiers["attack"] = current_att + att_boost
+    character.combat_buff_modifiers["armour_penetration"] = current_armour_pen + armour_pen_boost
+    character.combat_buff_modifiers["crit_damage"] = current_crit_damage + crit_damage_boost
+    character.combat_buff_modifiers["crit_chance"] = current_crit_chance + crit_chance_boost
+    character.combat_buff_modifiers["defence"] = current_def - def_reduce
+    character.combat_buff_modifiers["evasion"] = current_eva - eva_reduce
+    character.combat_buff_modifiers["block_chance"] = current_bc - bc_reduce
+    character.combat_buff_modifiers["damage_reduction"] = current_dr - dr_reduce
+    
+    character.recalculate_stats()
+    
+    # Create stat changes dictionary
+    stat_changes = {
+        "increases": {
+            "offensive stats": [
+                ("Attack", att_boost),
+                ("Armour Penetration", armour_pen_boost),
+                ("Crit Dmg", crit_damage_boost),
+                ("Crit %", crit_chance_boost)
+            ]
+        },
+        "decreases": {
+            "defensive stats": [
+                ("Defence", def_reduce),
+                ("Evasion", eva_reduce),
+                ("Block Chance", bc_reduce),
+                ("Damage Reduction", dr_reduce)
+            ]
+        }
+    }
+    create_stance_message(character.name, stat_changes)
+    return True
+    
+def berserker_stance_remove(character, strength):
+    # Calculate the boosts and negatives
+    att_boost = int((character.base_attack + character.level_modifiers["attack"] + character.weapon_buff_modifiers["attack"] + character.equipment_modifiers["attack"]))
+    armour_pen_boost = int((character.base_armour_penetration + character.level_modifiers.get("armour_penetration", 0) + character.equipment_modifiers.get("armour_penetration", 0)))
+    crit_damage_boost = int((character.base_crit_damage + character.level_modifiers.get("crit_damage", 0) + character.equipment_modifiers.get("crit_damage", 0)))
+    crit_chance_boost = int((character.base_crit_chance + character.level_modifiers.get("crit_chance", 0) + character.equipment_modifiers.get("crit_chance", 0)))
+    def_reduce = int((character.base_defence + character.level_modifiers.get("defence", 0) + character.equipment_modifiers.get("defence", 0)))
+    eva_reduce = int((character.base_evasion + character.level_modifiers.get("evasion", 0) + character.equipment_modifiers.get("evasion", 0)))
+    bc_reduce = int((character.base_block_chance + character.level_modifiers.get("block_chance", 0) + character.equipment_modifiers.get("block_chance", 0)))
+    dr_reduce = int((character.base_damage_reduction + character.level_modifiers.get("damage_reduction", 0) + character.equipment_modifiers.get("damage_reduction", 0)))
+    
+    # Update the combat_buff_modifiers with current value
+    current_att = character.combat_buff_modifiers.get("attack", 0)
+    current_armour_pen = character.combat_buff_modifiers.get("armour_penetration", 0)
+    current_crit_damage = character.combat_buff_modifiers.get("crit_damage", 0)
+    current_crit_chance = character.combat_buff_modifiers.get("crit_chance", 0)
+    current_def = character.combat_buff_modifiers.get("defence", 0)
+    current_eva = character.combat_buff_modifiers.get("evasion", 0)
+    current_bc = character.combat_buff_modifiers.get("block_chance", 0)
+    current_dr = character.combat_buff_modifiers.get("damage_reduction", 0)
+    
+    # Add on the boost or reduction to the combat_buff_modifiers
+    character.combat_buff_modifiers["attack"] = max(0, current_att - att_boost)
+    character.combat_buff_modifiers["armour_penetration"] = max(0, current_armour_pen - armour_pen_boost)
+    character.combat_buff_modifiers["crit_damage"] = max(0, current_crit_damage - crit_damage_boost)
+    character.combat_buff_modifiers["crit_chance"] = max(0, current_crit_chance - crit_chance_boost)
+    character.combat_buff_modifiers["defence"] = max(0, current_def + def_reduce)
+    character.combat_buff_modifiers["evasion"] = max(0, current_eva + eva_reduce)
+    character.combat_buff_modifiers["block_chance"] = max(0, current_bc + bc_reduce)
+    character.combat_buff_modifiers["damage_reduction"] = max(0, current_dr + dr_reduce)
+    
+    character.recalculate_stats()
+    
+    # Create stat changes dictionary
+    stat_changes = {
+        "decreases": {
+            "offensive stats": [
+                ("Attack", att_boost),
+                ("Armour Penetration", armour_pen_boost),
+                ("Crit Dmg", crit_damage_boost),
+                ("Crit %", crit_chance_boost)
+            ]
+        },
+        "increases": {
+            "defensive stats": [
+                ("Defence", def_reduce),
+                ("Evasion", eva_reduce),
+                ("Block Chance", bc_reduce),
+                ("Damage Reduction", dr_reduce)
+            ]
+        }
+    }
+    create_stance_message(character.name, stat_changes)
+
+    
+BERSERKER_STANCE = lambda duration, strength=25: StatusEffect("Berserker Stance", duration, berserker_stance_apply, berserker_stance_remove, strength=strength, is_debuff=False)
+
 def accuracy_stance_apply(character, strength):
     # Calculate the boosts and negatives
-    acc_boost = int((character.base_accuracy + character.level_modifiers["accuracy"] + character.weapon_buff_modifiers["accuracy"] + character.equipment_modifiers["accuracy"]) * strength / 100)
-    crit_chance_boost = int((character.base_crit_chance + character.level_modifiers["crit_chance"] + character.weapon_buff_modifiers.get("crit_chance", 0) + character.equipment_modifiers.get("crit_chance", 0) * strength / 100))
-    block_reduce = int((character.base_block_chance + character.level_modifiers.get("block_chance", 0) + character.equipment_modifiers.get("block_chance", 0)) * strength / 100)
-    eva_reduce = int((character.base_evasion + character.level_modifiers.get("evasion", 0) + character.equipment_modifiers.get("evasion", 0)) * strength / 100)
+    acc_boost = int((character.base_accuracy + character.level_modifiers["accuracy"] + character.weapon_buff_modifiers["accuracy"] + character.equipment_modifiers["accuracy"]) * strength / 50)
+    crit_chance_boost = int((character.base_crit_chance + character.level_modifiers["crit_chance"] + character.weapon_buff_modifiers.get("crit_chance", 0) + character.equipment_modifiers.get("crit_chance", 0) * strength / 75))
+    block_reduce = int((character.base_block_chance + character.level_modifiers.get("block_chance", 0) + character.equipment_modifiers.get("block_chance", 0)) * strength / 50)
+    eva_reduce = int((character.base_evasion + character.level_modifiers.get("evasion", 0) + character.equipment_modifiers.get("evasion", 0)) * strength / 50)
     
     # Update the combat_buff_modifiers with the current boost
     current_acc = character.combat_buff_modifiers.get("accuracy", 0)
@@ -312,23 +490,31 @@ def accuracy_stance_apply(character, strength):
     character.combat_buff_modifiers["block_chance"] = current_block - block_reduce
     
     character.recalculate_stats()
-    message = [
-        f"{character.name}'s accuracy stats increased:",
-        f"Accuracy: +{acc_boost}",
-        f"Crit Chance: +{crit_chance_boost}",
-        f"{character.name}'s defensive stats reduced:",
-        f"Evasion: -{eva_reduce}",
-        f"Block chance: -{block_reduce}"
-    ]
-    print("\n".join(message))
+    
+    # Create stat changes dictionary
+    stat_changes = {
+        "increases": {
+            "offensive stats": [
+                ("Accuracy", acc_boost),
+                ("Crit %", crit_chance_boost)
+            ]
+        },
+        "decreases": {
+            "defensive stats": [
+                ("Evasion", eva_reduce),
+                ("Block Chance", block_reduce)
+            ]
+        }
+    }
+    create_stance_message(character.name, stat_changes)
     return True
     
 def accuracy_stance_remove(character, strength):
     # Calculate the boosts and negatives
-    acc_boost = int((character.base_accuracy + character.level_modifiers["accuracy"] + character.weapon_buff_modifiers["accuracy"] + character.equipment_modifiers["accuracy"]) * strength / 100)
-    crit_chance_boost = int((character.base_crit_chance + character.level_modifiers["crit_chance"] + character.weapon_buff_modifiers.get("crit_chance", 0) + character.equipment_modifiers.get("crit_chance", 0) * strength / 100))
-    block_reduce = int((character.base_block_chance + character.level_modifiers.get("block_chance", 0) + character.equipment_modifiers.get("block_chance", 0)) * strength / 100)
-    eva_reduce = int((character.base_evasion + character.level_modifiers.get("evasion", 0) + character.equipment_modifiers.get("evasion", 0)) * strength / 100)
+    acc_boost = int((character.base_accuracy + character.level_modifiers["accuracy"] + character.weapon_buff_modifiers["accuracy"] + character.equipment_modifiers["accuracy"]) * strength / 50)
+    crit_chance_boost = int((character.base_crit_chance + character.level_modifiers["crit_chance"] + character.weapon_buff_modifiers.get("crit_chance", 0) + character.equipment_modifiers.get("crit_chance", 0) * strength / 75))
+    block_reduce = int((character.base_block_chance + character.level_modifiers.get("block_chance", 0) + character.equipment_modifiers.get("block_chance", 0)) * strength / 50)
+    eva_reduce = int((character.base_evasion + character.level_modifiers.get("evasion", 0) + character.equipment_modifiers.get("evasion", 0)) * strength / 50)
     
     # Update the combat_buff_modifiers with the current boost
     current_acc = character.combat_buff_modifiers.get("accuracy", 0)
@@ -343,15 +529,24 @@ def accuracy_stance_remove(character, strength):
     character.combat_buff_modifiers["block_chance"] = max(0, current_block - block_reduce)
     
     character.recalculate_stats()
-    message = [
-        f"{character.name}'s accuracy stats restored:",
-        f"Accuracy: -{acc_boost}",
-        f"Crit Chance: -{crit_chance_boost}",
-        f"{character.name}'s defensive stats restored:",
-        f"Evasion: +{eva_reduce}",
-        f"Block chance: +{block_reduce}"
-    ]
-    print("\n".join(message))
+    
+    # Create stat changes dictionary
+    stat_changes = {
+        "decreases": {
+            "offensive stats": [
+                ("Accuracy", acc_boost),
+                ("Crit %", crit_chance_boost)
+            ]
+        },
+        "increases": {
+            "defensive stats": [
+                ("Evasion", eva_reduce),
+                ("Block Chance", block_reduce)
+            ]
+        }
+    }
+    create_stance_message(character.name, stat_changes)
+
     
 ACCURACY_STANCE = lambda duration, strength=25: StatusEffect("Accuracy Stance", duration, accuracy_stance_apply, accuracy_stance_remove, strength=strength, is_debuff=False)
 
@@ -381,17 +576,25 @@ def evasion_stance_apply(character, strength):
     character.combat_buff_modifiers["damage_reduction"] = current_dr - dr_reduce
     
     character.recalculate_stats()
-    message = [
-        f"{character.name}'s evasion stats increased:",
-        f"Evasion: +{eva_boost}",
-        f"Crit Chance: +{crit_chance_boost}",
-        f"Crit Damage: +{crit_damage_boost}",
-        f"{character.name}'s defensive stats reduced:",
-        f"Defence: -{def_reduce}",
-        f"Block Chance: -{bc_reduce}",
-        f"Damage Reduction: -{dr_reduce}"
-    ]
-    print("\n".join(message))
+    
+    # Create stat changes dictionary
+    stat_changes = {
+        "increases": {
+            "offensive stats": [
+                ("Evasion", eva_boost),
+                ("Crit %", crit_chance_boost),
+                ("Crit Dmg", crit_damage_boost)
+            ]
+        },
+        "decreases": {
+            "defensive stats": [
+                ("Defence", def_reduce),
+                ("Block Chance", bc_reduce),
+                ("Damage Reduction", dr_reduce)
+            ]
+        }
+    }
+    create_stance_message(character.name, stat_changes)
     return True
 
 def evasion_stance_remove(character, strength):
@@ -420,19 +623,26 @@ def evasion_stance_remove(character, strength):
     character.combat_buff_modifiers["damage_reduction"] = max(0, current_dr + dr_reduce)
     
     character.recalculate_stats()
-    message = [
-        f"{character.name}'s evasion stats restored:",
-        f"Evasion: -{eva_boost}",
-        f"Crit Chance: -{crit_chance_boost}",
-        f"Crit Damage: -{crit_damage_boost}",
-        f"{character.name}'s defensive stats restored:",
-        f"Defence: +{def_reduce}",
-        f"Block Chance: +{bc_reduce}",
-        f"Damage Reduction: +{dr_reduce}"
-    ]
-    print("\n".join(message))
     
-    
+    # Create stat changes dictionary
+    stat_changes = {
+        "decreases": {
+            "offensive stats": [
+                ("Evasion", eva_boost),
+                ("Crit %", crit_chance_boost),
+                ("Crit Dmg", crit_damage_boost)
+            ]
+        },
+        "increases": {
+            "defensive stats": [
+                ("Defence", def_reduce),
+                ("Block Chance", bc_reduce),
+                ("Damage Reduction", dr_reduce)
+            ]
+        }
+    }
+    create_stance_message(character.name, stat_changes)
+
 EVASION_STANCE = lambda duration, strength=25: StatusEffect("Evasion Stance", duration, evasion_stance_apply, evasion_stance_remove, strength=strength, is_debuff=False)
 
 def weaken_apply(character, strength):

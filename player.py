@@ -294,6 +294,7 @@ class Player(Character):
             "stunning": {"name": "Stunning Blow", "stamina_modifier": 2, "damage_modifier": 0.8},
             "defensive": {"name": "Defensive Stance", "stamina_modifier": 2, "damage_modifier": 0, "defence_boost_percentage": 33, "duration": 5},
             "power_stance": {"name": "Power Stance", "stamina_modifier": 2, "damage_modifier": 0, "attack_boost_percentage": 33, "duration": 5},
+            "berserker_stance": {"name": "Berserker Stance", "stamina_modifier": 4, "damage_modifier": 0, "attack_boost_percentage": 33, "duration": 5},
             "accuracy_stance": {"name": "Accuracy Stance", "stamina_modifier": 2, "damage_modifier": 0, "accuracy_boost_percentage": 33, "duration": 5},
             "evasion_stance": {"name": "Evasion Stance", "stamina_modifier": 2, "damage_modifier": 0, "evasion_boost_percentage": 33, "duration": 5}
         }
@@ -650,6 +651,20 @@ class Player(Character):
             self.apply_status_effect(power_stance_effect)
             #print(f"You've entered a power Stance for {attack_info['duration']} turns.")
             
+    def apply_berserker_stance(self):
+        attack_info = self.attack_types["berserker_stance"]
+        existing_effect = next((effect for effect in self.status_effects if effect.name == "Berserker Stance"), None)
+        if existing_effect:
+            existing_effect.reset_duration()
+            #print(f"Your Power Stance has been refreshed for {attack_info['duration']} turns.")
+        else:
+            berserker_stance_effect = BERSERKER_STANCE(
+                attack_info["duration"], 
+                attack_info["attack_boost_percentage"]
+            )
+            self.apply_status_effect(berserker_stance_effect)
+            #print(f"You've entered a power Stance for {attack_info['duration']} turns.")
+    
     def apply_accuracy_stance(self):
         attack_info = self.attack_types["accuracy_stance"]
         existing_effect = next((effect for effect in self.status_effects if effect.name == "Accuracy Stance"), None)
@@ -1012,6 +1027,8 @@ class Player(Character):
             return {"normal": self.attack_types["normal"]}
         if any(effect.name == "Power Stance" for effect in self.status_effects):
             return {"normal": self.attack_types["normal"], "power": self.attack_types["power"]}
+        if any(effect.name == "Berserker Stance" for effect in self.status_effects):
+            return {"normal": self.attack_types["normal"], "power": self.attack_types["power"]}
         if any(effect.name == "Accuracy Stance" for effect in self.status_effects):
             return {"normal": self.attack_types["normal"], "quick": self.attack_types["quick"], "stunning": self.attack_types["stunning"]}
         if any(effect.name == "Evasion Stance" for effect in self.status_effects):
@@ -1025,13 +1042,23 @@ class Player(Character):
                 "evasion_stance": self.attack_types["evasion_stance"]
             }
             return available_attacks
-        elif weapon_type in ["medium", "heavy"]:
+        elif weapon_type == "medium":
             available_attacks = {
                 "normal": self.attack_types["normal"],
                 "power": self.attack_types["power"],
                 "stunning": self.attack_types["stunning"],
                 "defensive": self.attack_types["defensive"],
                 "power_stance": self.attack_types["power_stance"]
+            }
+            return available_attacks
+        elif weapon_type == "heavy":
+            available_attacks = {
+                "normal": self.attack_types["normal"],
+                "power": self.attack_types["power"],
+                "stunning": self.attack_types["stunning"],
+                "defensive": self.attack_types["defensive"],
+                "power_stance": self.attack_types["power_stance"],
+                "berserker_stance": self.attack_types["berserker_stance"]
             }
             return available_attacks
         
