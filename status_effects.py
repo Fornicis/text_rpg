@@ -1,5 +1,12 @@
 import random
 
+def create_dot_effect(name, damage_func):
+    def apply(character, strength):
+        # Initial application just activates the effect
+        print(f"{character.name} is affected by {name}!")
+        return True
+    return apply
+
 class StatusEffect:
     def __init__(self, name, duration, apply_func, remove_func=None, strength=1, is_debuff=False, stackable=False):
         self.name = name
@@ -28,6 +35,18 @@ class StatusEffect:
 
     def update(self, character):
         if self.is_active:
+            # Handle DoT effects
+            if self.name in ["Burn", "Poison"]:
+                if self.name == "Burn":
+                    damage = max(1, int(character.max_hp * 0.02 * self.strength))
+                    character.take_damage(damage)
+                    print(f"{character.name} takes {damage} burn damage! ({self.strength} stacks)")
+                elif self.name == "Poison":
+                    damage = self.strength  # Each poison stack does 2 damage
+                    character.take_damage(damage)
+                    print(f"{character.name} takes {damage} poison damage! ({self.strength} stacks)")
+            
+            # Update duration
             self.remaining_duration -= 1
             if self.remaining_duration <= 0:
                 remove_message = self.remove(character)
@@ -45,16 +64,6 @@ class StatusEffect:
         if self.stackable:
             return f"{self.name} ({self.strength} stacks, {self.remaining_duration} turns)"
         return f"{self.name} ({self.remaining_duration} turns)"
-
-def create_dot_effect(name, damage_func):
-    def apply(character, strength):
-        damage = damage_func(character, strength)
-        character.take_damage(damage)
-        effect = next((e for e in character.status_effects if e.name == name), None)
-        duration = effect.remaining_duration if effect else 0
-        print(f"{character.name} takes {damage} {name.lower()} damage! (Current stacks: {strength}, Duration: {duration} turns)")
-        return True
-    return apply
 
 def create_chance_effect(name, chance_func, effect_func):
     def apply(character, strength):
