@@ -38,12 +38,6 @@ class Game:
         #Ensures that battles are enabled even on reload
         if self.player is not None:
             self.battle = Battle(self.player, self.items, self)
-
-    def show_status(self):
-        #Displays the player's current status.
-        clear_screen()
-        self.player.show_status()
-        print(f"Current location: {self.current_location}\nDay: {self.player.days}")
         
     def show_stats(self):
         clear_screen()
@@ -460,8 +454,7 @@ class Game:
                 pause()
             else:
                 print("Invalid action. Try again.")
-            
-            self.show_status() #Ensures the status is shown after every action    
+              
             self.armourer.rotate_stock(self.player.level)  # Check if it's time to rotate stock after each action
             self.alchemist.rotate_stock(self.player.level) #^
             self.inn.rotate_stock(self.player.level)#^^

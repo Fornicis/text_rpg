@@ -484,53 +484,173 @@ def initialise_items():
         "Star Fragment": Item("Star Fragment", "consumable", 3000, "mythical", effect_type="damage", effect=150, cooldown=1),
 
         ## Buff Items
-        # Common
+        # Common Tier Attack & Defence Items
         "Minor Strength Tonic": Item("Minor Strength Tonic", "consumable", 20, "common", effect_type="buff", effect=("attack", 5), cooldown=5, combat_only=True),
-        "Minor Iron Skin Elixir": Item("Minor Iron Skin Elixir", "consumable", 20, "common", effect_type="buff", effect=("defence", 5), cooldown=5, combat_only=True),
-        "Minor Warrior's Brew": Item("Minor Warrior's Brew", "consumable", 25, "common", effect_type="buff", effect=("all stats", 2), cooldown=5, combat_only=True),
         "Quick Strength Drop": Item("Quick Strength Drop", "consumable", 15, "common", effect_type="buff", effect=("attack", 3), cooldown=2, combat_only=True),
+        "Minor Iron Skin Elixir": Item("Minor Iron Skin Elixir", "consumable", 20, "common", effect_type="buff", effect=("defence", 5), cooldown=5, combat_only=True),
         "Quick Iron Skin Drop": Item("Quick Iron Skin Drop", "consumable", 15, "common", effect_type="buff", effect=("defence", 3), cooldown=2, combat_only=True),
+
+        # Common Tier Accuracy & Evasion Items
+        "Minor Accuracy Tonic": Item("Minor Accuracy Tonic", "consumable", 20, "common", effect_type="buff", effect=("accuracy", 15), cooldown=5, combat_only=True),
+        "Quick Accuracy Drop": Item("Quick Accuracy Drop", "consumable", 15, "common", effect_type="buff", effect=("accuracy", 9), cooldown=2, combat_only=True),
+        "Minor Agility Tonic": Item("Minor Agility Tonic", "consumable", 20, "common", effect_type="buff", effect=("evasion", 5), cooldown=5, combat_only=True),
+        "Quick Agility Drop": Item("Quick Agility Drop", "consumable", 15, "common", effect_type="buff", effect=("evasion", 3), cooldown=2, combat_only=True),
+
+        # Common Tier Critical Stats Items (Combined crit chance and crit damage)
+        "Minor Critical Tonic": Item("Minor Critical Tonic", "consumable", 25, "common", effect_type="buff", effect=[("crit_chance", 3), ("crit_damage", 10)], cooldown=5, combat_only=True),
+        "Quick Critical Drop": Item("Quick Critical Drop", "consumable", 18, "common", effect_type="buff", effect=[("crit_chance", 2), ("crit_damage", 6)], cooldown=2, combat_only=True),
+
+        # Common Tier Block Chance Items
+        "Minor Guard Tonic": Item("Minor Guard Tonic", "consumable", 20, "common", effect_type="buff", effect=("block_chance", 5), cooldown=5, combat_only=True),
+        "Quick Guard Drop": Item("Quick Guard Drop", "consumable", 15, "common", effect_type="buff", effect=("block_chance", 3), cooldown=2, combat_only=True),
+
+        # Common Tier Combined Warrior Stats
+        "Minor Warrior's Brew": Item("Minor Warrior's Brew", "consumable", 25, "common", effect_type="buff", effect=("all stats", 2), cooldown=5, combat_only=True),
         "Quick Warrior's Drop": Item("Quick Warrior's Drop", "consumable", 18, "common", effect_type="buff", effect=("all stats", 1), cooldown=2, combat_only=True),
 
-        # Uncommon
+        # Uncommon Attack & Defence Items
         "Strength Tonic": Item("Strength Tonic", "consumable", 40, "uncommon", effect_type="buff", effect=("attack", 10), cooldown=6, combat_only=True),
-        "Iron Skin Elixir": Item("Iron Skin Elixir", "consumable", 40, "uncommon", effect_type="buff", effect=("defence", 10), cooldown=6, combat_only=True),
-        "Warrior's Brew": Item("Warrior's Brew", "consumable", 50, "uncommon", effect_type="buff", effect=("all stats", 5), cooldown=6, combat_only=True),
         "Swift Strength Vial": Item("Swift Strength Vial", "consumable", 30, "uncommon", effect_type="buff", effect=("attack", 6), cooldown=3, combat_only=True),
+        "Iron Skin Elixir": Item("Iron Skin Elixir", "consumable", 40, "uncommon", effect_type="buff", effect=("defence", 10), cooldown=6, combat_only=True),
         "Swift Iron Skin Vial": Item("Swift Iron Skin Vial", "consumable", 30, "uncommon", effect_type="buff", effect=("defence", 6), cooldown=3, combat_only=True),
+
+        # Uncommon Accuracy & Evasion Items (Accuracy 3x normal values)
+        "Accuracy Tonic": Item("Accuracy Tonic", "consumable", 40, "uncommon", effect_type="buff", effect=("accuracy", 30), cooldown=6, combat_only=True),
+        "Swift Accuracy Vial": Item("Swift Accuracy Vial", "consumable", 30, "uncommon", effect_type="buff", effect=("accuracy", 18), cooldown=3, combat_only=True),
+        "Agility Tonic": Item("Agility Tonic", "consumable", 40, "uncommon", effect_type="buff", effect=("evasion", 10), cooldown=6, combat_only=True),
+        "Swift Agility Vial": Item("Swift Agility Vial", "consumable", 30, "uncommon", effect_type="buff", effect=("evasion", 6), cooldown=3, combat_only=True),
+
+        # Uncommon Critical Stats Items (Combined crit chance and crit damage)
+        "Critical Tonic": Item("Critical Tonic", "consumable", 50, "uncommon", effect_type="buff", effect=[("crit_chance", 6), ("crit_damage", 20)], cooldown=6, combat_only=True),
+        "Swift Critical Vial": Item("Swift Critical Vial", "consumable", 35, "uncommon", effect_type="buff", effect=[("crit_chance", 4), ("crit_damage", 12)], cooldown=3, combat_only=True),
+
+        # Uncommon Block Chance Items
+        "Guard Tonic": Item("Guard Tonic", "consumable", 40, "uncommon", effect_type="buff", effect=("block_chance", 10), cooldown=6, combat_only=True),
+        "Swift Guard Vial": Item("Swift Guard Vial", "consumable", 30, "uncommon", effect_type="buff", effect=("block_chance", 6), cooldown=3, combat_only=True),
+
+        # Uncommon Combined Warrior Stats
+        "Warrior's Brew": Item("Warrior's Brew", "consumable", 50, "uncommon", effect_type="buff", effect=("all stats", 5), cooldown=6, combat_only=True),
         "Swift Warrior's Vial": Item("Swift Warrior's Vial", "consumable", 35, "uncommon", effect_type="buff", effect=("all stats", 3), cooldown=3, combat_only=True),
 
-        # Rare
-        "Greater Strength Tonic": Item("Greater Strength Tonic", "consumable", 80, "rare", effect_type="buff", effect=("attack", 20), cooldown=7, combat_only=True),
-        "Greater Iron Skin Elixir": Item("Greater Iron Skin Elixir", "consumable", 80, "rare", effect_type="buff", effect=("defence", 20), cooldown=7, combat_only=True),
-        "Greater Warrior's Brew": Item("Greater Warrior's Brew", "consumable", 100, "rare", effect_type="buff", effect=("all stats", 10), cooldown=7, combat_only=True),
-        "Rapid Strength Essence": Item("Rapid Strength Essence", "consumable", 60, "rare", effect_type="buff", effect=("attack", 12), cooldown=3, combat_only=True),
-        "Rapid Iron Skin Essence": Item("Rapid Iron Skin Essence", "consumable", 60, "rare", effect_type="buff", effect=("defence", 12), cooldown=3, combat_only=True),
-        "Rapid Warrior's Essence": Item("Rapid Warrior's Essence", "consumable", 75, "rare", effect_type="buff", effect=("all stats", 6), cooldown=3, combat_only=True),
+        # Rare Attack & Defence Items (Uncommon +5)
+        "Greater Strength Tonic": Item("Greater Strength Tonic", "consumable", 80, "rare", effect_type="buff", effect=("attack", 15), cooldown=7, combat_only=True),
+        "Rapid Strength Essence": Item("Rapid Strength Essence", "consumable", 60, "rare", effect_type="buff", effect=("attack", 9), cooldown=3, combat_only=True),
+        "Greater Iron Skin Elixir": Item("Greater Iron Skin Elixir", "consumable", 80, "rare", effect_type="buff", effect=("defence", 15), cooldown=7, combat_only=True),
+        "Rapid Iron Skin Essence": Item("Rapid Iron Skin Essence", "consumable", 60, "rare", effect_type="buff", effect=("defence", 9), cooldown=3, combat_only=True),
 
-        # Masterwork
-        "Masterwork Strength Tonic": Item("Masterwork Strength Tonic", "consumable", 400, "masterwork", effect_type="buff", effect=("attack", 40), cooldown=8, combat_only=True),
-        "Masterwork Iron Skin Elixir": Item("Masterwork Iron Skin Elixir", "consumable", 400, "masterwork", effect_type="buff", effect=("defence", 40), cooldown=8, combat_only=True),
-        "Masterwork Warrior's Brew": Item("Masterwork Warrior's Brew", "consumable", 500, "masterwork", effect_type="buff", effect=("all stats", 20), cooldown=8, combat_only=True),
-        "Quicksilver Strength Philter": Item("Quicksilver Strength Philter", "consumable", 300, "masterwork", effect_type="buff", effect=("attack", 24), cooldown=4, combat_only=True),
-        "Quicksilver Iron Skin Philter": Item("Quicksilver Iron Skin Philter", "consumable", 300, "masterwork", effect_type="buff", effect=("defence", 24), cooldown=4, combat_only=True),
-        "Quicksilver Warrior's Philter": Item("Quicksilver Warrior's Philter", "consumable", 375, "masterwork", effect_type="buff", effect=("all stats", 12), cooldown=4, combat_only=True),
+        # Rare Accuracy & Evasion Items (Accuracy maintains 3x value)
+        "Greater Accuracy Tonic": Item("Greater Accuracy Tonic", "consumable", 80, "rare", effect_type="buff", effect=("accuracy", 45), cooldown=7, combat_only=True),
+        "Rapid Accuracy Essence": Item("Rapid Accuracy Essence", "consumable", 60, "rare", effect_type="buff", effect=("accuracy", 27), cooldown=3, combat_only=True),
+        "Greater Agility Tonic": Item("Greater Agility Tonic", "consumable", 80, "rare", effect_type="buff", effect=("evasion", 15), cooldown=7, combat_only=True),
+        "Rapid Agility Essence": Item("Rapid Agility Essence", "consumable", 60, "rare", effect_type="buff", effect=("evasion", 9), cooldown=3, combat_only=True),
 
-        # Legendary
-        "Legendary Strength Tonic": Item("Legendary Strength Tonic", "consumable", 1600, "legendary", effect_type="buff", effect=("attack", 80), cooldown=10, combat_only=True),
-        "Legendary Iron Skin Elixir": Item("Legendary Iron Skin Elixir", "consumable", 1600, "legendary", effect_type="buff", effect=("defence", 80), cooldown=10, combat_only=True),
-        "Legendary Warrior's Brew": Item("Legendary Warrior's Brew", "consumable", 2000, "legendary", effect_type="buff", effect=("all stats", 40), cooldown=10, combat_only=True),
-        "Celestial Strength Ampoule": Item("Celestial Strength Ampoule", "consumable", 1200, "legendary", effect_type="buff", effect=("attack", 48), cooldown=5, combat_only=True),
-        "Celestial Iron Skin Ampoule": Item("Celestial Iron Skin Ampoule", "consumable", 1200, "legendary", effect_type="buff", effect=("defence", 48), cooldown=5, combat_only=True),
-        "Celestial Warrior's Ampoule": Item("Celestial Warrior's Ampoule", "consumable", 1500, "legendary", effect_type="buff", effect=("all stats", 24), cooldown=5, combat_only=True),
+        # Rare Critical Stats Items (Combined crit chance and crit damage)
+        "Greater Critical Tonic": Item("Greater Critical Tonic", "consumable", 100, "rare", effect_type="buff", effect=[("crit_chance", 9), ("crit_damage", 30)], cooldown=7, combat_only=True),
+        "Rapid Critical Essence": Item("Rapid Critical Essence", "consumable", 75, "rare", effect_type="buff", effect=[("crit_chance", 6), ("crit_damage", 18)], cooldown=3, combat_only=True),
 
-        # Mythical
-        "Godly Strength Tonic": Item("Godly Strength Tonic", "consumable", 8000, "mythical", effect_type="buff", effect=("attack", 160), cooldown=15, combat_only=True),
-        "Godly Iron Skin Elixir": Item("Godly Iron Skin Elixir", "consumable", 8000, "mythical", effect_type="buff", effect=("defence", 160), cooldown=15, combat_only=True),
-        "Godly Warrior's Brew": Item("Godly Warrior's Brew", "consumable", 10000, "mythical", effect_type="buff", effect=("all stats", 80), cooldown=15, combat_only=True),
-        "Divine Strength Infusion": Item("Divine Strength Infusion", "consumable", 6000, "mythical", effect_type="buff", effect=("attack", 96), cooldown=7, combat_only=True),
-        "Divine Iron Skin Infusion": Item("Divine Iron Skin Infusion", "consumable", 6000, "mythical", effect_type="buff", effect=("attack", 96), cooldown=7, combat_only=True),
-        "Divine Warrior's Infusion": Item("Divine Warrior's Infusion", "consumable", 7500, "mythical", effect_type="buff", effect=("all stats", 48), cooldown=7, combat_only=True),
+        # Rare Block Chance Items
+        "Greater Guard Tonic": Item("Greater Guard Tonic", "consumable", 80, "rare", effect_type="buff", effect=("block_chance", 15), cooldown=7, combat_only=True),
+        "Rapid Guard Essence": Item("Rapid Guard Essence", "consumable", 60, "rare", effect_type="buff", effect=("block_chance", 9), cooldown=3, combat_only=True),
+
+        # Rare Combined Warrior Stats (+3 from uncommon due to affecting all stats)
+        "Greater Warrior's Brew": Item("Greater Warrior's Brew", "consumable", 100, "rare", effect_type="buff", effect=("all stats", 8), cooldown=7, combat_only=True),
+        "Rapid Warrior's Essence": Item("Rapid Warrior's Essence", "consumable", 75, "rare", effect_type="buff", effect=("all stats", 5), cooldown=3, combat_only=True),
+
+        # Epic Attack & Defence Items (Rare +5)
+        "Epic Strength Tonic": Item("Epic Strength Tonic", "consumable", 300, "epic", effect_type="buff", effect=("attack", 20), cooldown=8, combat_only=True),
+        "Swift Epic Essence": Item("Swift Epic Essence", "consumable", 225, "epic", effect_type="buff", effect=("attack", 12), cooldown=4, combat_only=True),
+        "Epic Iron Skin Elixir": Item("Epic Iron Skin Elixir", "consumable", 300, "epic", effect_type="buff", effect=("defence", 20), cooldown=8, combat_only=True),
+        "Swift Iron Scale Essence": Item("Swift Iron Scale Essence", "consumable", 225, "epic", effect_type="buff", effect=("defence", 12), cooldown=4, combat_only=True),
+
+        # Epic Accuracy & Evasion Items (Accuracy maintains 3x value)
+        "Epic Accuracy Tonic": Item("Epic Accuracy Tonic", "consumable", 300, "epic", effect_type="buff", effect=("accuracy", 60), cooldown=8, combat_only=True),
+        "Swift Accuracy Essence": Item("Swift Accuracy Essence", "consumable", 225, "epic", effect_type="buff", effect=("accuracy", 36), cooldown=4, combat_only=True),
+        "Epic Agility Tonic": Item("Epic Agility Tonic", "consumable", 300, "epic", effect_type="buff", effect=("evasion", 20), cooldown=8, combat_only=True),
+        "Swift Agility Essence": Item("Swift Agility Essence", "consumable", 225, "epic", effect_type="buff", effect=("evasion", 12), cooldown=4, combat_only=True),
+
+        # Epic Critical Stats Items (Combined crit chance and crit damage)
+        "Epic Critical Tonic": Item("Epic Critical Tonic", "consumable", 375, "epic", effect_type="buff", effect=[("crit_chance", 12), ("crit_damage", 40)], cooldown=8, combat_only=True),
+        "Swift Critical Essence": Item("Swift Critical Essence", "consumable", 280, "epic", effect_type="buff", effect=[("crit_chance", 8), ("crit_damage", 24)], cooldown=4, combat_only=True),
+
+        # Epic Block Chance Items
+        "Epic Guard Tonic": Item("Epic Guard Tonic", "consumable", 300, "epic", effect_type="buff", effect=("block_chance", 20), cooldown=8, combat_only=True),
+        "Swift Guard Essence": Item("Swift Guard Essence", "consumable", 225, "epic", effect_type="buff", effect=("block_chance", 12), cooldown=4, combat_only=True),
+
+        # Epic Combined Warrior Stats (+3 from rare)
+        "Epic Warrior's Brew": Item("Epic Warrior's Brew", "consumable", 375, "epic", effect_type="buff", effect=("all stats", 11), cooldown=8, combat_only=True),
+        "Swift Warrior's Essence": Item("Swift Warrior's Essence", "consumable", 280, "epic", effect_type="buff", effect=("all stats", 7), cooldown=4, combat_only=True),
+
+        # Masterwork Attack & Defence Items (Epic +5)
+        "Masterwork Strength Tonic": Item("Masterwork Strength Tonic", "consumable", 600, "masterwork", effect_type="buff", effect=("attack", 25), cooldown=9, combat_only=True),
+        "Quicksilver Strength Philter": Item("Quicksilver Strength Philter", "consumable", 450, "masterwork", effect_type="buff", effect=("attack", 15), cooldown=5, combat_only=True),
+        "Masterwork Iron Skin Elixir": Item("Masterwork Iron Skin Elixir", "consumable", 600, "masterwork", effect_type="buff", effect=("defence", 25), cooldown=9, combat_only=True),
+        "Quicksilver Iron Scale Philter": Item("Quicksilver Iron Scale Philter", "consumable", 450, "masterwork", effect_type="buff", effect=("defence", 15), cooldown=5, combat_only=True),
+
+        # Masterwork Accuracy & Evasion Items (Accuracy maintains 3x value)
+        "Masterwork Accuracy Tonic": Item("Masterwork Accuracy Tonic", "consumable", 600, "masterwork", effect_type="buff", effect=("accuracy", 75), cooldown=9, combat_only=True),
+        "Quicksilver Accuracy Philter": Item("Quicksilver Accuracy Philter", "consumable", 450, "masterwork", effect_type="buff", effect=("accuracy", 45), cooldown=5, combat_only=True),
+        "Masterwork Agility Tonic": Item("Masterwork Agility Tonic", "consumable", 600, "masterwork", effect_type="buff", effect=("evasion", 25), cooldown=9, combat_only=True),
+        "Quicksilver Agility Philter": Item("Quicksilver Agility Philter", "consumable", 450, "masterwork", effect_type="buff", effect=("evasion", 15), cooldown=5, combat_only=True),
+
+        # Masterwork Critical Stats Items (Combined crit chance and crit damage)
+        "Masterwork Critical Tonic": Item("Masterwork Critical Tonic", "consumable", 750, "masterwork", effect_type="buff", effect=[("crit_chance", 15), ("crit_damage", 50)], cooldown=9, combat_only=True),
+        "Quicksilver Critical Philter": Item("Quicksilver Critical Philter", "consumable", 560, "masterwork", effect_type="buff", effect=[("crit_chance", 10), ("crit_damage", 30)], cooldown=5, combat_only=True),
+
+        # Masterwork Block Chance Items
+        "Masterwork Guard Tonic": Item("Masterwork Guard Tonic", "consumable", 600, "masterwork", effect_type="buff", effect=("block_chance", 25), cooldown=9, combat_only=True),
+        "Quicksilver Guard Philter": Item("Quicksilver Guard Philter", "consumable", 450, "masterwork", effect_type="buff", effect=("block_chance", 15), cooldown=5, combat_only=True),
+
+        # Masterwork Combined Warrior Stats (+3 from epic)
+        "Masterwork Warrior's Brew": Item("Masterwork Warrior's Brew", "consumable", 750, "masterwork", effect_type="buff", effect=("all stats", 14), cooldown=9, combat_only=True),
+        "Quicksilver Warrior's Philter": Item("Quicksilver Warrior's Philter", "consumable", 560, "masterwork", effect_type="buff", effect=("all stats", 9), cooldown=5, combat_only=True),
+
+        # Legendary Attack & Defence Items (Masterwork +5)
+        "Legendary Strength Tonic": Item("Legendary Strength Tonic", "consumable", 2000, "legendary", effect_type="buff", effect=("attack", 30), cooldown=10, combat_only=True),
+        "Celestial Strength Ampoule": Item("Celestial Strength Ampoule", "consumable", 1500, "legendary", effect_type="buff", effect=("attack", 18), cooldown=6, combat_only=True),
+        "Legendary Iron Skin Elixir": Item("Legendary Iron Skin Elixir", "consumable", 2000, "legendary", effect_type="buff", effect=("defence", 30), cooldown=10, combat_only=True),
+        "Celestial Iron Scale Ampoule": Item("Celestial Iron Scale Ampoule", "consumable", 1500, "legendary", effect_type="buff", effect=("defence", 18), cooldown=6, combat_only=True),
+
+        # Legendary Accuracy & Evasion Items (Accuracy maintains 3x value)
+        "Legendary Accuracy Tonic": Item("Legendary Accuracy Tonic", "consumable", 2000, "legendary", effect_type="buff", effect=("accuracy", 90), cooldown=10, combat_only=True),
+        "Celestial Accuracy Ampoule": Item("Celestial Accuracy Ampoule", "consumable", 1500, "legendary", effect_type="buff", effect=("accuracy", 54), cooldown=6, combat_only=True),
+        "Legendary Agility Tonic": Item("Legendary Agility Tonic", "consumable", 2000, "legendary", effect_type="buff", effect=("evasion", 30), cooldown=10, combat_only=True),
+        "Celestial Agility Ampoule": Item("Celestial Agility Ampoule", "consumable", 1500, "legendary", effect_type="buff", effect=("evasion", 18), cooldown=6, combat_only=True),
+
+        # Legendary Critical Stats Items (Combined crit chance and crit damage)
+        "Legendary Critical Tonic": Item("Legendary Critical Tonic", "consumable", 2500, "legendary", effect_type="buff", effect=[("crit_chance", 18), ("crit_damage", 60)], cooldown=10, combat_only=True),
+        "Celestial Critical Ampoule": Item("Celestial Critical Ampoule", "consumable", 1875, "legendary", effect_type="buff", effect=[("crit_chance", 12), ("crit_damage", 36)], cooldown=6, combat_only=True),
+
+        # Legendary Block Chance Items
+        "Legendary Guard Tonic": Item("Legendary Guard Tonic", "consumable", 2000, "legendary", effect_type="buff", effect=("block_chance", 30), cooldown=10, combat_only=True),
+        "Celestial Guard Ampoule": Item("Celestial Guard Ampoule", "consumable", 1500, "legendary", effect_type="buff", effect=("block_chance", 18), cooldown=6, combat_only=True),
+
+        # Legendary Combined Warrior Stats (+3 from masterwork)
+        "Legendary Warrior's Brew": Item("Legendary Warrior's Brew", "consumable", 2500, "legendary", effect_type="buff", effect=("all stats", 17), cooldown=10, combat_only=True),
+        "Celestial Warrior's Ampoule": Item("Celestial Warrior's Ampoule", "consumable", 1875, "legendary", effect_type="buff", effect=("all stats", 11), cooldown=6, combat_only=True),
+
+        # Mythical Attack & Defence Items (Legendary +5)
+        "Godly Strength Tonic": Item("Godly Strength Tonic", "consumable", 8000, "mythical", effect_type="buff", effect=("attack", 35), cooldown=12, combat_only=True),
+        "Divine Strength Infusion": Item("Divine Strength Infusion", "consumable", 6000, "mythical", effect_type="buff", effect=("attack", 21), cooldown=8, combat_only=True),
+        "Godly Iron Skin Elixir": Item("Godly Iron Skin Elixir", "consumable", 8000, "mythical", effect_type="buff", effect=("defence", 35), cooldown=12, combat_only=True),
+        "Divine Iron Scale Infusion": Item("Divine Iron Scale Infusion", "consumable", 6000, "mythical", effect_type="buff", effect=("defence", 21), cooldown=8, combat_only=True),
+
+        # Mythical Accuracy & Evasion Items (Accuracy maintains 3x value)
+        "Godly Accuracy Tonic": Item("Godly Accuracy Tonic", "consumable", 8000, "mythical", effect_type="buff", effect=("accuracy", 105), cooldown=12, combat_only=True),
+        "Divine Accuracy Infusion": Item("Divine Accuracy Infusion", "consumable", 6000, "mythical", effect_type="buff", effect=("accuracy", 63), cooldown=8, combat_only=True),
+        "Godly Agility Tonic": Item("Godly Agility Tonic", "consumable", 8000, "mythical", effect_type="buff", effect=("evasion", 35), cooldown=12, combat_only=True),
+        "Divine Agility Infusion": Item("Divine Agility Infusion", "consumable", 6000, "mythical", effect_type="buff", effect=("evasion", 21), cooldown=8, combat_only=True),
+
+        # Mythical Critical Stats Items (Combined crit chance and crit damage)
+        "Godly Critical Tonic": Item("Godly Critical Tonic", "consumable", 10000, "mythical", effect_type="buff", effect=[("crit_chance", 21), ("crit_damage", 70)], cooldown=12, combat_only=True),
+        "Divine Critical Infusion": Item("Divine Critical Infusion", "consumable", 7500, "mythical", effect_type="buff", effect=[("crit_chance", 14), ("crit_damage", 42)], cooldown=8, combat_only=True),
+
+        # Mythical Block Chance Items
+        "Godly Guard Tonic": Item("Godly Guard Tonic", "consumable", 8000, "mythical", effect_type="buff", effect=("block_chance", 35), cooldown=12, combat_only=True),
+        "Divine Guard Infusion": Item("Divine Guard Infusion", "consumable", 6000, "mythical", effect_type="buff", effect=("block_chance", 21), cooldown=8, combat_only=True),
+
+        # Mythical Combined Warrior Stats (+3 from legendary)
+        "Godly Warrior's Brew": Item("Godly Warrior's Brew", "consumable", 10000, "mythical", effect_type="buff", effect=("all stats", 20), cooldown=12, combat_only=True),
+        "Divine Warrior's Infusion": Item("Divine Warrior's Infusion", "consumable", 7500, "mythical", effect_type="buff", effect=("all stats", 13), cooldown=8, combat_only=True),
         
         #Sharpening Stones
         "Basic Sharpening Stone": Item("Basic Sharpening Stone", "consumable", 100, "common", effect_type="weapon_buff", effect=("attack", 5), cooldown=0, duration=20),

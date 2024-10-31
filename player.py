@@ -34,65 +34,97 @@ class Character:
         print(f">>> {attack_name.upper()} <<<")
         time.sleep(0.5)
         
-    def show_status(self):
-        #Shows the status and equipment of the player, 
-        print(f"\n{self.name} (Level {self.level}):")
-        print(f"HP: {self.hp}/{self.max_hp}, EXP: {self.exp}/{self.level*100}, Gold: {self.gold}, "
-              f"Attack: {self.attack}, Defence: {self.defence}, Stamina: {self.stamina}/{self.max_stamina}")
-        if self.active_buffs or self.combat_buffs:
-            print("\nActive Buffs:")
-            for stat, buff_info in self.active_buffs.items():
-                if isinstance(buff_info, dict):
-                    print(f"  {stat.capitalize()}: +{buff_info['value']} for {buff_info['duration']} more turns")
-                else:
-                    print(f"  {stat.capitalize()}: +{buff_info} (Permanent)")
-            for stat, buff_info in self.combat_buffs.items():
-                print(f"  {stat.capitalize()}: +{buff_info['value']} (Combat Only)")
-        if self.weapon_buff['duration'] > 0:
-            print(f"Weapon buff: +{self.weapon_buff['value']} attack for {self.weapon_buff['duration']} more turns")
-        if self.active_hots:
-                print("\nActive Heal Over Time Effects:")
-                for hot_name, hot_info in self.active_hots.items():
-                    print(f"  {hot_name}: {hot_info['tick_effect']} HP/turn for {hot_info['duration']} more turns")
-        print("\nEquipped Items:")
-        for slot, item in self.equipped.items():
-            if item:
-                print(f"{slot.capitalize()}: {item.name} (Tier: {item.tier.capitalize()})")
-                if item.attack > 0:
-                    print(f"  Attack: +{item.attack} ({item.weapon_type})")
-                if item.defence > 0:
-                    print(f"  Defence: +{item.defence}")
-                if item.effect_type:
-                    print(f"  Effect: {item.effect_type.capitalize()} - ", end="")
-                    if isinstance(item.effect, tuple):
-                        print(f"{item.effect[0].capitalize()} +{item.effect[1]}")
-                    else:
-                        print(f"{item.effect}")
-                    if item.cooldown > 0:
-                        print(f"  Cooldown: {item.cooldown} turns")
-            else:
-                print(f"{slot.capitalize()}: None")
-    
     def show_stats(self):
-        #Shows the status of the player, 
+        # Show basic stats
         print(f"\n{self.name} (Level {self.level}):")
-        print(f"HP: {self.hp}/{self.max_hp}, EXP: {self.exp}/{self.level*100}, Gold: {self.gold}, "
-              f"Att: {self.attack}, AP: {self.armour_penetration}, Def: {self.defence}, Eva: {int(self.evasion)}, Acc: {self.accuracy}, Crit%: {self.crit_chance}, Crit Dmg: {self.crit_damage}%, DR: {self.damage_reduction}, BC: {self.block_chance} Stamina: {self.stamina}/{self.max_stamina}")
+        print(f"HP: {self.hp}/{self.max_hp}, Stamina: {self.stamina}/{self.max_stamina}, EXP: {self.exp}/{self.level*100}, Gold: {self.gold}")
+        print(f"Att: {self.attack}, Acc: {self.accuracy}, Crit: {self.crit_chance}%, Crit Dmg: {self.crit_damage}%, AP: {self.armour_penetration}")
+        print(f"Def: {self.defence}, Eva: {int(self.evasion)}, DR: {self.damage_reduction}, Block: {self.block_chance}%")
+
+        # Show active buffs
         if self.active_buffs or self.combat_buffs:
-            print("\nActive Buffs:")
+            # Group buffs by type (offensive, defensive, etc.)
+            offensive_buffs = []
+            defensive_buffs = []
+            utility_buffs = []
+            other_buffs = []
+
+            # Process regular buffs
             for stat, buff_info in self.active_buffs.items():
-                if isinstance(buff_info, dict):
-                    print(f"  {stat.capitalize()}: +{buff_info['value']} for {buff_info['duration']} more turns")
-                else:
-                    print(f"  {stat.capitalize()}: +{buff_info} (Permanent)")
+                buff_str = self._format_buff_string(stat, buff_info, False)
+                self._categorize_buff(buff_str, stat, offensive_buffs, defensive_buffs, utility_buffs, other_buffs)
+
+            # Process combat buffs
             for stat, buff_info in self.combat_buffs.items():
-                print(f"  {stat.capitalize()}: +{buff_info['value']} (Combat Only)")
+                buff_str = self._format_buff_string(stat, buff_info, True)
+                self._categorize_buff(buff_str, stat, offensive_buffs, defensive_buffs, utility_buffs, other_buffs)
+
+            # Display buffs by category
+            if any([offensive_buffs, defensive_buffs, utility_buffs, other_buffs]):
+                print("\nActive Buffs:")
+                if offensive_buffs:
+                    print("  Offensive:")
+                    print("   " + "\n   ".join(offensive_buffs))
+                if defensive_buffs:
+                    print("  Defensive:")
+                    print("   " + "\n   ".join(defensive_buffs))
+                if utility_buffs:
+                    print("  Utility:")
+                    print("   " + "\n   ".join(utility_buffs))
+                if other_buffs:
+                    print("  Other:")
+                    print("   " + "\n   ".join(other_buffs))
+
+        # Show weapon buff separately if active
         if self.weapon_buff['duration'] > 0:
-            print(f"Weapon buff: +{self.weapon_buff['value']} attack for {self.weapon_buff['duration']} more turns")
+            print(f"Weapon Enhancement: +{self.weapon_buff['value']} Attack ({self.weapon_buff['duration']} turns remaining)")
+
+        # Show active HoTs if any
         if self.active_hots:
-                print("\nActive Heal Over Time Effects:")
-                for hot_name, hot_info in self.active_hots.items():
-                    print(f"  {hot_name}: {hot_info['tick_effect']} HP/turn for {hot_info['duration']} more turns")
+            print("\nActive Healing Effects:")
+            for hot_name, hot_info in self.active_hots.items():
+                print(f"  {hot_name}: {hot_info['tick_effect']} HP/turn ({hot_info['duration']} turns remaining)")
+
+    def _format_buff_string(self, stat, buff_info, is_combat_buff=False):
+        """Helper method to format buff strings consistently"""
+        # Format the stat name
+        stat_display = {
+            'attack': 'Attack',
+            'defence': 'Defense',
+            'accuracy': 'Accuracy',
+            'evasion': 'Evasion',
+            'crit_chance': 'Critical Chance',
+            'crit_damage': 'Critical Damage',
+            'block_chance': 'Block Chance',
+            'damage_reduction': 'Damage Reduction',
+            'armour_penetration': 'Armor Penetration',
+            'all stats': 'All Stats'
+        }.get(stat, stat.replace('_', ' ').title())
+
+        # Format the buff value and duration
+        if isinstance(buff_info, dict):
+            value = buff_info['value']
+            if 'duration' in buff_info:
+                return f"{stat_display} +{value} ({buff_info['duration']} turns)"
+            else:
+                return f"{stat_display} +{value} (Combat)" if is_combat_buff else f"{stat_display} +{value}"
+        else:
+            return f"{stat_display} +{buff_info} (Combat)" if is_combat_buff else f"{stat_display} +{buff_info}"
+
+    def _categorize_buff(self, buff_str, stat, offensive_buffs, defensive_buffs, utility_buffs, other_buffs):
+        """Helper method to categorize buffs"""
+        offensive_stats = {'attack', 'crit_chance', 'crit_damage', 'accuracy', 'armour_penetration'}
+        defensive_stats = {'defence', 'block_chance', 'damage_reduction', 'evasion'}
+        utility_stats = {'all stats'}
+
+        if stat in offensive_stats:
+            offensive_buffs.append(buff_str)
+        elif stat in defensive_stats:
+            defensive_buffs.append(buff_str)
+        elif stat in utility_stats:
+            utility_buffs.append(buff_str)
+        else:
+            other_buffs.append(buff_str)
     
     def calculate_damage(self, attacker, defender, attack_type):
         # Calculate hit chance
@@ -573,32 +605,58 @@ class Player(Character):
             self.inventory.append(item)
             self.equipped[slot] = None
             print(f"You unequipped {item.name}.")
-            
+
     def apply_buff(self, stat, value, duration, combat_only=True):
-        #Applies the buff of a given item, places them in the appropriate area if they are a combat_only item
+        """
+        Applies buff(s) to the player.
+        stat: string or list of tuples [(stat, value), ...]
+        value: int or None if stat is a list of tuples
+        duration: int
+        combat_only: boolean
+        """
+        # Handle "all stats" buff
         if stat == "all stats":
             self.apply_buff("attack", value, duration, combat_only)
             self.apply_buff("defence", value, duration, combat_only)
-        else:
-            if combat_only:
-                self.combat_buff_modifiers[stat] += value
-                if stat in self.combat_buffs:
-                    self.combat_buffs[stat]['value'] += value
-                else:
-                    self.combat_buffs[stat] = {'value': value}
+            return
+
+        # Handle list of stat buffs (for items that buff multiple stats)
+        if isinstance(stat, list):
+            for stat_tuple in stat:
+                sub_stat, sub_value = stat_tuple
+                self.apply_single_buff(sub_stat, sub_value, duration, combat_only)
+            return
+
+        # Handle single stat buff
+        self.apply_single_buff(stat, value, duration, combat_only)
+
+    def apply_single_buff(self, stat, value, duration, combat_only):
+        """Helper method to apply a single stat buff"""
+        if combat_only:
+            if stat not in self.combat_buff_modifiers:
+                self.combat_buff_modifiers[stat] = 0
+            self.combat_buff_modifiers[stat] += value
+            
+            if stat in self.combat_buffs:
+                self.combat_buffs[stat]['value'] += value
             else:
-                self.buff_modifiers[stat] += value
-                if stat in self.active_buffs:
-                    if isinstance(self.active_buffs[stat], dict):
-                        self.active_buffs[stat]['value'] += value
-                        self.active_buffs[stat]['duration'] = max(self.active_buffs[stat]['duration'], duration)
-                    else:
-                        self.active_buffs[stat] += value
+                self.combat_buffs[stat] = {'value': value}
+        else:
+            if stat not in self.buff_modifiers:
+                self.buff_modifiers[stat] = 0
+            self.buff_modifiers[stat] += value
+            
+            if stat in self.active_buffs:
+                if isinstance(self.active_buffs[stat], dict):
+                    self.active_buffs[stat]['value'] += value
+                    self.active_buffs[stat]['duration'] = max(self.active_buffs[stat]['duration'], duration)
                 else:
-                    self.active_buffs[stat] = {'value': value, 'duration': duration} if duration > 0 else value
+                    self.active_buffs[stat] += value
+            else:
+                self.active_buffs[stat] = {'value': value, 'duration': duration} if duration > 0 else value
 
         self.recalculate_stats()
-
+    
     def apply_debuff(self, stat, value):
         self.debuff_modifiers[stat] += value
         self.recalculate_stats()
@@ -710,8 +768,9 @@ class Player(Character):
                 if buff_info['duration'] <= 0:
                     # Handle "all stats" buff
                     if stat == "all stats":
-                        for base_stat in ["attack", "defence"]:  # Keep all stats limited to basic stats
+                        for base_stat in ["attack", "defence", "evasion"]:  # Keep all stats limited to basic stats
                             self.buff_modifiers[base_stat] -= buff_info['value']
+                        self.buff_modifiers["accuracy"] -= buff_info['value' * 5]
                     # Handle individual stat buffs
                     elif stat in all_stats:
                         self.buff_modifiers[stat] -= buff_info['value']
@@ -768,7 +827,6 @@ class Player(Character):
         print("Any combat buffs you had have worn off.")
         
     def use_item(self, item, game=None):
-        #Allows the player to use an item based on current state, be that cooldown, combat_only items, teleport scrolls etc.
         if item.name in self.cooldowns and self.cooldowns[item.name] > 0:
             print(f"You can't use {item.name} yet. Cooldown: {self.cooldowns[item.name]} turns.")
             return False, f"Couldn't use {item.name} due to cooldown!"
@@ -784,16 +842,22 @@ class Player(Character):
                 self.restore_stamina(stamina_restore)
                 message += f"You used {item.name} and restored {stamina_restore} Stamina. "
             elif item.effect_type == "buff":
-                stat, value = item.effect
                 duration = getattr(item, 'duration', 0)
                 combat_only = getattr(item, 'combat_only', True)
-                self.apply_buff(stat, value, duration, combat_only)
-                if combat_only:
-                    message += f"You used {item.name} and gained a combat-only {stat} buff of {value}. "
-                elif duration > 0:
-                    message += f"You used {item.name} and gained a temporary {stat} buff of {value} for {duration} turns. "
-                else:
-                    message += f"You used {item.name} and gained a permanent {stat} buff of {value}. "
+                
+                if isinstance(item.effect, list):  # Handle multiple stat buffs
+                    for stat, value in item.effect:
+                        self.apply_buff(stat, value, duration, combat_only)
+                    message += f"You used {item.name} and gained multiple buffs. "
+                else:  # Handle single stat buff
+                    stat, value = item.effect if isinstance(item.effect, tuple) else ("all stats", item.effect)
+                    self.apply_buff(stat, value, duration, combat_only)
+                    if combat_only:
+                        message += f"You used {item.name} and gained a combat-only {stat} buff of {value}. "
+                    elif duration > 0:
+                        message += f"You used {item.name} and gained a temporary {stat} buff of {value} for {duration} turns. "
+                    else:
+                        message += f"You used {item.name} and gained a permanent {stat} buff of {value}. "
             elif item.effect_type == "weapon_buff":
                 if self.equipped['weapon']:
                     stat, value = item.effect
@@ -827,8 +891,8 @@ class Player(Character):
                     else:
                         return False, f"You can only apply {item.name} to light weapons. Your current weapon is a {self.equipped['weapon'].weapon_type.title()} Weapon!"
                 else:
-                    return False, "You don't have a weapon equipped to apply the poison coating."    
-        
+                    return False, "You don't have a weapon equipped to apply the poison coating."
+            
             self.inventory.remove(item)  # Remove the item from inventory after use
             self.cooldowns[item.name] = item.cooldown
             return True, message
@@ -915,30 +979,9 @@ class Player(Character):
             
             # Consumable effects
             if item.type in ["consumable", "food", "drink"]:
-                if item.effect_type == "healing":
-                    effects.append(f"Heal: {item.effect}")
-                elif item.effect_type == "hot":
-                    effects.append(f"HoT: {item.tick_effect}/turn for {item.duration} turns")
-                elif item.effect_type == "damage":
-                    effects.append(f"Damage: {item.effect}")
-                elif item.effect_type == "buff":
-                    if isinstance(item.effect, tuple):
-                        stat, value = item.effect
-                        duration = "until end of combat" if item.duration == 0 else f"for {item.duration} turns"
-                        effects.append(f"Buff: {stat.capitalize()} +{value} {duration}")
-                    else:
-                        duration = "until end of combat" if item.duration == 0 else f"for {item.duration} turns"
-                        effects.append(f"Buff: Attack +{item.effect} {duration}")
-                elif item.effect_type == "weapon_buff":
-                    if isinstance(item.effect, tuple):
-                        stat, value = item.effect
-                        effects.append(f"Weapon Buff: {stat.capitalize()} +{value} for {item.duration} turns")
-            
-            # Weapon coating
-            elif item.type == "weapon coating":
-                if isinstance(item.effect, tuple):
-                    stack, duration = item.effect
-                    effects.append(f"Poison: {stack} stacks for {duration} turns")
+                effect_desc = self.get_effect_description(item)
+                if effect_desc:
+                    effects.append(effect_desc)
             
             stats_str = ", ".join(stats)
             effects_str = ", ".join(effects)
@@ -971,17 +1014,28 @@ class Player(Character):
         elif item.effect_type == "damage":
             return f"Deals {item.effect} damage"
         elif item.effect_type == "buff":
-            if isinstance(item.effect, tuple):
+            if isinstance(item.effect, list):
+                # Handle multiple stat buffs
+                buff_effects = []
+                for stat, value in item.effect:
+                    stat_name = stat.replace('_', ' ').title()
+                    if item.duration > 0:
+                        buff_effects.append(f"{stat_name} +{value} for {item.duration} turns")
+                    else:
+                        buff_effects.append(f"{stat_name} +{value}")
+                return "Buff: " + ", ".join(buff_effects)
+            elif isinstance(item.effect, tuple):
                 stat, value = item.effect
+                stat_name = stat.replace('_', ' ').title()
                 if item.duration > 0:
                     if item.stamina_restore > 0:
-                        return f"Increases {stat} by {value} for {item.duration} turns and restores {item.stamina_restore} stamina."
+                        return f"Buff: {stat_name} +{value} for {item.duration} turns and restores {item.stamina_restore} stamina"
                     else:
-                        return f"Increases {stat} by {value} for {item.duration} turns."
+                        return f"Buff: {stat_name} +{value} for {item.duration} turns"
                 else:
-                    return f"Increases {stat} by {value} until end of combat."
+                    return f"Buff: {stat_name} +{value} until combat ends"
             else:
-                return f"Increases attack by {item.effect}"
+                return f"Buff: Attack +{item.effect}"
         elif item.effect_type == "weapon_buff":
             if isinstance(item.effect, tuple):
                 stat, value = item.effect

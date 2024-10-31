@@ -86,8 +86,21 @@ class BaseShop:
 
     def display_consumable_stats(self, item):
         if item.effect_type == "buff":
-            stat, value = item.effect if isinstance(item.effect, tuple) else ("Attack", item.effect)
-            print(f"   Buff: {stat.capitalize()} +{value} for {item.duration} turns")
+            if isinstance(item.effect, list):
+                # Handle multiple stat buffs
+                buff_effects = []
+                for stat, value in item.effect:
+                    stat_name = stat.replace('_', ' ').title()
+                    buff_effects.append(f"{stat_name} +{value}")
+                buff_str = ", ".join(buff_effects)
+                duration_str = f" for {item.duration} turns" if item.duration > 0 else " (Combat Only)"
+                print(f"   Effect: {buff_str}{duration_str}")
+            else:
+                # Handle single stat buff
+                stat, value = item.effect if isinstance(item.effect, tuple) else ("Attack", item.effect)
+                stat_name = stat.replace('_', ' ').title()
+                duration_str = f" for {item.duration} turns" if item.duration > 0 else " (Combat Only)"
+                print(f"   Effect: {stat_name} +{value}{duration_str}")
         elif item.effect_type == "healing":
             print(f"   Effect: Healing ({item.effect} HP)")
         elif item.effect_type == "hot":
@@ -98,6 +111,8 @@ class BaseShop:
         elif item.effect_type == "weapon_buff":
             stat, value = item.effect if isinstance(item.effect, tuple) else ("Attack", item.effect)
             print(f"   Effect: Increases weapon {stat} by {value} for {item.duration} turns")
+        elif item.effect_type == "stamina":
+            print(f"   Effect: Restores {item.stamina_restore} stamina")
 
     def display_coating_stats(self, item):
         if isinstance(item.effect, tuple):
