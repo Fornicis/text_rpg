@@ -66,7 +66,7 @@ def display_help():
 
     CONSUMABLES AND BUFFS:
     - Use healing potions to restore HP during and outside of combat.
-    - Buff items can temporarily increase your stats.
+    - Buff items can temporarily increase your stats. Items which increase all stats increase Attack, Defence, Accuracy and Evasion.
     - Food and drinks can restore stamina and provide various effects.
 
     SAVING AND LOADING:

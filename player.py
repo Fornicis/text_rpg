@@ -618,6 +618,8 @@ class Player(Character):
         if stat == "all stats":
             self.apply_buff("attack", value, duration, combat_only)
             self.apply_buff("defence", value, duration, combat_only)
+            self.apply_buff("accuracy", value*5, duration, combat_only)
+            self.apply_buff("evasion", value, duration, combat_only)
             return
 
         # Handle list of stat buffs (for items that buff multiple stats)

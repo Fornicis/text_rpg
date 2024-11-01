@@ -2,7 +2,7 @@ import json
 import os
 from player import Player
 from items import Item, initialise_items
-from status_effects import StatusEffect, BURN, POISON, FREEZE, STUN, SELF_DAMAGE, VAMPIRIC, STAMINA_DRAIN, DAMAGE_REFLECT, DEFENCE_BREAK, DEFENSIVE_STANCE
+from status_effects import StatusEffect, BURN, POISON, FREEZE, STUN, SELF_DAMAGE, VAMPIRIC, STAMINA_DRAIN, DAMAGE_REFLECT, DEFENCE_BREAK, DEFENSIVE_STANCE, POWER_STANCE, BERSERKER_STANCE, EVASION_STANCE, ACCURACY_STANCE
 
 SAVE_DIRECTORY = "saves"
 
@@ -118,7 +118,11 @@ def load_game(filename):
         "Stamina Drain": STAMINA_DRAIN,
         "Damage Reflect": DAMAGE_REFLECT,
         "Defence Break": DEFENCE_BREAK,
-        "Defensive Stance": DEFENSIVE_STANCE
+        "Defensive Stance": DEFENSIVE_STANCE,
+        "Power Stance": POWER_STANCE,
+        "Berserker Stance": BERSERKER_STANCE,
+        "Evasion Stance": EVASION_STANCE,
+        "Accuracy Stance": ACCURACY_STANCE
     }
     player.status_effects = []
     for name, duration, strength, stackable in player_data["status_effects"]:
