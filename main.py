@@ -25,13 +25,19 @@ class Game:
         self.armourer.stock_shop()
         self.alchemist.stock_shop()
         self.inn.stock_shop()
+        
+        from autosave import AutosaveManager
+        self.autosave_manager = AutosaveManager(self)
 
     def create_character(self):
         #Creates a new player character.
         name = input("Enter your character's name: ")
         self.player = Player(name)
         self.initialise_battle()
-        print(f"Welcome, {self.player.name}! Your adventure begins in the Village.")
+        print(f"\nWelcome, {self.player.name}! Your adventure begins in the Village.")
+        print("\nAutosave is enabled and will save your game every 10 turns.")
+        print("You can toggle autosave on/off using the [au] command.")
+        print("The system keeps your 3 most recent autosaves.")
         pause()
         
     def initialise_battle(self):
@@ -361,7 +367,6 @@ class Game:
                     if loaded_player and loaded_location:
                         self.player = loaded_player
                         self.current_location = loaded_location
-                        #self.player.days = loaded_days
                         self.player.recalculate_stats()
                         self.initialise_battle()
                         break
@@ -380,10 +385,10 @@ class Game:
             if self.current_location == "Village":
                 #Provides a set of options players can do if in the village, such as using shops and resting, otherwise prevents these actions
                 action = input("\nWhat do you want to do?\n[m]ove\n[i]nventory\n[c]onsumables\n[e]quip"
-                            "\n[u]se item\n[a]lchemist\n[ar]mourer\n[in]n\n[r]est\n[v]iew map\n[k]ill log\n[sa]ve game\n[q]uit\n>").lower()
+                            "\n[u]se item\n[a]lchemist\n[ar]mourer\n[in]n\n[r]est\n[v]iew map\n[k]ill log\n[sa]ve game\n[au]tosave toggle\n[q]uit\n>").lower()
             else:
                 action = input("\nWhat do you want to do?\n[m]ove\n[i]nventory\n[c]onsumables\n[e]quip"
-                            "\n[l]ocation actions\n[u]se item\n[v]iew map\n[k]ill log\n[sa]ve game\n[q]uit\n>").lower()
+                            "\n[l]ocation actions\n[u]se item\n[v]iew map\n[k]ill log\n[sa]ve game\n[au]tosave toggle\n[q]uit\n>").lower()
             #Handling of choices by player depending on what is chosen
             if action == "m":
                 #Moves the palyer to different location if level requirements met
@@ -449,6 +454,8 @@ class Game:
                 #Allows the player to save at any point in case of unexpected crashes, will look into making an autosave feature
                 save_file = self.choose_save_file()
                 save_game(self.player, self.current_location, save_file)
+            elif action == "au":
+                self.autosave_manager.toggle_autosave()
             elif action == "d":
                 self.player.print_debug_modifiers()
                 pause()
@@ -458,6 +465,7 @@ class Game:
             self.armourer.rotate_stock(self.player.level)  # Check if it's time to rotate stock after each action
             self.alchemist.rotate_stock(self.player.level) #^
             self.inn.rotate_stock(self.player.level)#^^
+            self.autosave_manager.increment_turn() # Increments turn for autosave manager function
 
 if __name__ == "__main__":
     game = Game()

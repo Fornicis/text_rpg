@@ -347,6 +347,7 @@ class Battle:
             self.player.lose_gold()
             self.player.respawn()
             self.game.current_location = "Village"
+            self.game.initialise_battle()
         else:
             self.player.game_over()
 
