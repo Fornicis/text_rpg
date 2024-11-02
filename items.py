@@ -24,6 +24,60 @@ class Item:
         self.weapon_type = weapon_type
         self.stamina_restore = stamina_restore
         self.combat_only = combat_only
+        self.stack_size = 1
+        self.max_stack = self._get_max_stack()
+        
+    def _get_max_stack(self):
+        """Determine maxium stack size based on item type"""
+        if self.type in ["consumable", "food", "drink", "weapon coating"]:
+            return 99
+        return 1
+    
+    def is_stackable(self):
+        """Check if the item can be stacked"""
+        return self.max_stack > 1
+    
+    def can_stack_with(self, other):
+        """Check if this item can be stacked with another item"""
+        return (self.name == other.name and
+                self.is_stackable() and
+                other.is_stackable() and
+                self.stack_size + other.stack_size <= self.max_stack)
+        
+    def stack_with(self, other):
+        """Stack this item with another item"""
+        if self.can_stack_with(other):
+            total = self.stack_size + other.stack_size
+            if total <= self.max_stack:
+                self.stack_size = total
+                return None # Other item was fully stacked
+            else:
+                self.stack_size = self.max_stack
+                other.stack_size = total - self.max_stack
+                return other # Return remaining stack
+        return other
+    
+    def split_stack(self, amount):
+        """Split a stack into two stacks."""
+        if amount >= self.stack_size:
+            return None
+        
+        new_item = type(self)(
+            self.name, self.type, self.value, self.tier,
+            attack = self.attack, defence = self.defence,
+            accuracy = self.accuracy, evasion = self.evasion,
+            crit_chance = self.crit_chance, crit_damage = self.crit_damage,
+            armour_penetration = self.armour_penetration,
+            damage_reduction = self.damage_reduction,
+            block_chance = self.block_chance, effect = self.effect,
+            effect_type = self.effect_type, cooldown = self.cooldown,
+            duration = self.duration, tick_effect = self.tick_effect,
+            weapon_type = self.weapon_type, stamina_restore = self.stamina_restore,
+            combat_only = self.combat_only
+        )
+        new_item.stack_size = amount
+        self.stack_size -= amount
+        return new_item
         
 def initialise_items():
     return {

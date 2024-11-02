@@ -828,7 +828,41 @@ class Player(Character):
         self.recalculate_stats()
         print("Any combat buffs you had have worn off.")
         
+    def add_item(self, item):
+        """Add an item to inventory, stacking if possible"""
+        if not item.is_stackable():
+            self.inventory.append(item)
+            return
+        
+        # Try to stack with existing items
+        for inv_item in self.inventory():
+            if inv_item.can_stack_with(item):
+                remaining = inv_item.stack_with(item)
+                if not remaining:
+                    return # Item was fully stacked
+                item = remaining # Continue with remaining stack
+                
+        # Add new stack if couldn't fully stack with existing items
+        self.inventory.append(item)
+        
+    def remove_item(self, item, amount=1):
+        """Remove an item from inventory, handling stacks properly"""
+        if not item.is_stackable():
+            self.inventory.remove(item)
+            return item
+        
+        for inv_item in self.inventory:
+            if inv_item.name == item.name:
+                if inv_item.stack_size <= amount:
+                    self.inventory.remove(inv_item)
+                    return inv_item
+                else:
+                    return inv_item.split_stack(amount)
+                
+        return None
+        
     def use_item(self, item, game=None):
+        """Use an item from inventory, handling stacks properly"""
         if item.name in self.cooldowns and self.cooldowns[item.name] > 0:
             print(f"You can't use {item.name} yet. Cooldown: {self.cooldowns[item.name]} turns.")
             return False, f"Couldn't use {item.name} due to cooldown!"
@@ -887,7 +921,11 @@ class Player(Character):
                             'duration': item.effect[1],
                             'remaining_duration': item.duration
                         }
-                        self.inventory.remove(item)
+                        # Handle stack removal
+                        if item.stack_size > 1:
+                            item.stack_size -= 1
+                        else:
+                            self.inventory.remove(item)
                         self.cooldowns[item.name] = item.cooldown
                         return True, f"You applied {item.name} to your weapon. It will apply {item.effect[0]} poison stacks for {item.effect[1]} turns on your next {item.duration} attacks."
                     else:
@@ -895,10 +933,14 @@ class Player(Character):
                 else:
                     return False, "You don't have a weapon equipped to apply the poison coating."
             
-            self.inventory.remove(item)  # Remove the item from inventory after use
+            # Handle stack removal for successful item use
+            if item.stack_size > 1:
+                item.stack_size -= 1
+            else:
+                self.inventory.remove(item)
+                
             self.cooldowns[item.name] = item.cooldown
             return True, message
-            
         else:
             message = f"You can't use {item.name}."
             return False, message
@@ -949,52 +991,83 @@ class Player(Character):
                 print(f"- {item}: {cooldown} turns")
     
     def show_inventory(self):
+        """Display inventory with stack sizes"""
         print("\nInventory:")
+        
+        # Group stackable items
+        item_counts = {}
+        for item in self.inventory:
+            if item.is_stackable():
+                if item.name in item_counts:
+                    item_counts[item.name]["count"] += item.stack_size
+                else:
+                    item_counts[item.name] = {
+                        "item": item,
+                        "count": item.stack_size
+                    }
+                    
+        # Display non-stackable items and stacks
+        idx = 1
         for i, item in enumerate(self.inventory, 1):
-            stats = []
-            effects = []
+            if not item.is_stackable():
+                self._display_item(idx, item)
+                idx += 1
+                
+        # Display stacked items
+        for name, data in item_counts.items():
+            if data["count"] > 0:
+                self._display_stacked_item(idx, data["item"], data["count"])
+                idx += 1
+    
+    def _display_item(self, idx, item):
+        """Helper method to display a single item"""
+        stats = []
+        effects = []
+        if item.attack > 0:
+            stats.append(f"Attack: {item.attack}")
+        if item.defence > 0:
+            stats.append(f"Defence: {item.defence}")
+        if item.accuracy > 0:
+            stats.append(f"Accuracy: {item.accuracy}")
+        if hasattr(item, 'damage_reduction') and item.damage_reduction > 0:
+            stats.append(f"DR: {item.damage_reduction}")
+        if hasattr(item, 'evasion') and item.evasion > 0:
+            stats.append(f"Evasion: {item.evasion}")
+        if hasattr(item, 'crit_chance') and item.crit_chance > 0:
+            stats.append(f"Crit%: {item.crit_chance}")
+        if hasattr(item, 'crit_damage') and item.crit_damage > 0:
+            stats.append(f"CritDmg: {item.crit_damage}")
+        if hasattr(item, 'block_chance') and item.block_chance > 0:
+            stats.append(f"Block%: {item.block_chance}")    
             
-            # Equipment stats
-            if item.attack > 0:
-                stats.append(f"Attack: {item.attack}")
-            if item.accuracy > 0:
-                stats.append(f"Accuracy: {item.accuracy}")
-            if item.defence > 0:
-                stats.append(f"Defence: {item.defence}")
-            if hasattr(item, 'damage_reduction') and item.damage_reduction > 0:
-                stats.append(f"DR: {item.damage_reduction}")
-            if hasattr(item, 'evasion') and item.evasion > 0:
-                stats.append(f"Evasion: {item.evasion}")
-            if hasattr(item, 'crit_chance') and item.crit_chance > 0:
-                stats.append(f"Crit%: {item.crit_chance}")
-            if hasattr(item, 'crit_damage') and item.crit_damage > 0:
-                stats.append(f"CritDmg: {item.crit_damage}")
-            if hasattr(item, 'block_chance') and item.block_chance > 0:
-                stats.append(f"Block%: {item.block_chance}")
+        # Weapon-specific info
+        if item.type == "weapon":
+            weapon_type = getattr(item, 'weapon_type', 'light')
+            stamina_cost = self.get_weapon_stamina_cost(weapon_type)
+            stats.append(f"Stamina: {stamina_cost}")
+            stats.append(f"Type: {item.weapon_type.title()}")
             
-            # Weapon-specific info
-            if item.type == "weapon":
-                weapon_type = getattr(item, 'weapon_type', 'light')
-                stamina_cost = self.get_weapon_stamina_cost(weapon_type)
-                stats.append(f"Stamina: {stamina_cost}")
-                stats.append(f"Type: {item.weapon_type.title()}")
+        # Consumable effects
+        if item.type in ["consumable", "food", "drink"]:
+            effect_desc = self.get_effect_description(item)
+            if effect_desc:
+                effects.append(effect_desc)
             
-            # Consumable effects
-            if item.type in ["consumable", "food", "drink"]:
-                effect_desc = self.get_effect_description(item)
-                if effect_desc:
-                    effects.append(effect_desc)
+        stats_str = ", ".join(stats)
+        effect_desc = self.get_effect_description(item)
+    
+        print(f"{idx}. {item.name} ", end="")
+        if stats_str:
+            print(f"({stats_str}) ", end="")
+        if effect_desc:
+            print(f"[{effect_desc}] ", end="")
+        print(f"(Value: {item.value} gold)")
             
-            stats_str = ", ".join(stats)
-            effects_str = ", ".join(effects)
-            
-            print(f"{i}. {item.name} ", end="")
-            if stats_str:
-                print(f"({stats_str}) ", end="")
-            if effects_str:
-                print(f"[{effects_str}] ", end="")
-            print(f"(Value: {item.value} gold)")
-            
+    def _display_stacked_item(self, idx, item, count):
+        """Helper method to displa a stacked item"""
+        effect_desc = self.get_effect_description(item)
+        print(f"{idx}. {item.name} x{count} [{effect_desc}] (Value: {item.value} gold each)")
+    
     def show_consumables(self):
         # Display consumable items in inventory
         consumables = [item for item in self.inventory if item.type in ["consumable", "buff", "food", "drink"]]
