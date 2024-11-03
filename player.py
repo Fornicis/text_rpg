@@ -829,21 +829,31 @@ class Player(Character):
         print("Any combat buffs you had have worn off.")
         
     def add_item(self, item):
-        """Add an item to inventory, stacking if possible"""
+        """Add an item to inventory, handling stacks"""
         if not item.is_stackable():
             self.inventory.append(item)
             return
-        
+            
         # Try to stack with existing items
-        for inv_item in self.inventory():
-            if inv_item.can_stack_with(item):
-                remaining = inv_item.stack_with(item)
-                if not remaining:
-                    return # Item was fully stacked
-                item = remaining # Continue with remaining stack
-                
-        # Add new stack if couldn't fully stack with existing items
-        self.inventory.append(item)
+        for inv_item in self.inventory:
+            if inv_item.name == item.name and inv_item.is_stackable():
+                # Check if we can add to this stack
+                space_in_stack = inv_item.max_stack - inv_item.stack_size
+                if space_in_stack > 0:
+                    # Add as much as we can to this stack
+                    amount_to_add = min(space_in_stack, item.stack_size)
+                    inv_item.stack_size += amount_to_add
+                    item.stack_size -= amount_to_add
+                    
+                    # If we've used all of the new item, we're done
+                    if item.stack_size == 0:
+                        return
+                    
+        # If we get here, either:
+        # 1. No existing stack was found
+        # 2. We still have items left after filling existing stacks
+        if item.stack_size > 0:
+            self.inventory.append(item)
         
     def remove_item(self, item, amount=1):
         """Remove an item from inventory, handling stacks properly"""

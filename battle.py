@@ -308,24 +308,167 @@ class Battle:
         
     
     def loot_drop(self, enemy_tier):
-        #Handles loot drops after defeating an enemy.
-        if random.random() < 0.3:  # 30% chance of loot drop
-            loot_pool = [item for item in self.items.values() if item.tier in self.get_loot_tiers(enemy_tier)]
+        """Enhanced loot drop system with stack handling"""
+        # Base 30% chance for loot
+        if random.random() < 0.3:
+            drops = self.generate_loot(enemy_tier)
+            if drops:
+                self.display_loot(drops)
+                self.add_loot_to_player(drops)
+                
+    def generate_loot(self, enemy_tier):
+        """Generate loot based on enemy tier with stack handling"""
+        drops = []
+        loot_tiers = self.get_loot_tiers(enemy_tier)
+        
+        # Get valid items for the loot pool
+        loot_pool = [item for item in self.items.values() if item.tier in loot_tiers]
+        
+        if not loot_pool:
+            return drops
+        
+        # Determine number of items to drop
+        num_drops = 1
+        # 10% chance for additional drop
+        while random.random() < 0.1 and num_drops < 3:
+            num_drops += 1
+            
+        for _ in range(num_drops):
             item = random.choice(loot_pool)
-            self.player.inventory.append(item)
-            print(f"You found a {item.name}!")
+            
+            # Handle stackable items
+            if item.is_stackable():
+                # Caluclate stack size based on tier
+                base_stack = {
+                    "common": (1, 3),
+                    "uncommon": (1, 2),
+                    "rare": (1, 2),
+                    "epic": 1,
+                    "masterwork": 1,
+                    "legendary": 1,
+                    "mythical": 1
+                }
+                
+                # Get stack range for item tier
+                stack_range = base_stack.get(item.tier, (1, 1))
+                
+                # Calculate stack size
+                if isinstance(stack_range, tuple):
+                    stack_size = random.randint(*stack_range)
+                else:
+                    stack_size = stack_range
+                    
+                # Create new item with stack size
+                new_item = type(item)(
+                    item.name, item.type, item.value, item.tier,
+                    effect_type=item.effect_type, effect=item.effect,
+                    cooldown=item.cooldown, duration=item.duration,
+                    tick_effect=item.tick_effect,
+                    weapon_type=item.weapon_type,
+                    stamina_restore=item.stamina_restore
+                )
+                new_item.stack_size = stack_size
+                drops.append(new_item)
+            else:
+                drops.append(item)
+                
+        return drops
+    
+    def display_loot(self, drops):
+        """Display dropped loot with stack information"""
+        print("\nLoot dropped:")
+        
+        # Group items by name for cleaner display
+        grouped_drops = {}
+        for item in drops:
+            if item.name in grouped_drops:
+                if item.is_stackable():
+                    grouped_drops[item.name]['quantity'] += item.stack_size
+                else:
+                    grouped_drops[item.name]['quantity'] += 1
+            else:
+                grouped_drops[item.name] = {
+                    'item': item,
+                    'quantity': item.stack_size if item.is_stackable() else 1
+                }
+        
+        # Display grouped items
+        for name, info, in grouped_drops.items():
+            item = info['item']
+            quantity = info['quantity']
+            
+            # Format the display string
+            quantity_str = f" x{quantity}" if quantity > 1 else ""
+            tier_str = f"[{item.tier.capitalize()}]"
+            value_str = f"({item.value} gold each)" if quantity > 1 else f"({item.value} gold)"
+            
+            print(f"- {name}{quantity_str} {tier_str} {value_str}")
+            
+            # Show additional info for equipment
+            if item.type in ["weapon", "shield", "helm", "chest", "boots", "gloves", "back", "legs", "belt", "ring"]:
+                stats = []
+                if item.attack > 0:
+                    stats.append(f"Attack: {item.attack}")
+                if hasattr(item, 'armour_penetration') and item.armour_penetration > 0:
+                    stats.append(f"AP: {item.armour_penetration}")
+                if hasattr(item, 'accuracy') and item.accuracy > 0:
+                    stats.append(f"Accuracy: {item.accuracy}")
+                if item.defence > 0:
+                    stats.append(f"Defence: {item.defence}")
+                if hasattr(item, 'block_chance') and item.block_chance > 0:
+                    stats.append(f"BC: {item.block_chance}")
+                if hasattr(item, 'damage_reduction') and item.damage_reduction > 0:
+                    stats.append(f"DR: {item.damage_reduction}")
+                if hasattr(item, 'evasion') and item.evasion > 0:
+                    stats.append(f"Evasion: {item.evasion}")
+                if hasattr(item, 'crit_chance') and item.crit_chance > 0:
+                    stats.append(f"Crit: {item.crit_chance}%")
+                if hasattr(item, 'crit_damage') and item.crit_damage > 0:
+                    stats.append(f"Crit Damage: {item.crit_damage}")
+                if stats:
+                    print(f"  {', '.join(stats)}")
+                    
+            # Show effect for consumables
+            elif item.type in ["consumable", "food", "drink", "weapon coating"]:
+                effect_desc = self.player.get_effect_description(item)
+                if effect_desc:
+                    print(f"  Effect: {effect_desc}")
 
+    def add_loot_to_player(self, drops):
+        """Add dropped items to player inventory with stack handling"""
+        for item in drops:
+            self.player.add_item(item)
+    
     def get_loot_tiers(self, enemy_tier):
-        #Returns the appropriate loot tiers based on the enemy tier.
-        tiers = {
+        """Determine eligible loot tiers based on enemy tier"""
+        basic_tiers = {
             "low": ["common"],
             "medium": ["uncommon"],
             "medium-hard": ["uncommon", "rare"],
-            "hard": ["rare, epic"],
-            "very-hard": ["epic, masterwork"],
-            "extreme": ["masterwork, legendary"],
+            "hard": ["rare", "epic"],
+            "very-hard": ["epic", "masterwork"],
+            "extreme": ["masterwork", "legendary"],
+            "boss": ["legendary", "mythical"]
         }
-        return tiers.get(enemy_tier, ["mythical"])
+        
+        # Add chance for better loot
+        tiers = basic_tiers.get(enemy_tier, ["common"])
+        
+        # 5% chance for next tier up
+        if random.random() < 0.05:
+            next_tier_map = {
+                "common": "uncommon",
+                "uncommon": "rare",
+                "rare": "epic",
+                "epic": "masterwork",
+                "masterwork": "legendary",
+                "legendary": "mythical"
+            }
+            
+            if tiers[0] in next_tier_map:
+                tiers.append(next_tier_map[tiers[0]])
+                
+        return tiers
     
     def run_away(self, enemy):
         #Gives the player a 50% chance to run away from the enemy, if they fail, the enemy attacks, damage is set based on difference between enemy attack and player defence * 2
