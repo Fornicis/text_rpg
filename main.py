@@ -7,6 +7,7 @@ from shop import Armourer, Alchemist, Inn
 from battle import Battle
 from world_map import WorldMap
 from save_system import save_game, load_game, get_save_files
+from random_events import *
 
 class Game:
     def __init__(self):
@@ -20,6 +21,7 @@ class Game:
         self.alchemist = Alchemist(self.items)
         self.inn = Inn(self.items)
         self.battle = None
+        self.random_events = RandomEventSystem()
         
         #Stocks the shops initially
         self.armourer.stock_shop()
@@ -117,6 +119,7 @@ class Game:
             if action == 'e':
                 clear_screen()
                 self.encounter()
+                input("\nPress enter to continue...")
             elif action == 'u':
                 clear_screen()
                 self.use_item_menu()
@@ -130,7 +133,11 @@ class Game:
                 print("Invalid action. Try again.")
 
     def encounter(self):
-        #Handles enemy encounters during exploration.
+        # Check to see if random event triggers
+        if self.random_events.trigger_random_event(self.player, self):
+            return
+        
+        # Handles enemy encounters during exploration.
         possible_enemies = self.world_map.get_enemies(self.current_location)
         if possible_enemies and random.random() < 0.7:
             enemy_type = random.choice(possible_enemies)
