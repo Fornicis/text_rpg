@@ -286,7 +286,7 @@ class Player(Character):
         self.base_block_chance = 5
         self.level_modifiers = {"attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, "damage_reduction": 0, "block_chance": 0}
         self.equipment_modifiers = {"attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, "damage_reduction": 0, "block_chance": 0}
-        self.buff_modifiers = {"attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, "damage_reduction": 0, "block_chance": 0}
+        self.buff_modifiers = {"temp_max_hp": 0, "temp_max_stamina": 0, "attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, "damage_reduction": 0, "block_chance": 0}
         self.combat_buff_modifiers = {"attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, "damage_reduction": 0, "block_chance": 0}
         self.debuff_modifiers = {"attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, "damage_reduction": 0, "block_chance": 0}
         self.weapon_buff_modifiers = {"attack": 0, "accuracy": 0, "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, "block_chance": 0}
@@ -764,7 +764,7 @@ class Player(Character):
 
         # Update regular buffs
         for stat, buff_info in list(self.active_buffs.items()):
-            if isinstance(buff_info, dict) and 'duration' in buff_info:
+            if isinstance(buff_info, dict) and 'duration' in buff_info and stat in all_stats:
                 buff_info['duration'] -= 1
                 
                 if buff_info['duration'] <= 0:
@@ -782,6 +782,21 @@ class Player(Character):
                     display_stat = stat.replace('_', ' ').title()
                     print(f"Your {display_stat} buff has worn off.")
 
+        # Handle temporary max increases
+        for stat in ["temp_max_hp", "temp_max_stamina"]:
+            if stat in self.active_buffs:
+                buff_info = self.active_buffs[stat]
+                buff_info['duration'] -= 1
+                
+                if buff_info['duration'] <= 0:
+                    # Remove the temporary boost
+                    buff_info['remove_func']()
+                    del self.active_buffs[stat]
+                    
+                    # Format the stat name for display
+                    display_stat = "HP" if stat == "temp_max_hp" else "Stamina"
+                    print(f"Your temporary maximum {display_stat} increase has worn off.")
+        
         # Update weapon buff
         if self.weapon_buff['duration'] > 0:
             self.weapon_buff['duration'] -= 1
