@@ -53,7 +53,7 @@ class RandomEventSystem:
         
         # Beneficial events
         
-        events.append(RandomEvent(
+        """events.append(RandomEvent(
             "Hidden Cache",
             "You notice something glinting behind some rocks...",
             EventType.BENEFICIAL,
@@ -143,9 +143,35 @@ class RandomEventSystem:
             {"min_level": 1}
         ))
         
-        # Dangerous events
+        events.append(RandomEvent(
+            "Weather-worn Statue",
+            "An old statue weathered by time and the elements, you see some writing at the base...",
+            EventType.NEUTRAL,
+            [
+                ("Clean the statue, this will take some effort! (Uses 20% stamina)", self._outcome_statue_clean),
+                ("Read inscription", self._outcome_statue_read),
+                ("Search the area", self._outcome_statue_search),
+                ("Carry on your way", self._outcome_ignore)
+            ],
+            {"min_level": 1}
+        ))"""
         
         events.append(RandomEvent(
+            "Echo Chamber",
+            "You enter a strange space where even your smallest sounds carry strangely. The acoustics seem almost magical...",
+            EventType.NEUTRAL,
+            [
+                ("Call out!", self._outcome_echo_call),
+                ("Listen carefully", self._outcome_echo_listen),
+                ("Throw a stone", self._outcome_echo_stone),
+                ("Pass by quietly", self._outcome_echo_quiet)
+            ],
+            {"location_type": ["Cave", "Temple", "Ruins", "Ancient Ruins", "Death Caves"]}
+        ))
+        
+        # Dangerous events
+        
+        """events.append(RandomEvent(
             "Unstable Ground",
             "The ground beneath your feet feels unnaturally soft...",
             EventType.DANGEROUS,
@@ -169,14 +195,14 @@ class RandomEventSystem:
                 ("Something seems off, leave them alone", self._outcome_ignore)
             ],
             {"location_type": ["Forest", "Swamp", "Cave", "Deepwoods", "Toxic Swamp", "Valley", "Ruins", "Death Caves", "Death Valley", "Ancient Ruins"]}
-        ))
+        ))"""
         
         return events
 
     def trigger_random_event(self, player, game):
         """Attempt to trigger an event"""
         # 15% chance for a random event
-        if random.random() < 0.15:
+        if random.random() < 1.0:
             # Filter eligible events
             eligible_events = [
                 event for event in self.events
@@ -220,7 +246,7 @@ class RandomEventSystem:
         outcomes = [
             (0.4, lambda: self._give_random_consumable(player, game, player.level)),
             (0.3, lambda: self._give_gold(player, 20, 50)),
-            (0.2, lambda: self._give_tier_equipment(player, game)),
+            (0.2, lambda: self._give_tier_equipment(player, game, player.level)),
             (0.1, lambda: print("Unfortunately, you find nothing of value."))
         ]
         self._resolve_weighted_outcome(outcomes, player)
@@ -228,7 +254,7 @@ class RandomEventSystem:
     def _outcome_hidden_cache_quick(self, player, game):
         """Quickly grab from the hidden cache"""
         outcomes = [
-            (0.3, lambda: self._give_tier_equipment(player, game)),
+            (0.3, lambda: self._give_tier_equipment(player, game, player.level)),
             (0.3, lambda: self._give_gold(player, 50, 100)),
             (0.4, lambda: self._take_damage(player, 5, 15, "You trigger a nasty trap!"))
         ]
@@ -254,10 +280,10 @@ class RandomEventSystem:
             return
         
         outcomes = [
-            (0.3, lambda: self._give_multiple_consumables(player, game, 2)),
+            (0.4, lambda: self._give_multiple_consumables(player, game, 2)),
             (0.3, lambda: self._give_tier_equipment(player, game, player.level)),
             (0.2, lambda: self._give_gold(player, trade_cost * 2, trade_cost * 3)),
-            (0.2, lambda: self._give_special_item(player, game))
+            (0.1, lambda: self._give_special_item(player, game, "The merchant is impressed by your task and gives you a special item!"))
         ]
         
         player.gold -= trade_cost
@@ -451,7 +477,7 @@ class RandomEventSystem:
         outcomes = [
             (0.5, lambda: self._take_damage(player, 30, "The god whose shrine this is smites you for your unholy act!")),
             (0.3, lambda: self._give_gold(player, 50, 100, "You find some of the gold other adventurers have left and steal it!")),
-            (0.1, lambda: self._give_tier_equipment(player, game)),
+            (0.1, lambda: self._give_tier_equipment(player, game, player.level)),
             (0.1, lambda: print("Nothing happens, but you do feel guilty."))
         ]
         self._resolve_weighted_outcome(outcomes, player)
@@ -470,6 +496,143 @@ class RandomEventSystem:
         """Ask the adventurer for information"""
         player.add_visited_location(random.choice(game.world_map.get_all_locations()))
         print("The adventurer marks an interesting location on your map!")
+    
+    def _outcome_statue_clean(self, player, game):
+        """Clean the old weathered statue"""
+        stamina_cost = player.max_stamina // 5
+        if player.stamina < stamina_cost:
+            print("You don't have the energy for this!")
+            return
+        else:
+            player.stamina -= stamina_cost
+            outcomes = [
+                (0.5, lambda: self._give_random_buff(player)),
+                (0.3, lambda: self._give_gold(player, 30, 60, "While cleaning the status you notice some coins in the crook of its arm.")),
+                (0.2, lambda: self._give_tier_equipment(player, game, player.level))
+            ]
+            self._resolve_weighted_outcome(outcomes, player)
+        
+    def _outcome_statue_read(self, player, game):
+        """Read the inscription on the statue"""
+        if random.random() < 0.7:
+            exp_gain = random.randint(15, 30) * player.level
+            player.gain_exp(exp_gain, player.level)
+            print(f"The inscription contains some words of wisdom. Gain {exp_gain} experience!")
+        else:
+            exp_gain = random.randint(30, 60) * player.level
+            player.gain_exp(exp_gain, player.level)
+            print(f"The inscription seems to draw you in, you feel like you hear the statue whispering to you! Gain {exp_gain} experience!")
+            
+    def _outcome_statue_search(self, player, game):
+        """Search the statue for loot"""
+        outcomes = [
+            (0.7, lambda: self._take_damage(player, 10, 20, "The spirit of the statue doesn't take kindly to you looting it!")),
+            (0.2, lambda: self._give_tier_equipment(player, game, player.level)),
+            (0.1, lambda: self._give_special_item(player, game, "The spirit of this statue approves of your gall! It provides an impressive piece of equipment!"))
+        ]
+        self._resolve_weighted_outcome(outcomes, player)
+        
+    def _outcome_echo_call(self, player, game):
+        """Call out into the echo chamber"""
+        outcomes = [
+            (0.4, lambda: self._echo_friendly_buff(player)),
+            (0.3, lambda: self._give_random_consumable(player, game, player.level)),
+            (0.15, lambda: print("Your voice echoes away unanswered!")),
+            (0.15, lambda: self._hostile_response(player, game))
+        ]
+        self._resolve_weighted_outcome(outcomes, player)
+            
+    def _echo_friendly_buff(self, player):
+        """Apply random combat buff from friendly echo"""
+        buff_choices = [
+            ("attack", 10),
+            ("defence", 10),
+            ("accuracy", 20)
+        ]
+        stat, value = random.choice(buff_choices)
+        duration = random.randint(5, 10)
+        player.apply_buff(stat, value, duration, combat_only=False)
+        print("Your voice returns with an empowering presence")
+            
+    def _outcome_echo_listen(self, player, game):
+        """Listen carefully to the echoes"""
+        if player.stamina < 20:
+            print("You're too tired to focus on the echoes.")
+            return
+
+        player.stamina -= 20  # Cost to listen carefully
+        
+        exp_gain = random.randint(15, 25) * player.level
+        
+        outcomes = [
+            (0.4, lambda: self._echo_danger_buff(player)),
+            (0.3, lambda: self._give_tier_equipment(player, game, player.level)),
+            (0.2, lambda: player.gain_exp(exp_gain, player.level)),
+            (0.1, lambda: self._echo_disorient(player))
+        ]
+        self._resolve_weighted_outcome(outcomes, player)
+        
+    def _echo_danger_buff(self, player):
+        """Apply defensive buffs from hearing danger"""
+        buff_choices = [
+            ("evasion", 10),
+            ("defence", 15),
+            ("block_chance", 10)
+        ]
+        stat, value = random.choice(buff_choices)
+        duration = random.randint(5, 10)
+        player.apply_buff(stat, value, duration, combat_only=False)
+        print("You hear distant dangers and prepare accordingly!")
+        
+    def _echo_disorient(self, player):
+        """Apply a temporary accuracy debuff"""
+        player.apply_debuff("accuracy", 10)
+        print("The confusing echoes disorient you!")
+        
+    def _outcome_echo_stone(self, player, game):
+        """Throwing stones can be dangerous"""
+        damage = random.randint(5, 15)
+        
+        outcomes = [
+            (0.35, lambda: self._echo_safe_path(player)),
+            (0.25, lambda: self._give_random_consumable(player, game, player.level)),
+            (0.25, lambda: self._echo_mechanism(player)),
+            (0.15, lambda: self._echo_stone_return(player))
+        ]
+        self._resolve_weighted_outcome(outcomes, player)
+    
+    def _echo_safe_path(self, player):
+        """Find safe path and restore some stamina"""
+        stamina_restore = player.max_stamina // 4
+        player.restore_stamina(stamina_restore)
+        print(f"The echoes reveal a safe path forward! Restored {stamina_restore} stamina.")
+        
+    def _echo_mechanism(self, player):
+        """Trigger a random mechanism effect"""
+        if random.random() < 0.5:
+            damage = random.randint(5, 15)
+            player.take_damage(damage)
+            print(f"Your stone triggers a trap! You take {damage} damage!")
+        else:
+            heal_amount = player.max_hp // 4
+            player.heal(heal_amount)
+            print(f"Your stone triggers an ancient blessing! Restored {heal_amount} HP!")
+            
+    def _echo_stone_return(self, player):
+        damage = random.randint(5, 15)
+        player.take_damage(damage)
+        print(f"Your stone returns unexpectedly! You take {damage} damage!")
+            
+    def _outcome_echo_quiet(self, player, game):
+        """Sneak past the chamber like a mouse"""
+        outcomes = [
+            (0.6, lambda: print("You pass through safely and quietly.")),
+            (0.3, lambda: self._give_gold(player, 10, 30)),
+            (0.1, lambda: self._permanent_stat_increase_specific(player, "accuracy", 1))
+        ]
+        self._resolve_weighted_outcome(outcomes, player)
+            
+    # Dangerous Events
         
     def _outcome_unstable_careful(self, player, game):
         """Carefully handle the unstable ground"""
@@ -516,16 +679,16 @@ class RandomEventSystem:
         if random.random() < 0.8:
             print("You take your time and manage to harvest some useful reagents, this has been tiring work!")
             self._give_random_consumable(player, game, player.level)
-            player.stamina = max(0, player.stamina - 10)
+            player.stamina = max(0, player.stamina - 20)
         else:
             self._take_damage(player, 5, 10, "Despite your best efforts you disturb some spores and inhale them...")
             
     def _outcome_mushroom_eat(self, player, game):
         """Eat a mysterious mushroom...weirdo"""
         outcomes = [
-            (0.3, lambda: self._heal_player(player, 0.5)),
-            (0.3, lambda: self._restore_stamina(player, 0.5)),
-            (0.4, lambda: self._take_damage(player, 10, 20, "That was probably not a smart idea..."))
+            (0.2, lambda: self._heal_player(player, 0.5)),
+            (0.2, lambda: self._restore_stamina(player, 0.5)),
+            (0.6, lambda: self._take_damage(player, 10, 20, "That was probably not a smart idea..."))
         ]
         self._resolve_weighted_outcome(outcomes, player)
         
@@ -572,7 +735,7 @@ class RandomEventSystem:
             player.add_item(item)
             print(f"You gained a {item.name}")
     
-    def _give_special_item(self, player, game):
+    def _give_special_item(self, player, game, *args):
         """Gives a special rare item"""
         special_items = [item for item in game.items.values()
                          if item.tier in ["masterwork", "legendary"]]
@@ -580,7 +743,8 @@ class RandomEventSystem:
         if special_items:
             item = random.choice(special_items)
             player.add_item(item)
-            print(f"The merchant gives you something special: {item.name}!")
+            print(*args)
+            print(f"You receive something special: {item.name}!")
             
     def _give_merchant_favour(self, player):
         """Give gold and exp for helping merchant"""
@@ -590,10 +754,11 @@ class RandomEventSystem:
         player.gain_exp(exp, player.level)
         print(f"The merchant rewards you with {gold} gold and valuable knowledge! (No lamborghini though)")
             
-    def _give_gold(self, player, min_amount, max_amount):
+    def _give_gold(self, player, min_amount, max_amount, *args):
         """Give player some gold"""
         amount = random.randint(min_amount, max_amount)
         player.gold += amount
+        print(*args)
         print(f"You found {amount} gold!")
         
     def _heal_player(self, player, percentage):
@@ -622,6 +787,15 @@ class RandomEventSystem:
         player.take_damage(damage)
         print(f"{message} You take {damage} damage!")
         
+    def _hostile_response(self, player, game):
+        """Trigger an immediate hostile encounter"""
+        print("\nYou feel you've made a mistake... Something approaches!")
+        # Force an encounter by setting random chance to 1
+        old_random = random.random
+        random.random = lambda: 0.5 # Ensures the encounter trigger succeeds
+        game.encounter() # Handles enemy selection and battle
+        random.random = old_random # Restore normal behaviour
+    
     def _give_random_buff(self, player):
         """Gives player a random temporary buff"""
         buff_types = [
@@ -736,6 +910,11 @@ class RandomEventSystem:
         stat, amount = random.choice(stat_choices)
         setattr(player, stat, getattr(player, stat) + amount)
         print(f"You feel permanently strengthened! {stat.replace('_', ' ').title()} increased by {amount}!")
+    
+    def _permanent_stat_increase_specific(self, player, stat, value):
+        """Give a small increase to chosen stat"""
+        setattr(player, stat, getattr(player, stat) + value)
+        print(f"You feel permanently strengthened! {stat.title()} increased by {value}!")
         
     def _is_appropriate_tier(self, item, level):
         """Check if item tier is appropriate for level"""
