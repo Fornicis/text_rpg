@@ -202,7 +202,7 @@ class RandomEventSystem:
     def trigger_random_event(self, player, game):
         """Attempt to trigger an event"""
         # 15% chance for a random event
-        if random.random() < 1.0:
+        if random.random() < 0.15:
             # Filter eligible events
             eligible_events = [
                 event for event in self.events
@@ -601,24 +601,17 @@ class RandomEventSystem:
         def mechanism():
             """Trigger a random mechanism effect"""
             if random.random() < 0.5:
-                damage = random.randint(5, 15)
-                player.take_damage(damage)
-                print(f"Your stone triggers a trap! You take {damage} damage!")
+                self._take_damage(player, 5, 15, "Your stone triggers a trap!")
             else:
                 heal_amount = player.max_hp // 4
                 player.heal(heal_amount)
                 print(f"Your stone triggers an ancient blessing! Restores {heal_amount} HP!")
-        
-        def stone_return():
-            damage = random.randint(5, 15)
-            player.take_damage(damage)
-            print(f"Your stone returns unexpectedly! You take {damage} damage!")
-        
+
         outcomes = [
-            (0.35, lambda: safe_path()),
-            (0.25, lambda: self._give_random_consumable(player, game, player.level)),
-            (0.25, lambda: mechanism()),
-            (0.15, lambda: stone_return())
+            (0.0, lambda: safe_path()),
+            (0.0, lambda: self._give_random_consumable(player, game, player.level)),
+            (1.0, lambda: mechanism()),
+            (0.0, lambda: self._take_damage(player, 5, 15, "Your stone returns unexpectedly!"))
         ]
         self._resolve_weighted_outcome(outcomes, player)
             
