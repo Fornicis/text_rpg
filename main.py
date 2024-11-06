@@ -435,7 +435,7 @@ class Game:
                 self.inn.inn_menu(self.player)
             elif action == "v":
                 #Opens the world map for the player
-                self.world_map.display_map(self.current_location, self.player.level)
+                self.world_map.display_map(self.current_location, self.player.level, self.player)
             elif action == "k":
                 self.player.display_kill_stats()
                 pause()

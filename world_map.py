@@ -1,4 +1,5 @@
 import os
+from player import *
 
 class WorldMap:
     def __init__(self):
@@ -56,7 +57,7 @@ class WorldMap:
         #Returns minimum level required to enter area
         return self._game_map[location]["min_level"]
     
-    def display_map(self, current_location, player_level):
+    def display_map(self, current_location, player_level, player):
         #Displays an ASCII representation of the world map, highlighting the current location
         #and showing available paths based on the player's level.
         os.system('cls' if os.name == 'nt' else 'clear')
@@ -65,16 +66,16 @@ class WorldMap:
         map_art = """
                                                [HEAVENS]
                                                   |
-    [ANCIENT]------[DEATH_V]---------[VOLCANIC]------[DRAGONS]-----[DEATH_C]
+    [ANCIENT]-----[DEATH_V]--------[VOLCANIC]-----[DRAGONS]----[DEATH_C]
           |                |                      |                   |                |
           |                |                      |                   |                |            
         [RUINS]        [SCORCHING]       [SHADOWED]     [MOUNTAIN_P]    [TOXIC]
           |                |                      |                   |                |
           |                |                      |                   |                |
-        [TEMPLE]----------[DESERT]-----------------[VALLEY]-------------[MOUNTAIN]-----------[SWAMP]
+        [TEMPLE]---------[DESERT]----------------[VALLEY]------------[MOUNTAIN]-----------[SWAMP]
           |                |                                          |                |
           |                |                                          |                |
-        [CAVE]------------[PLAINS]----------------[VILLAGE]------------[FOREST]----------[DEEPWOODS]
+        [CAVE]-----------[PLAINS]---------------[VILLAGE]-----------[FOREST]---------[DEEPWOODS]
         """
         
         # Define a dictionary to map markers to actual location names
@@ -106,6 +107,8 @@ class WorldMap:
         for marker, location in location_markers.items():
             if location == current_location:
                 map_art = map_art.replace(marker, f"*{location}*")
+            elif location in player.visited_locations:
+                map_art = map_art.replace(marker, f"!{location}")
             else:
                 map_art = map_art.replace(marker, location)
         
@@ -116,6 +119,7 @@ class WorldMap:
         
         print("\nLegend:")
         print("* Your current location *")
+        print("! Known location (Can teleport too)")
         print("------ Direct connection")
         print()
         

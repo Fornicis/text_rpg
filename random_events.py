@@ -53,7 +53,7 @@ class RandomEventSystem:
         
         # Beneficial events
         
-        """events.append(RandomEvent(
+        events.append(RandomEvent(
             "Hidden Cache",
             "You notice something glinting behind some rocks...",
             EventType.BENEFICIAL,
@@ -154,7 +154,7 @@ class RandomEventSystem:
                 ("Carry on your way", self._outcome_ignore)
             ],
             {"min_level": 1}
-        ))"""
+        ))
         
         events.append(RandomEvent(
             "Echo Chamber",
@@ -169,9 +169,22 @@ class RandomEventSystem:
             {"location_type": ["Cave", "Temple", "Ruins", "Ancient Ruins", "Death Caves"]}
         ))
         
+        events.append(RandomEvent(
+            "Abandoned Caravan",
+            "You discover a merchant's caravan, seemingly abandoned in haste...",
+            EventType.NEUTRAL,
+            [
+                ("Search thoroughly (Takes time, 25% stamina)", self._outcome_caravan_search),
+                ("Quickly grab what you can see", self._outcome_caravan_quick),
+                ("Look for survivors", self._outcome_caravan_survivors),
+                ("Leave it be", self._outcome_ignore)
+            ],
+            {"min_level": 5, "location_type": ["Desert", "Plains", "Mountain", "Valley", "Death Valley", "Shadowed Valley", "Scorching Plains"]}
+        ))
+        
         # Dangerous events
         
-        """events.append(RandomEvent(
+        events.append(RandomEvent(
             "Unstable Ground",
             "The ground beneath your feet feels unnaturally soft...",
             EventType.DANGEROUS,
@@ -195,7 +208,7 @@ class RandomEventSystem:
                 ("Something seems off, leave them alone", self._outcome_ignore)
             ],
             {"location_type": ["Forest", "Swamp", "Cave", "Deepwoods", "Toxic Swamp", "Valley", "Ruins", "Death Caves", "Death Valley", "Ancient Ruins"]}
-        ))"""
+        ))
         
         return events
 
@@ -494,7 +507,7 @@ class RandomEventSystem:
             
     def _outcome_ask_adventurer(self, player, game):
         """Ask the adventurer for information"""
-        player.add_visited_location(random.choice(game.world_map.get_all_locations()))
+        self._discover_location(player, game, 1)
         print("The adventurer marks an interesting location on your map!")
     
     def _outcome_statue_clean(self, player, game):
@@ -608,10 +621,10 @@ class RandomEventSystem:
                 print(f"Your stone triggers an ancient blessing! Restores {heal_amount} HP!")
 
         outcomes = [
-            (0.0, lambda: safe_path()),
-            (0.0, lambda: self._give_random_consumable(player, game, player.level)),
-            (1.0, lambda: mechanism()),
-            (0.0, lambda: self._take_damage(player, 5, 15, "Your stone returns unexpectedly!"))
+            (0.6, lambda: safe_path()),
+            (0.2, lambda: self._give_random_consumable(player, game, player.level)),
+            (0.1, lambda: mechanism()),
+            (0.1, lambda: self._take_damage(player, 5, 15, "Your stone returns unexpectedly!"))
         ]
         self._resolve_weighted_outcome(outcomes, player)
             
@@ -623,6 +636,66 @@ class RandomEventSystem:
             (0.1, lambda: self._permanent_stat_increase_specific(player, "accuracy", 1))
         ]
         self._resolve_weighted_outcome(outcomes, player)
+    
+    def _outcome_caravan_search(self, player, game):
+        """Thoroughly search the abandoned caravan"""
+        # Costs stamina for a thorough search
+        stamina_cost = player.max_stamina // 4
+        if player.stamina <= stamina_cost:
+            print("You're too tired to conduct a thorough search")
+            return
+        
+        player.stamina -= stamina_cost
+        
+        def find_valuables():
+            self._give_tier_equipment(player, game, player.level)
+            self._give_gold(player, 25, 50)
+        
+        outcomes = [
+            (0.3, lambda: find_valuables()),
+            (0.3, lambda: self._give_multiple_consumables(player, game, 3)),
+            (0.2, lambda: self._discover_location(player, game, 1)),
+            (0.2, lambda: print("Despite your thorough search, you come up empty handed!"))
+        ]
+        self._resolve_weighted_outcome(outcomes, player)
+        
+    def _outcome_caravan_quick(self, player, game):
+        """Quickly grab visible items from the caravan"""
+        
+        def trigger_trap():
+            self._take_damage(player, 5, 15, "You trigger a hidden trap!")
+        
+        outcomes = [
+            (0.4, lambda: self._give_random_consumable(player, game, player.level)),
+            (0.3, lambda: self._give_gold(player, 20, 50)),
+            (0.3, lambda: trigger_trap())
+        ]
+        self._resolve_weighted_outcome(outcomes, player)
+        
+    def _outcome_caravan_survivors(self, player, game):
+        """Look for survivors around the caravan"""
+        
+        def gain_exp():
+            exp_gain = random.randint(20, 40) * player.level
+            print(f"You help a grateful survivor who shares valuable knowledge!")
+            player.gain_exp(exp_gain, player.level)
+            
+        def find_injured():
+            print("You find a survivor but they're too badly injured, they pass on their items to you to continue their journey!")
+            self._give_tier_equipment(player, game, player.level)
+            self._give_gold(player, 20, 50)
+            
+        def find_clues():
+            print("You find clues as to what caused this.")
+            self._discover_location(player, game, 1)
+        
+        outcomes = [
+            (0.4, lambda: gain_exp()),
+            (0.3, lambda: find_injured()),
+            (0.3, lambda: find_clues())
+        ]
+        self._resolve_weighted_outcome(outcomes, player)
+        
             
     # Dangerous Events
         
@@ -907,6 +980,18 @@ class RandomEventSystem:
         """Give a small increase to chosen stat"""
         setattr(player, stat, getattr(player, stat) + value)
         print(f"You feel permanently strengthened! {stat.title()} increased by {value}!")
+        
+    def _discover_location(self, player, game, number):
+        """Discover a number of unvisited locations"""
+        locations = game.world_map.get_all_locations()
+        undiscovered = [loc for loc in locations if loc not in player.visited_locations]
+        if undiscovered:
+            for _ in range(min(number, len(undiscovered))):
+                loc = random.choice(undiscovered)
+                player.add_visited_location(loc)
+            print("You gain information about a new area of the map (Allows teleportation to location)")
+        else:
+            self._give_gold(player, 50, 100, "You already know of all locations, the Deities provide a monetary gain instead!")
         
     def _is_appropriate_tier(self, item, level):
         """Check if item tier is appropriate for level"""
