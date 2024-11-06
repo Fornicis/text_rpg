@@ -759,7 +759,7 @@ class Player(Character):
         # Define all possible stats that can be buffed
         all_stats = [
             "attack", "defence", "accuracy", "evasion", "crit_chance",
-            "crit_damage", "armour_penetration", "damage_reduction"
+            "crit_damage", "armour_penetration", "damage_reduction", "block_chance"
         ]
 
         # Update regular buffs

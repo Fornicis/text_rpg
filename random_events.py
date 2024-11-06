@@ -534,25 +534,26 @@ class RandomEventSystem:
         
     def _outcome_echo_call(self, player, game):
         """Call out into the echo chamber"""
+        
+        def friendly_buff():
+            """Apply random combat buff from friendly echo"""
+            buff_choices = [
+                ("attack", 10),
+                ("defence", 10),
+                ("accuracy", 20)
+            ]
+            stat, value = random.choice(buff_choices)
+            duration = random.randint(5, 10)
+            player.apply_buff(stat, value, duration, combat_only=False)
+            print("Your voice returns with an empowering presence")
+        
         outcomes = [
-            (0.4, lambda: self._echo_friendly_buff(player)),
-            (0.3, lambda: self._give_random_consumable(player, game, player.level)),
+            (0.3, lambda: friendly_buff()),
+            (0.4, lambda: self._give_random_consumable(player, game, player.level)),
             (0.15, lambda: print("Your voice echoes away unanswered!")),
             (0.15, lambda: self._hostile_response(player, game))
         ]
         self._resolve_weighted_outcome(outcomes, player)
-            
-    def _echo_friendly_buff(self, player):
-        """Apply random combat buff from friendly echo"""
-        buff_choices = [
-            ("attack", 10),
-            ("defence", 10),
-            ("accuracy", 20)
-        ]
-        stat, value = random.choice(buff_choices)
-        duration = random.randint(5, 10)
-        player.apply_buff(stat, value, duration, combat_only=False)
-        print("Your voice returns with an empowering presence")
             
     def _outcome_echo_listen(self, player, game):
         """Listen carefully to the echoes"""
@@ -564,64 +565,62 @@ class RandomEventSystem:
         
         exp_gain = random.randint(15, 25) * player.level
         
+        def danger_buff():
+            """Apply defensive buffs from hearing danger"""
+            buff_choices = [
+                ("evasion", 10),
+                ("defence", 15),
+                ("block_chance", 10)
+            ]
+            stat, value = random.choice(buff_choices)
+            duration = random.randint(5, 10)
+            player.apply_buff(stat, value, duration, combat_only=False)
+            print("You hear distant dangers and prepare accordingly!")
+        
+        def disorient():
+            """Apply a temporary accuracy debuff"""
+            player.apply_debuff("accuracy", 10)
+            print("The confusing echoes disorient you!")
+        
         outcomes = [
-            (0.4, lambda: self._echo_danger_buff(player)),
-            (0.3, lambda: self._give_tier_equipment(player, game, player.level)),
-            (0.2, lambda: player.gain_exp(exp_gain, player.level)),
-            (0.1, lambda: self._echo_disorient(player))
+            (0.3, lambda: danger_buff()),
+            (0.2, lambda: self._give_tier_equipment(player, game, player.level)),
+            (0.4, lambda: player.gain_exp(exp_gain, player.level)),
+            (0.1, lambda: disorient())
         ]
         self._resolve_weighted_outcome(outcomes, player)
-        
-    def _echo_danger_buff(self, player):
-        """Apply defensive buffs from hearing danger"""
-        buff_choices = [
-            ("evasion", 10),
-            ("defence", 15),
-            ("block_chance", 10)
-        ]
-        stat, value = random.choice(buff_choices)
-        duration = random.randint(5, 10)
-        player.apply_buff(stat, value, duration, combat_only=False)
-        print("You hear distant dangers and prepare accordingly!")
-        
-    def _echo_disorient(self, player):
-        """Apply a temporary accuracy debuff"""
-        player.apply_debuff("accuracy", 10)
-        print("The confusing echoes disorient you!")
         
     def _outcome_echo_stone(self, player, game):
         """Throwing stones can be dangerous"""
-        damage = random.randint(5, 15)
+        def safe_path():
+            """Find safe path and restore some stamina"""
+            stamina_restore = player.max_stamina // 4
+            player.restore_stamina(stamina_restore)
+            print(f"The echoes reveal a safe path forward! Restores {stamina_restore} stamina.")
         
-        outcomes = [
-            (0.35, lambda: self._echo_safe_path(player)),
-            (0.25, lambda: self._give_random_consumable(player, game, player.level)),
-            (0.25, lambda: self._echo_mechanism(player)),
-            (0.15, lambda: self._echo_stone_return(player))
-        ]
-        self._resolve_weighted_outcome(outcomes, player)
-    
-    def _echo_safe_path(self, player):
-        """Find safe path and restore some stamina"""
-        stamina_restore = player.max_stamina // 4
-        player.restore_stamina(stamina_restore)
-        print(f"The echoes reveal a safe path forward! Restored {stamina_restore} stamina.")
+        def mechanism():
+            """Trigger a random mechanism effect"""
+            if random.random() < 0.5:
+                damage = random.randint(5, 15)
+                player.take_damage(damage)
+                print(f"Your stone triggers a trap! You take {damage} damage!")
+            else:
+                heal_amount = player.max_hp // 4
+                player.heal(heal_amount)
+                print(f"Your stone triggers an ancient blessing! Restores {heal_amount} HP!")
         
-    def _echo_mechanism(self, player):
-        """Trigger a random mechanism effect"""
-        if random.random() < 0.5:
+        def stone_return():
             damage = random.randint(5, 15)
             player.take_damage(damage)
-            print(f"Your stone triggers a trap! You take {damage} damage!")
-        else:
-            heal_amount = player.max_hp // 4
-            player.heal(heal_amount)
-            print(f"Your stone triggers an ancient blessing! Restored {heal_amount} HP!")
-            
-    def _echo_stone_return(self, player):
-        damage = random.randint(5, 15)
-        player.take_damage(damage)
-        print(f"Your stone returns unexpectedly! You take {damage} damage!")
+            print(f"Your stone returns unexpectedly! You take {damage} damage!")
+        
+        outcomes = [
+            (0.35, lambda: safe_path()),
+            (0.25, lambda: self._give_random_consumable(player, game, player.level)),
+            (0.25, lambda: mechanism()),
+            (0.15, lambda: stone_return())
+        ]
+        self._resolve_weighted_outcome(outcomes, player)
             
     def _outcome_echo_quiet(self, player, game):
         """Sneak past the chamber like a mouse"""
