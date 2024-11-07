@@ -53,7 +53,7 @@ class RandomEventSystem:
         
         # Beneficial events
         
-        events.append(RandomEvent(
+        """events.append(RandomEvent(
             "Hidden Cache",
             "You notice something glinting behind some rocks...",
             EventType.BENEFICIAL,
@@ -180,11 +180,26 @@ class RandomEventSystem:
                 ("Leave it be", self._outcome_ignore)
             ],
             {"min_level": 5, "location_type": ["Desert", "Plains", "Mountain", "Valley", "Death Valley", "Shadowed Valley", "Scorching Plains"]}
+        ))"""
+        
+        events.append(RandomEvent(
+            "Ancient Ritual Site",
+            "You stumble upon a circle of standing stones humming with residual magic...",
+            EventType.NEUTRAL,
+            [
+                ("Attempt to channel the energy", self._outcome_ritual_channel),
+                ("Study the runes (Takes time, costs 33% stamina)", self._outcome_ritual_study),
+                ("Perform a cleansing ritual (Costs 25 gold)", self._outcome_ritual_cleanse),
+                ("Leave the site undisturbed", self._outcome_ignore)
+            ],
+            {
+                "min level": 3, "location_type": ["Cave", "Ruins", "Temple", "Ancient Ruins", "Death Caves", "Heavens"]
+             }
         ))
         
         # Dangerous events
         
-        events.append(RandomEvent(
+        """events.append(RandomEvent(
             "Unstable Ground",
             "The ground beneath your feet feels unnaturally soft...",
             EventType.DANGEROUS,
@@ -208,14 +223,14 @@ class RandomEventSystem:
                 ("Something seems off, leave them alone", self._outcome_ignore)
             ],
             {"location_type": ["Forest", "Swamp", "Cave", "Deepwoods", "Toxic Swamp", "Valley", "Ruins", "Death Caves", "Death Valley", "Ancient Ruins"]}
-        ))
+        ))"""
         
         return events
 
     def trigger_random_event(self, player, game):
         """Attempt to trigger an event"""
         # 15% chance for a random event
-        if random.random() < 0.15:
+        if random.random() < 1.0:
             # Filter eligible events
             eligible_events = [
                 event for event in self.events
@@ -418,7 +433,7 @@ class RandomEventSystem:
         """Drink from the magical spring"""
         outcomes = [
             (0.3, lambda: self._full_heal_player(player)),
-            (0.3, lambda: self._give_major_buff(player)),
+            (0.3, lambda: self._give_major_buff(player, 15, 30, 20, 40)),
             (0.2, lambda: self._permanent_stat_increase(player)),
             (0.2, lambda: self._temporary_max_increase(player))
         ]
@@ -661,25 +676,15 @@ class RandomEventSystem:
         
     def _outcome_caravan_quick(self, player, game):
         """Quickly grab visible items from the caravan"""
-        
-        def trigger_trap():
-            self._take_damage(player, 5, 15, "You trigger a hidden trap!")
-        
         outcomes = [
-            (0.4, lambda: self._give_random_consumable(player, game, player.level)),
+            (0.3, lambda: self._give_random_consumable(player, game, player.level)),
             (0.3, lambda: self._give_gold(player, 20, 50)),
-            (0.3, lambda: trigger_trap())
+            (0.4, lambda: self._take_damage(player, 5, 15, "You trigger a hidden trap!"))
         ]
         self._resolve_weighted_outcome(outcomes, player)
         
     def _outcome_caravan_survivors(self, player, game):
-        """Look for survivors around the caravan"""
-        
-        def gain_exp():
-            exp_gain = random.randint(20, 40) * player.level
-            print(f"You help a grateful survivor who shares valuable knowledge!")
-            player.gain_exp(exp_gain, player.level)
-            
+        """Look for survivors around the caravan"""    
         def find_injured():
             print("You find a survivor but they're too badly injured, they pass on their items to you to continue their journey!")
             self._give_tier_equipment(player, game, player.level)
@@ -690,12 +695,50 @@ class RandomEventSystem:
             self._discover_location(player, game, 1)
         
         outcomes = [
-            (0.4, lambda: gain_exp()),
+            (0.4, lambda: self._gain_exp(player, 20, 40, "You help a grateful survivor who shares valuable knowledge!")),
             (0.3, lambda: find_injured()),
             (0.3, lambda: find_clues())
         ]
         self._resolve_weighted_outcome(outcomes, player)
         
+    def _outcome_ritual_channel(self, player, game):
+        """Attempt to channel the ritual site's energy"""
+        outcomes = [
+            (0.3, lambda: (print("Ancient power surges through you!"), self._give_major_buff(player, 10, 15, 15, 25), self._heal_player(player, 0.25))),
+            (0.3, lambda: self._give_temporary_weapon_enchant(player, 16, 24, 15, 30)),
+            (0.2, lambda: (print("You feel drained from channeling the ritual but also reinvigorated!"), self._drain_stamina(player, 0.5), self._gain_exp(player, 20, 35))),
+            (0.2, lambda: (self._take_damage(player, 15, 25, "The ritual backfires!"), self._give_random_buff_specific(player, 5, 8, 10, 20, ["attack", "defence", "accuracy"])))
+        ]
+        self._resolve_weighted_outcome(outcomes, player)
+    
+    def _outcome_ritual_study(self, player, game):
+        """Study the ritual sites runes"""
+        stamina_cost = player.max_stamina // 3
+        if player.stamina < stamina_cost:
+            print("You're too tired to focuse on the complex runes.")
+            return
+        
+        player.stamina -= stamina_cost
+        
+        outcomes = [
+            (0.4, lambda: (self._gain_exp(player, 20, 40, "Ancient knowledge flows into your mind!"), self._permanent_stat_increase(player))),
+            (0.3, lambda: (print("You decipher the magical crafting patterns!"), self._give_multiple_consumables(player, game, random.randint(2, 4)), self._gain_exp(player, 20, 30, "The knowledge grants you experience!"))),
+            (0.3, lambda: (self._give_gold(player, 50, 100, "You discover a hidden cache of coins!"), self._give_random_buff_specific(player, 8, 12, 10, 15, ["attack", "defence", "accuracy"])))
+        ]
+        self._resolve_weighted_outcome(outcomes, player)
+        
+    def _outcome_ritual_cleanse(self, player, game):
+        """Attempt to cleanse the ritual"""
+        outcomes = [
+            (0.4, lambda: (print("By cleansing the ritual you feel restored and protected!"),
+                            self._full_heal_player(player),
+                            self._give_random_buff_specific(player, 10, 10, 10, 15, ["defence"]),
+                            self._give_random_buff_specific(player, 10, 10, 10, 15, ["damage_reduction"]))),
+            (0.3, lambda: (print("You partially cleanse the ritual and feel somewhat restored and protected!"),
+                           self._give_random_buff_specific(player, 5, 8, 5, 10, ["defence", "damage_reduction", "block_chance"]))),
+            (0.3, lambda: (print("You fail to cleanse the ritual but gain insights!"), self._gain_exp(player, 25, 40, "You feel knowledgable from your failure...paradoxically!"), self._restore_stamina(player, 0.5)))
+        ]
+        self._resolve_weighted_outcome(outcomes, player)
             
     # Dangerous Events
         
@@ -711,7 +754,7 @@ class RandomEventSystem:
         """Run across unstable ground"""
         if random.random() < 0.5:
             print("You sprint across safely saving alot of time and energy!")
-            self._restore_stamina(10)
+            self._restore_stamina(player, 0.1)
         else:
             self._take_damage(player, 10, 25, "The ground collapses underneath you, you make it across but take severe damage!")
             
@@ -774,7 +817,13 @@ class RandomEventSystem:
             if r <= current:
                 outcome()
                 break
-            
+    
+    def _gain_exp(self, player, min_exp, max_exp, message=""):
+        """Player gains exp based on level"""
+        exp_gain = random.randint(min_exp, max_exp) * player.level
+        print(f"{message}")
+        player.gain_exp(exp_gain, player.level)
+        
     def _give_random_consumable(self, player, game, level):
         """Gives player a random consumable"""
         consumables = [item for item in game.items.values()
@@ -846,7 +895,21 @@ class RandomEventSystem:
         player.restore_stamina(stamina_amount)
         print(f"You feel energised! Restored {stamina_amount} stamina.")
         
-    def _take_damage(self, player, min_damage, max_damage, message):
+    def _drain_stamina(self, player, percentage):
+        """Drain player stamina by percentage"""
+        stamina_amount = int(player.max_stamina * percentage)
+        player.stamina = max(0, player.stamina - stamina_amount)
+        print(f"Your stamina is drained by {stamina_amount}!")
+        
+    def _restore_and_heal(self, player, percentage):
+        """Restore player health and stamina"""
+        heal_amount = int(player.max_hp * percentage)
+        stamina_amount = int(player.max_stamina * percentage)
+        player.heal(heal_amount)
+        player.restore_stamina(stamina_amount)
+        print(f"You feel energised and restored! Restored {stamina_amount} and healed {heal_amount} HP.")
+        
+    def _take_damage(self, player, min_damage, max_damage, message=""):
         """Deal damage to player"""
         damage = random.randint(min_damage, max_damage)
         player.take_damage(damage)
@@ -900,12 +963,45 @@ class RandomEventSystem:
         player.apply_buff(stat, value, duration, combat_only=False)
         print(f"You feel blessed! Gained +{value} {buff_info['name']} ({percent}% increase) for {duration} turns.")
     
-    def _give_major_buff(self, player):
+    def _give_major_buff(self, player, min_dura, max_dura, min_amnt, max_amnt):
         """Give a significant temporary buff"""
-        buff_duration = random.randint(15, 30)
-        buff_amount = random.randint(20, 40)
+        buff_duration = random.randint(min_dura, max_dura)
+        buff_amount = random.randint(min_amnt, max_amnt)
         player.apply_buff("all stats", buff_amount, buff_duration, combat_only=False)
         print(f"You feel incredibly empowered! All stats increased by {buff_amount} for {buff_duration} turns!")
+    
+    def _give_random_buff_specific(self, player, min_dura, max_dura, min_amnt, max_amnt, stat=[]):
+        """Give a random buff to a random stat in a list of stats"""
+        stat = random.choice(stat)
+        buff_duration = random.randint(min_dura, max_dura)
+        buff_amount = random.randint(min_amnt, max_amnt)
+        if stat == "accuracy":
+            buff_amount *= 2
+            player.apply_buff(stat, buff_amount, buff_duration, combat_only=False)
+        else:
+            player.apply_buff(stat, buff_amount, buff_duration, combat_only=False)
+        print(f"You feel empowered and gain {buff_amount} in {stat.replace('_', ' ').title()} for {buff_duration} turns.")
+    
+    def _give_temporary_weapon_enchant(self, player, min_dura, max_dura, min_amnt, max_amnt):
+        """Gives a temporary weapon enchantment"""
+        if random.random() < 0.3:
+            # Significant weapon buff
+            attack_boost = random.randint(min_amnt, max_amnt)
+            duration = random.randint(min_dura, max_dura)
+            player.weapon_buff = {
+                'value': attack_boost,
+                'duration': duration
+            }
+            print(f"Your weapon hums with energy! Attack increased by {attack_boost} for {duration} turns!")
+        else:
+            # Minor weapon buff
+            attack_boost = random.randint(min_amnt, max_amnt) // 2
+            duration = random.randint(min_dura, max_dura) // 2
+            player.weapon_buff = {
+                'value': attack_boost,
+                'duration': duration
+            }
+            print(f"Your weapon buzzes with energy! Attack increased by {attack_boost} for {duration} turns!")
     
     def _temporary_max_increase(self, player):
         """Temporarily increase max HP and/or stamina"""
@@ -965,11 +1061,11 @@ class RandomEventSystem:
     def _permanent_stat_increase(self, player):
         """Give a small permanent stat increase"""
         stat_choices = [
-            ("max_hp", 10),
-            ("base_attack", 2),
-            ("base_defence", 2),
+            ("max_hp", 5),
+            ("base_attack", 1),
+            ("base_defence", 1),
             ("base_evasion", 1),
-            ("base_accuracy", 4),
+            ("base_accuracy", 2),
             ("max_stamina", 5)
         ]
         stat, amount = random.choice(stat_choices)
