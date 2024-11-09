@@ -400,7 +400,7 @@ class Game:
             if action == "m":
                 #Moves the palyer to different location if level requirements met
                 clear_screen()
-                self.world_map.display_map(self.current_location, self.player.level)
+                self.world_map.display_map(self.current_location, self.player.level, self.player)
                 self.move()
                 if self.current_location != "Village":
                     self.location_actions()

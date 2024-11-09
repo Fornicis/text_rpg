@@ -53,7 +53,7 @@ class RandomEventSystem:
         
         # Beneficial events
         
-        events.append(RandomEvent(
+        """events.append(RandomEvent(
             "Hidden Cache",
             "You notice something glinting behind some rocks...",
             EventType.BENEFICIAL,
@@ -113,7 +113,10 @@ class RandomEventSystem:
                 ("Fill empty containers", self._outcome_spring_fill),
                 ("Wade in the water", self._outcome_spring_wade)
             ],
-            {"min_level": 4, "location_type": ["Forest", "Deepwoods", "Plains", "Mountain", "Swamp", "Desert", "Toxic Swamp", "Valley", "Mountain Peaks", "Scorching Valley", "Death Caves", "Death Valley", "Volcanic Valley"]}
+            {
+                "min_level": 4,
+                "location_type": ["Forest", "Deepwoods", "Plains", "Mountain", "Swamp", "Desert", "Toxic Swamp", "Valley", "Mountain Peaks", "Scorching Valley", "Death Caves", "Death Valley", "Volcanic Valley"]
+            }
         ))
         
         # Neutral Events
@@ -179,7 +182,10 @@ class RandomEventSystem:
                 ("Look for survivors", self._outcome_caravan_survivors),
                 ("Leave it be", self._outcome_ignore)
             ],
-            {"min_level": 5, "location_type": ["Desert", "Plains", "Mountain", "Valley", "Death Valley", "Shadowed Valley", "Scorching Plains"]}
+            {
+                "min_level": 5,
+                "location_type": ["Desert", "Plains", "Mountain", "Valley", "Death Valley", "Shadowed Valley", "Scorching Plains"]
+            }
         ))
         
         events.append(RandomEvent(
@@ -193,13 +199,30 @@ class RandomEventSystem:
                 ("Leave the site undisturbed", self._outcome_ignore)
             ],
             {
-                "min level": 8, "location_type": ["Ruins", "Temple", "Ancient Ruins", "Death Caves", "Heavens"]
-             }
+                "min level": 8,
+                "location_type": ["Ruins", "Temple", "Ancient Ruins", "Death Caves", "Heavens"]
+            }
+        ))"""
+        
+        events.append(RandomEvent(
+            "Mysterious Campfire",
+            "You spot a recently abandoned campfire with strange coloured flames...",
+            EventType.NEUTRAL,
+            [
+                ("Rest by the fire", self._outcome_campfire_rest),
+                ("Study the unusual flames (Uses 25% stamina)", self._outcome_campfire_study),
+                ("Add fuel to the fire", self._outcome_campfire_fuel),
+                ("Continue your journey...", self._outcome_ignore)
+            ],
+            {
+                "min_level": 4,
+                "location_type": ["Forest", "Deepwoods", "Mountain", "Cave", "Ruins", "Ancient Ruins", "Mountain Peaks", "Death Caves", "Dragons Lair"]
+            }
         ))
         
         # Dangerous events
         
-        events.append(RandomEvent(
+        """events.append(RandomEvent(
             "Unstable Ground",
             "The ground beneath your feet feels unnaturally soft...",
             EventType.DANGEROUS,
@@ -223,14 +246,14 @@ class RandomEventSystem:
                 ("Something seems off, leave them alone", self._outcome_ignore)
             ],
             {"location_type": ["Forest", "Swamp", "Cave", "Deepwoods", "Toxic Swamp", "Valley", "Ruins", "Death Caves", "Death Valley", "Ancient Ruins"]}
-        ))
+        ))"""
         
         return events
 
     def trigger_random_event(self, player, game):
         """Attempt to trigger an event"""
         # 15% chance for a random event
-        if random.random() < 0.15:
+        if random.random() < 1.0:
             # Filter eligible events
             eligible_events = [
                 event for event in self.events
@@ -524,7 +547,6 @@ class RandomEventSystem:
         if player.stamina < 20:
             print("You're too tired to focus on the echoes.")
             return
-
         else:
             player.stamina -= 20  # Cost to listen carefully
         
@@ -571,7 +593,6 @@ class RandomEventSystem:
         if player.stamina <= stamina_cost:
             print("You're too tired to conduct a thorough search")
             return
-        
         else:
             player.stamina -= stamina_cost
             
@@ -617,7 +638,6 @@ class RandomEventSystem:
         if player.stamina < stamina_cost:
             print("You're too tired to focuse on the complex runes.")
             return
-        
         else:
             player.stamina -= stamina_cost
             
@@ -640,7 +660,94 @@ class RandomEventSystem:
             (0.3, lambda: (print("You fail to cleanse the ritual but gain insights!"), self._gain_exp(player, 25, 40, "You feel knowledgable from your failure...paradoxically!"), self._restore_stamina(player, 0.5)))
         ]
         self._resolve_weighted_outcome(outcomes, player)
+    
+    def _outcome_campfire_rest(self, player, game):
+        def strange_effect():
+            # Provides a random effect 
+            if random.random() < 0.3:
+                """Temporary transformation boosting all stats"""
+                print("The flames temporarily transform you into a stronger being!")
+                self._give_major_buff(player, 8, 12, 10, 10)
+            elif random.random() < 0.6:
+                """Elemental energy surge boosting weapons strength"""
+                print("Elemental energy surges through your weapon empowering it!")
+                self._give_temporary_weapon_enchant(player, 5, 10, 15, 25)
+            else:
+                """Transport to another dimension temporarily"""
+                print("You find yourself in a different place after watching the flames flicker!")
+                print("You see some gold and equipment laying on the ground!!")
+                self._give_gold(player, 40, 80)
+                self._give_tier_equipment(player, game, player.level)
             
+        outcomes = [
+            (0.4, lambda: (print("The mystical flames provide a deep, restorative rest."), self._restore_and_heal(player, 0.6), print("You feel protected by the flames!"), self._give_random_buff_specific(player, 5, 8, 8, 12, ["defence", "evasion"]))),
+            (0.3, lambda: (print("You dream of ancient battles and mystical techniques! You gain some knowledge and feel strengthened!"), self._gain_exp(player, 20, 30), self._give_random_buff_specific(player, 6, 9, 8, 15, ["attack", "accuracy", "crit_chance"]))),
+            (0.3, lambda: (print("As you stare at the flames you feel something strange building up..."), strange_effect()))
+        ]
+        self._resolve_weighted_outcome(outcomes, player)
+    
+    def _outcome_campfire_study(self, player, game):
+        """Study the unusual flames"""
+        # Check to see if the player has enough stamina
+        stamina_cost = player.max_stamina // 4
+        if player.stamina < stamina_cost:
+            print("You're too tired to focus on the mystical flames.")
+            return
+        else:
+            self._drain_stamina(player, 0.25)
+            outcomes = [
+                (0.3, lambda: (print("You learn some magical knowledge from studying the flames!"), self._gain_exp(player, 30, 40), self._permanent_stat_increase(player))),
+                (0.3, lambda: (print("From studying the flames you feel rejuvenated and temporarily tougher!"), self._heal_player(player, 0.25), self._give_multiple_random_buffs(player, 8, 15, 8, 15, 2, ["defence", "damage_reduction", "block_chance", "evasion"]))),
+                (0.4, lambda: (print("You get mesmerised by studying the flames! You feel drained but benefit from what you saw!"), self._drain_stamina(player, 0.33), self._gain_exp(player, 25, 40)))
+            ]
+            self._resolve_weighted_outcome(outcomes, player)
+    
+    def _outcome_campfire_fuel(self, player, game):
+        """Feed the flames there chosen fuel...Gold!"""
+        # Check if the player has enough gold for offering
+        def summon_spirit():
+            # Summons a friendly spirit who provides boons
+            outcomes = [
+                (0.25, lambda: (print("You summon a warrior spirit who trains you in ancient techniques!"), self._give_multiple_random_buffs(player, 8, 12, 10, 20, 2, ["attack", "accuracy", "armour_penetration", "crit_chance", "crit_damage"]))),
+                (0.25, lambda: (print("You summon a guardian spirit who defends you temporarily!"), self._give_multiple_random_buffs(player, 8, 12, 10, 15, 2, ["defence", "evasion", "block_chance", "damage_reduction"]))),
+                (0.25, lambda: (print("You summon a generous spirit who gives you some gold and items!"), self._give_gold(player, 50, 100), self._give_tier_equipment(player, game, player.level))),
+                (0.25, lambda: (print("You summon a wise spirit who grants you untold knowledge!"), self._gain_exp(player, 50, 100)))
+            ]
+            self._resolve_weighted_outcome(outcomes, player)
+        
+        def wild_magic():
+            # The mystical flames go wild spewing forth magic!
+            def chaos():
+                outcomes = [
+                    # Positive chaos
+                    (0.2, lambda: (print("The flames cauterise your wounds!"), self._take_damage(player, 5, 5, "Healing can sometimes be painful..."), self._heal_player(player, 0.5))),
+                    (0.2, lambda: (print("Gold starts falling all around...it's molten!"), self._take_damage(player, 5, 7, "Some gold lands on you, burning your flesh!"), self._give_gold(player, 100, 150))),
+                    # Mixed chaos
+                    (0.2, lambda: (print("The flames empower you!"), self._give_multiple_random_buffs(player, 5, 10, 5, 10, random.randint(1, 3), ["attack", "accuracy", "armour_penetration"]))),
+                    (0.2, lambda: (print("The flames devour you!"), player.apply_debuff("defence", 10), player.apply_debuff("attack", 10), self._take_damage(player, 10, 20, "The flames eat away at your body and soul! "))),
+                    # Negative chaos
+                    (0.2, lambda: (print("The flames start scorching you severely!"), self._take_damage(player, 30, 50, "You're severely burned by the flames! "), self._drain_stamina(player, 0.33))),
+                    (0.2, lambda: (print("The flames drain something from you!"), self._permanent_stat_decrease(player), self._drain_stamina(player, 0.25)))
+                ]
+                self._resolve_weighted_outcome(outcomes, player)
+            outcomes = [
+                (0.4, lambda: (print("The magic surges around you both healing and damaging you, but making you stronger in the process...temporarily!"), self._heal_player(player, 0.33), self._take_damage(player, 15, 20), self._give_major_buff(player, 8, 12, 10, 15))),
+                (0.3, lambda: (print("The wild magic temporarily enhances you in multiple ways!"), self._give_multiple_random_buffs(player, 8, 12, 8, 12, random.randint(2, 4), ["attack", "defence", "evasion", "accuracy", "damage_reduction", "armour_penetration", "crit_chance", "crit_damage", "block_chance"]))),
+                (0.3, lambda: (print("The flames go absolutely chaotic! You try to back away but it's too late!"), chaos()))
+            ]
+            self._resolve_weighted_outcome(outcomes, player)
+        if player.gold < 15:
+            print("You have nothing worthy to offer the flames!")
+            return
+        else:
+            player.gold -= 15
+            outcomes = [
+                (0.3, lambda: (print("The flames grow stronger! Their magic flows into you!"), self._restore_and_heal(player, 0.33), self._give_major_buff(player, 12, 15, 10, 15))),
+                (0.3, lambda: (print("You summon a spirit who helps you!"), summon_spirit())),
+                (0.4, lambda: (print("The flames react unexpectedly to your offering! The magic goes wild!"), wild_magic()))
+            ]
+            self._resolve_weighted_outcome(outcomes, player)
+    
     # Dangerous Events
         
     def _outcome_unstable_careful(self, player, game):
@@ -828,7 +935,7 @@ class RandomEventSystem:
         """Deal damage to player"""
         damage = random.randint(min_damage, max_damage)
         player.take_damage(damage)
-        print(f"{message} You take {damage} damage!")
+        print(f"{message}You take {damage} damage!")
         
     def _hostile_response(self, player, game):
         """Trigger an immediate hostile encounter"""
@@ -899,6 +1006,11 @@ class RandomEventSystem:
         else:
             player.apply_buff(stat, buff_amount, buff_duration, combat_only=False)
         print(f"You feel empowered and gain {buff_amount} in {stat.replace('_', ' ').title()} for {buff_duration} turns.")
+    
+    def _give_multiple_random_buffs(self, player, min_dura, max_dura, min_amnt, max_amnt, count, stat=[]):
+        """Gives multiple buffs selected randomly from a given list"""
+        for _ in range(count):
+            self._give_random_buff_specific(player, min_dura, max_dura, min_amnt, max_amnt, stat)
     
     def _give_temporary_weapon_enchant(self, player, min_dura, max_dura, min_amnt, max_amnt):
         """Gives a temporary weapon enchantment"""
@@ -990,10 +1102,29 @@ class RandomEventSystem:
         setattr(player, stat, getattr(player, stat) + amount)
         print(f"You feel permanently strengthened! {stat.replace('_', ' ').title()} increased by {amount}!")
     
+    def _permanent_stat_decrease(self, player):
+        """Give a small permanent stat increase"""
+        stat_choices = [
+            ("max_hp", 5),
+            ("base_attack", 1),
+            ("base_defence", 1),
+            ("base_evasion", 1),
+            ("base_accuracy", 2),
+            ("max_stamina", 5)
+        ]
+        stat, amount = random.choice(stat_choices)
+        setattr(player, stat, getattr(player, stat) - amount)
+        print(f"You feel permanently weakened! {stat.replace('_', ' ').title()} decreased by {amount}!")
+    
     def _permanent_stat_increase_specific(self, player, stat, value):
         """Give a small increase to chosen stat"""
         setattr(player, stat, getattr(player, stat) + value)
         print(f"You feel permanently strengthened! {stat.title()} increased by {value}!")
+    
+    def _permanent_stat_decrease_specific(self, player, stat, value):
+        """Give a small decrease to chosen stat"""
+        setattr(player, stat, getattr(player, stat) - value)
+        print(f"You feel permanently weakened! {stat.title()} decreased by {value}!")
         
     def _discover_location(self, player, game, number):
         """Discover a number of unvisited locations"""
