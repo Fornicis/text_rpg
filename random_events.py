@@ -53,7 +53,7 @@ class RandomEventSystem:
         
         # Beneficial events
         
-        """events.append(RandomEvent(
+        events.append(RandomEvent(
             "Hidden Cache",
             "You notice something glinting behind some rocks...",
             EventType.BENEFICIAL,
@@ -75,7 +75,7 @@ class RandomEventSystem:
                 ("Ask about their journey", self._outcome_traveller_chat)
             ],
             {"min_level": 2}
-        ))"""
+        ))
         
         events.append(RandomEvent(
             "Wandering Merchant",
@@ -90,7 +90,7 @@ class RandomEventSystem:
             {"min_level": 3}
         ))
         
-        """events.append(RandomEvent(
+        events.append(RandomEvent(
             "Ancient Training Grounds",
             "You come across a seemingly ancient and weathered training ground. Some of the equipment nearby looks usable...",
             EventType.BENEFICIAL,
@@ -223,14 +223,14 @@ class RandomEventSystem:
                 ("Something seems off, leave them alone", self._outcome_ignore)
             ],
             {"location_type": ["Forest", "Swamp", "Cave", "Deepwoods", "Toxic Swamp", "Valley", "Ruins", "Death Caves", "Death Valley", "Ancient Ruins"]}
-        ))"""
+        ))
         
         return events
 
     def trigger_random_event(self, player, game):
         """Attempt to trigger an event"""
         # 15% chance for a random event
-        if random.random() < 1.0:
+        if random.random() < 0.15:
             # Filter eligible events
             eligible_events = [
                 event for event in self.events
