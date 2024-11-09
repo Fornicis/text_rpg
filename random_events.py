@@ -75,7 +75,7 @@ class RandomEventSystem:
                 ("Ask about their journey", self._outcome_traveller_chat)
             ],
             {"min_level": 2}
-        ))
+        ))"""
         
         events.append(RandomEvent(
             "Wandering Merchant",
@@ -90,7 +90,7 @@ class RandomEventSystem:
             {"min_level": 3}
         ))
         
-        events.append(RandomEvent(
+        """events.append(RandomEvent(
             "Ancient Training Grounds",
             "You come across a seemingly ancient and weathered training ground. Some of the equipment nearby looks usable...",
             EventType.BENEFICIAL,
@@ -180,7 +180,7 @@ class RandomEventSystem:
                 ("Leave it be", self._outcome_ignore)
             ],
             {"min_level": 5, "location_type": ["Desert", "Plains", "Mountain", "Valley", "Death Valley", "Shadowed Valley", "Scorching Plains"]}
-        ))"""
+        ))
         
         events.append(RandomEvent(
             "Ancient Ritual Site",
@@ -193,13 +193,13 @@ class RandomEventSystem:
                 ("Leave the site undisturbed", self._outcome_ignore)
             ],
             {
-                "min level": 3, "location_type": ["Cave", "Ruins", "Temple", "Ancient Ruins", "Death Caves", "Heavens"]
+                "min level": 8, "location_type": ["Ruins", "Temple", "Ancient Ruins", "Death Caves", "Heavens"]
              }
         ))
         
         # Dangerous events
         
-        """events.append(RandomEvent(
+        events.append(RandomEvent(
             "Unstable Ground",
             "The ground beneath your feet feels unnaturally soft...",
             EventType.DANGEROUS,
@@ -271,34 +271,34 @@ class RandomEventSystem:
     
     def _outcome_hidden_cache_careful(self, player, game):
         """Carefully investigate the hidden cache"""
+        message = "Inside the cache you find"
         outcomes = [
-            (0.4, lambda: self._give_random_consumable(player, game, player.level)),
-            (0.3, lambda: self._give_gold(player, 20, 50)),
-            (0.2, lambda: self._give_tier_equipment(player, game, player.level)),
+            (0.4, lambda: (print(f"{message} a consumable!"), self._give_random_consumable(player, game, player.level))),
+            (0.3, lambda: (print(f"{message} some gold"), self._give_gold(player, 20, 50))),
+            (0.2, lambda: (print(f"{message} a piece of equipment!"), self._give_tier_equipment(player, game, player.level))),
             (0.1, lambda: print("Unfortunately, you find nothing of value."))
         ]
         self._resolve_weighted_outcome(outcomes, player)
         
     def _outcome_hidden_cache_quick(self, player, game):
         """Quickly grab from the hidden cache"""
+        message = "After making it to safety you look at what you found in the cache. It was"
         outcomes = [
-            (0.3, lambda: self._give_tier_equipment(player, game, player.level)),
-            (0.3, lambda: self._give_gold(player, 50, 100)),
+            (0.3, lambda: (print(f"{message} a piece of equipment!"), self._give_tier_equipment(player, game, player.level))),
+            (0.3, lambda: (print(f"{message} some gold!"), self._give_gold(player, 50, 100))),
             (0.4, lambda: self._take_damage(player, 5, 15, "You trigger a nasty trap!"))
         ]
         self._resolve_weighted_outcome(outcomes, player)
         
     def _outcome_traveller_accept(self, player, game):
         """Accept the travellers offer"""
-        exp_gain = random.randint(10, 25) * player.level
-        print(f"The traveller imparts his ancient wisdom upon you. You gain {exp_gain} experience!")
-        player.gain_exp(exp_gain, player.level)
+        print("The traveller imparts his ancient wisdom upon you.")
+        self._gain_exp(player, 10, 25)
         
     def _outcome_traveller_chat(self, player, game):
         """Have a chat with the traveller"""
-        gold_gain = random.randint(10, 20) * player.level
-        player.gold += gold_gain
-        print(f"The traveller enjoys having a conversation with you. He generously gives you {gold_gain} gold as a gift!")
+        print("The traveller enjoys having a conversation with you. He generously gives you some gold as a gift!")
+        self._give_gold(player, 10 * player.level, 20 * player.level)
         
     def _outcome_merchant_trade(self, player, game):
         """Trade gold for potentially valuable items"""
@@ -308,9 +308,9 @@ class RandomEventSystem:
             return
         
         outcomes = [
-            (0.4, lambda: self._give_multiple_consumables(player, game, 2)),
-            (0.3, lambda: self._give_tier_equipment(player, game, player.level)),
-            (0.2, lambda: self._give_gold(player, trade_cost * 2, trade_cost * 3)),
+            (0.4, lambda: (print("The merchant gives you some consumables!"), self._give_multiple_consumables_random(player, game, 2))),
+            (0.3, lambda: (print("The merchant gives you a piece of equipment!"), self._give_tier_equipment(player, game, player.level))),
+            (0.2, lambda: (print("The merchant doesn't have anything of value to give you, he returns your gold and then some as compensation!"), self._give_gold(player, trade_cost * 2, trade_cost * 3))),
             (0.1, lambda: self._give_special_item(player, game, "The merchant is impressed by your task and gives you a special item!"))
         ]
         
@@ -332,14 +332,14 @@ class RandomEventSystem:
         # Higher chance of good outcome if traded item was valuable
         if traded_item.value >= 100:
             outcomes = [
-                (0.6, lambda: self._give_tier_equipment(player, game, player.level + 1)),
-                (0.4, lambda: self._give_multiple_consumables(player, game, 3))
+                (0.6, lambda: (print("The merchant gives you an item!"), self._give_tier_equipment(player, game, player.level * 2))),
+                (0.4, lambda: (print("The merchant gives you some consumables!"), self._give_multiple_consumables_random(player, game, 3)))
             ]
         else:
             outcomes = [
-                (0.4, lambda: self._give_random_consumable(player, game, player.level)),
-                (0.4, lambda: self._give_tier_equipment(player, game, player.level)),
-                (0.2, lambda: self._give_gold(player, traded_item.value * 2, traded_item.value * 3))
+                (0.4, lambda: (print("The merchant gives you a consumable!"), self._give_random_consumable(player, game, player.level))),
+                (0.4, lambda: (print("The merchant gives you a piece of equipment!"), self._give_tier_equipment(player, game, player.level))),
+                (0.2, lambda: (print("The merchant gives you some gold!"), self._give_gold(player, traded_item.value * 2, traded_item.value * 3)))
             ]
             
         self._resolve_weighted_outcome(outcomes, player)
@@ -349,45 +349,29 @@ class RandomEventSystem:
         if player.stamina < (player.max_stamina * 0.8):
             print("You're too tired to help guard the caravan.")
             return
-    
-        player.stamina = 0 # Exhaust stamina
-        
-        outcomes = [
-            (0.4, lambda: self._give_gold(player, 100, 200)),
-            (0.3, lambda: self._give_multiple_consumables(player, game, 2)),
-            (0.2, lambda: self._give_merchant_favour(player)),
-            (0.1, lambda: self._give_tier_equipment(player, game, player.level + 1))
-        ]
-        
-        print("You spend time helping guard the merchant's caravan...")
-        self._resolve_weighted_outcome(outcomes, player)
+        else:
+            self._drain_stamina(player, 1.0)
+            print("You spend time helping guard the merchant's caravan... This completely exhausts you!")
+            message = "The merchant rewards you with"
+            outcomes = [
+                (0.4, lambda: (print(f"{message} some gold!"), self._give_gold(player, 200, 300))),
+                (0.3, lambda: (print(f"{message} a number of consumables!"), self._give_multiple_consumables_random(player, game, random.randint(2, 5)))),
+                (0.2, lambda: (print(f"{message} some gold and knowledge!"), self._gain_exp(player, 20, 40), self._give_gold(player, 100, 200))),
+                (0.1, lambda: (print(f"{message} a special item!"), self._give_tier_equipment(player, game, random.randint(player.level + 1, player.level + 3))))
+            ]
+            self._resolve_weighted_outcome(outcomes, player)
         
     def _outcome_training_combat(self, player, game):
         """Practice combat at the ancient training grounds"""
         stamina_cost = player.max_stamina // 2
         if player.stamina < stamina_cost:
-            print("You are too tired to train effectively")
+            print("You're too tired to study effectively")
             return
-        
-        player.stamina -= stamina_cost
-        
-        # Give combat focused buffs
-        buff_choices = [
-            ("attack", 15),
-            ("accuracy", 30),
-            ("crit_chance", 10),
-            ("crit_damage", 20),
-        ]
-        
-        # Apply 2 random buffs
-        for _ in range(2):
-            stat, value = random.choice(buff_choices)
-            duration = random.randint(5, 10)
-            player.apply_buff(stat, value, duration, combat_only=False)
-            
-        exp_gain = random.randint(20, 40) * player.level
-        player.gain_exp(exp_gain, player.level)
-        print(f"Your combat training yields great results! Gained {exp_gain} experience!")
+        else:
+            self._drain_stamina(player, 0.5)
+            for _ in range(2):
+                self._give_random_buff_specific(player, 5, 10, 5, 15, ["attack", "accuracy", "crit_chance", "armour_penetration"])
+            self._gain_exp(player, 15, 30, "You learn valuable offensive techniques!")
         
     def _outcome_training_study(self, player, game):
         """Study ancient combat techniques"""
@@ -395,45 +379,29 @@ class RandomEventSystem:
         if player.stamina < stamina_cost:
             print("You're too tired to study effectively")
             return
-        
-        # Give defensive buffs
-        buff_choices = [
-            ("defence", 15),
-            ("evasion", 15),
-            ("block_chance", 10),
-            ("damage_reduction", 10)
-        ]
-        
-        # Apply 2 random buffs
-        for _ in range(2):
-            stat, value = random.choice(buff_choices)
-            duration = random.randint(5, 10)
-            player.apply_buff(stat, value, duration, combat_only=False)
-            
-        exp_gain = random.randint(15, 30) * player.level
-        player.gain_exp(exp_gain, player.level)
-        print(f"You learn valuable defensive techniques! Gained {exp_gain} experience!")
+        else:
+            self._drain_stamina(player, 0.25)
+            for _ in range(2):
+                self._give_random_buff_specific(player, 5, 10, 5, 15, ["defence", "evasion", "block_chance", "damage_reduction"])
+            self._gain_exp(player, 15, 30, "You learn valuable defensive techniques!")
         
     def _outcome_training_search(self, player, game):
         """Search the training grounds for equipment"""
         if random.random() < 0.6:
             self._give_tier_equipment(player, game, player.level)
         else:
-            self._give_multiple_consumables(player, game, 2)
+            self._give_multiple_consumables_specific(player, game, random.randint(1, 3), "consumable", "buff")
             
     def _outcome_training_rest(self, player, game):
         """Rest at the training grounds"""
-        heal_amount = player.max_hp // 2
-        stamina_amount = player.max_stamina // 2
-        player.heal(heal_amount)
-        player.restore_stamina(stamina_amount)
-        print(f"You rest at the ancient training grounds. Restored {heal_amount} HP and {stamina_amount} stamina!")
+        print("You rest at the ancient training grounds.")
+        self._restore_and_heal(player, 0.5)
         
     def _outcome_spring_drink(self, player, game):
         """Drink from the magical spring"""
         outcomes = [
             (0.3, lambda: self._full_heal_player(player)),
-            (0.3, lambda: self._give_major_buff(player, 15, 30, 20, 40)),
+            (0.3, lambda: self._give_major_buff(player, 5, 10, 10, 15)),
             (0.2, lambda: self._permanent_stat_increase(player)),
             (0.2, lambda: self._temporary_max_increase(player))
         ]
@@ -442,28 +410,16 @@ class RandomEventSystem:
     def _outcome_spring_meditate(self, player, game):
         """Meditate besides the spring"""
         # Restore resources
-        player.hp = player.max_hp
-        player.stamina = player.max_stamina
+        self._restore_and_heal(player, 1.0)
         
         # Give exp bonus
-        exp_gain = random.randint(25, 50) * player.level
-        player.gain_exp(exp_gain, player.level)
-        print(f"Your meditation leaves you fully restored and enlightened! Gained {exp_gain} experience!")
+        self._gain_exp(player, 25, 50, "Your meditation leaves you fully restored and enlightened!")
         
     def _outcome_spring_fill(self, player, game):
         """Fill containers with spring water"""
         # Give healing potions
-        potions = [item for item in game.items.values()
-                   if item.type == "consumable" and item.effect_type == "healing"
-                   and self._is_appropriate_tier(item, player.level)]
-        
-        if potions:
-            num_potions = random.randint(2, 4)
-            for _ in range(num_potions):
-                potion = random.choice(potions)
-                player.add_item(potion)
-                print(f"You acquire {potion.name}.")
-            print(f"You manage to fill {num_potions} containers with magical water!")
+        print("You manage to fill a number of containers with magical water!")
+        self._give_multiple_consumables_specific(player, game, random.randint(2, 4), "consumable", ["healing", "hot"])
             
     def _outcome_spring_wade(self, player, game):
         """Wade in the magical spring"""
@@ -472,9 +428,8 @@ class RandomEventSystem:
                                  if not effect.is_debuff]
         
         # Give temporary bonus
-        buff_duration = random.randint(10, 20)
-        player.apply_buff("all stats", 5, buff_duration, combat_only=False)
         print("The magical water cleanses and empowers you!")
+        self._give_major_buff(player, 10, 20, 5, 10)
         
     # Neutral Events
     
@@ -483,7 +438,7 @@ class RandomEventSystem:
         if player.gold >= 10:
             player.gold -= 10
             outcomes = [
-                (0.4, lambda: self._give_random_buff(player)),
+                (0.4, lambda: self._give_random_buff_percentile(player)),
                 (0.3, lambda: self._heal_player(player, 0.3)),
                 (0.2, lambda: self._restore_stamina(player, 0.3)),
                 (0.1, lambda: self._give_gold(player, 20, 40))
@@ -516,9 +471,7 @@ class RandomEventSystem:
             print("The grateful adventurer shares some supplies with you!")
             self._give_random_consumable(player, game, player.level)
         else:
-            exp_gain = random.randint(5, 15) * player.level
-            print(f"The adventurer shares some valuable knowledge. You gain {exp_gain} experience!")
-            player.gain_exp(exp_gain, player.level)
+            self._gain_exp(player, 5, 15, "The adventurer shares some valuable knowledge!")
             
     def _outcome_ask_adventurer(self, player, game):
         """Ask the adventurer for information"""
@@ -534,49 +487,32 @@ class RandomEventSystem:
         else:
             player.stamina -= stamina_cost
             outcomes = [
-                (0.5, lambda: self._give_random_buff(player)),
+                (0.5, lambda: (print("The spirit of the statue thanks you with a buff!"), self._give_random_buff_percentile(player))),
                 (0.3, lambda: self._give_gold(player, 30, 60, "While cleaning the status you notice some coins in the crook of its arm.")),
-                (0.2, lambda: self._give_tier_equipment(player, game, player.level))
+                (0.2, lambda: (print("While cleaning the statue you spot a piece of equipment!"), self._give_tier_equipment(player, game, player.level)))
             ]
             self._resolve_weighted_outcome(outcomes, player)
         
     def _outcome_statue_read(self, player, game):
         """Read the inscription on the statue"""
         if random.random() < 0.7:
-            exp_gain = random.randint(15, 30) * player.level
-            player.gain_exp(exp_gain, player.level)
-            print(f"The inscription contains some words of wisdom. Gain {exp_gain} experience!")
+            self._gain_exp(player, 15, 30, "The inscription contains some words of wisdom.")
         else:
-            exp_gain = random.randint(30, 60) * player.level
-            player.gain_exp(exp_gain, player.level)
-            print(f"The inscription seems to draw you in, you feel like you hear the statue whispering to you! Gain {exp_gain} experience!")
+            self._gain_exp(player, 30, 60, "The inscription seems to draw you in, you feel like you hear the statue whispering to you!")
             
     def _outcome_statue_search(self, player, game):
         """Search the statue for loot"""
         outcomes = [
             (0.7, lambda: self._take_damage(player, 10, 20, "The spirit of the statue doesn't take kindly to you looting it!")),
-            (0.2, lambda: self._give_tier_equipment(player, game, player.level)),
+            (0.2, lambda: (print("You find a piece of equipment hidden behind the statue!"), self._give_tier_equipment(player, game, player.level))),
             (0.1, lambda: self._give_special_item(player, game, "The spirit of this statue approves of your gall! It provides an impressive piece of equipment!"))
         ]
         self._resolve_weighted_outcome(outcomes, player)
         
     def _outcome_echo_call(self, player, game):
         """Call out into the echo chamber"""
-        
-        def friendly_buff():
-            """Apply random combat buff from friendly echo"""
-            buff_choices = [
-                ("attack", 10),
-                ("defence", 10),
-                ("accuracy", 20)
-            ]
-            stat, value = random.choice(buff_choices)
-            duration = random.randint(5, 10)
-            player.apply_buff(stat, value, duration, combat_only=False)
-            print("Your voice returns with an empowering presence")
-        
         outcomes = [
-            (0.3, lambda: friendly_buff()),
+            (0.3, lambda: (print("Your voice reutrns with an empowering presence!"), self._give_random_buff_specific(player, 5, 10, 8, 12, ["attack", "defence", "accuracy"]))),
             (0.4, lambda: self._give_random_consumable(player, game, player.level)),
             (0.15, lambda: print("Your voice echoes away unanswered!")),
             (0.15, lambda: self._hostile_response(player, game))
@@ -589,43 +525,19 @@ class RandomEventSystem:
             print("You're too tired to focus on the echoes.")
             return
 
-        player.stamina -= 20  # Cost to listen carefully
+        else:
+            player.stamina -= 20  # Cost to listen carefully
         
-        exp_gain = random.randint(15, 25) * player.level
-        
-        def danger_buff():
-            """Apply defensive buffs from hearing danger"""
-            buff_choices = [
-                ("evasion", 10),
-                ("defence", 15),
-                ("block_chance", 10)
+            outcomes = [
+                (0.5, lambda: (print("You hear distant dangers and prepare accordingly!"), self._give_random_buff_specific(player, 5, 10, 8, 12, ["evasion", "defence", "block_chance"]))),
+                (0.3, lambda: self._give_tier_equipment(player, game, player.level)),
+                (0.1, lambda: self._gain_exp(player, 15, 25, "You hear some knowledgeable words come back to you!")),
+                (0.1, lambda: (print("The confusing echoes disorient you! Accuracy -10 until end of next combat!"), player.apply_debuff("accuracy", 10)))
             ]
-            stat, value = random.choice(buff_choices)
-            duration = random.randint(5, 10)
-            player.apply_buff(stat, value, duration, combat_only=False)
-            print("You hear distant dangers and prepare accordingly!")
-        
-        def disorient():
-            """Apply a temporary accuracy debuff"""
-            player.apply_debuff("accuracy", 10)
-            print("The confusing echoes disorient you!")
-        
-        outcomes = [
-            (0.3, lambda: danger_buff()),
-            (0.2, lambda: self._give_tier_equipment(player, game, player.level)),
-            (0.4, lambda: player.gain_exp(exp_gain, player.level)),
-            (0.1, lambda: disorient())
-        ]
-        self._resolve_weighted_outcome(outcomes, player)
+            self._resolve_weighted_outcome(outcomes, player)
         
     def _outcome_echo_stone(self, player, game):
         """Throwing stones can be dangerous"""
-        def safe_path():
-            """Find safe path and restore some stamina"""
-            stamina_restore = player.max_stamina // 4
-            player.restore_stamina(stamina_restore)
-            print(f"The echoes reveal a safe path forward! Restores {stamina_restore} stamina.")
-        
         def mechanism():
             """Trigger a random mechanism effect"""
             if random.random() < 0.5:
@@ -636,7 +548,7 @@ class RandomEventSystem:
                 print(f"Your stone triggers an ancient blessing! Restores {heal_amount} HP!")
 
         outcomes = [
-            (0.6, lambda: safe_path()),
+            (0.6, lambda: (print("The echoes revel a safe path forward, you regain 25% stamina!"), self._restore_stamina(player, 0.25))),
             (0.2, lambda: self._give_random_consumable(player, game, player.level)),
             (0.1, lambda: mechanism()),
             (0.1, lambda: self._take_damage(player, 5, 15, "Your stone returns unexpectedly!"))
@@ -660,19 +572,16 @@ class RandomEventSystem:
             print("You're too tired to conduct a thorough search")
             return
         
-        player.stamina -= stamina_cost
-        
-        def find_valuables():
-            self._give_tier_equipment(player, game, player.level)
-            self._give_gold(player, 25, 50)
-        
-        outcomes = [
-            (0.3, lambda: find_valuables()),
-            (0.3, lambda: self._give_multiple_consumables(player, game, 3)),
-            (0.2, lambda: self._discover_location(player, game, 1)),
-            (0.2, lambda: print("Despite your thorough search, you come up empty handed!"))
-        ]
-        self._resolve_weighted_outcome(outcomes, player)
+        else:
+            player.stamina -= stamina_cost
+            
+            outcomes = [
+                (0.3, lambda: (self._give_tier_equipment(player, game, player.level), self._give_gold(player, 25, 50))),
+                (0.3, lambda: self._give_multiple_consumables_random(player, game, 3)),
+                (0.2, lambda: self._discover_location(player, game, 1)),
+                (0.2, lambda: print("Despite your thorough search, you come up empty handed!"))
+            ]
+            self._resolve_weighted_outcome(outcomes, player)
         
     def _outcome_caravan_quick(self, player, game):
         """Quickly grab visible items from the caravan"""
@@ -684,20 +593,11 @@ class RandomEventSystem:
         self._resolve_weighted_outcome(outcomes, player)
         
     def _outcome_caravan_survivors(self, player, game):
-        """Look for survivors around the caravan"""    
-        def find_injured():
-            print("You find a survivor but they're too badly injured, they pass on their items to you to continue their journey!")
-            self._give_tier_equipment(player, game, player.level)
-            self._give_gold(player, 20, 50)
-            
-        def find_clues():
-            print("You find clues as to what caused this.")
-            self._discover_location(player, game, 1)
-        
+        """Look for survivors around the caravan"""   
         outcomes = [
             (0.4, lambda: self._gain_exp(player, 20, 40, "You help a grateful survivor who shares valuable knowledge!")),
-            (0.3, lambda: find_injured()),
-            (0.3, lambda: find_clues())
+            (0.3, lambda: (self._give_tier_equipment(player, game, player.level), self._give_gold(player, 20, 50))),
+            (0.3, lambda: (print("You find clues as to what caused this."), self._discover_location(player, game, 1)))
         ]
         self._resolve_weighted_outcome(outcomes, player)
         
@@ -718,14 +618,15 @@ class RandomEventSystem:
             print("You're too tired to focuse on the complex runes.")
             return
         
-        player.stamina -= stamina_cost
-        
-        outcomes = [
-            (0.4, lambda: (self._gain_exp(player, 20, 40, "Ancient knowledge flows into your mind!"), self._permanent_stat_increase(player))),
-            (0.3, lambda: (print("You decipher the magical crafting patterns!"), self._give_multiple_consumables(player, game, random.randint(2, 4)), self._gain_exp(player, 20, 30, "The knowledge grants you experience!"))),
-            (0.3, lambda: (self._give_gold(player, 50, 100, "You discover a hidden cache of coins!"), self._give_random_buff_specific(player, 8, 12, 10, 15, ["attack", "defence", "accuracy"])))
-        ]
-        self._resolve_weighted_outcome(outcomes, player)
+        else:
+            player.stamina -= stamina_cost
+            
+            outcomes = [
+                (0.4, lambda: (self._gain_exp(player, 20, 40, "Ancient knowledge flows into your mind!"), self._permanent_stat_increase(player))),
+                (0.3, lambda: (print("You decipher the magical crafting patterns!"), self._give_multiple_consumables_random(player, game, random.randint(2, 4)), self._gain_exp(player, 20, 30, "The knowledge grants you experience!"))),
+                (0.3, lambda: (self._give_gold(player, 50, 100, "You discover a hidden cache of coins!"), self._give_random_buff_specific(player, 8, 12, 10, 15, ["attack", "defence", "accuracy"])))
+            ]
+            self._resolve_weighted_outcome(outcomes, player)
         
     def _outcome_ritual_cleanse(self, player, game):
         """Attempt to cleanse the ritual"""
@@ -794,8 +695,8 @@ class RandomEventSystem:
     def _outcome_mushroom_eat(self, player, game):
         """Eat a mysterious mushroom...weirdo"""
         outcomes = [
-            (0.2, lambda: self._heal_player(player, 0.5)),
-            (0.2, lambda: self._restore_stamina(player, 0.5)),
+            (0.2, lambda: (self._heal_player(player, 0.5), self._give_random_buff_specific(player, 5, 10, 8, 12, ["attack", "accuracy", "crit_damage", "crit_chance"]))),
+            (0.2, lambda: (self._restore_stamina(player, 0.5)), self._give_random_buff_specific(player, 5, 10, 8, 12, ["defence", "evasion", "block_chance"])),
             (0.6, lambda: self._take_damage(player, 10, 20, "That was probably not a smart idea..."))
         ]
         self._resolve_weighted_outcome(outcomes, player)
@@ -832,12 +733,26 @@ class RandomEventSystem:
         if consumables:
             item = random.choice(consumables)
             player.add_item(item)
-            print(f"You acquired a {item.name}")
+            print(f"You acquired a {item.name}!")
+            
+    def _give_specific_consumable(self, player, game, level, type, effect_type):
+        """Gives player a specific consumable type"""
+        consumables = [item for item in game.items.values()
+                       if item.type in type and item.effect_type in effect_type
+                       and self._is_appropriate_tier(item, level)]
+        if consumables:
+            item = random.choice(consumables)
+            player.add_item(item)
+            print(f"You acquired a {item.name}!")
      
-    def _give_multiple_consumables(self, player, game, count):
+    def _give_multiple_consumables_random(self, player, game, count):
         """Give multiple random consumables"""
         for _ in range(count):
             self._give_random_consumable(player, game, player.level)
+            
+    def _give_multiple_consumables_specific(self, player, game, count, type, effect_type):
+        for _ in range(count):
+            self._give_specific_consumable(player, game, player.level, type, effect_type)
             
     def _give_tier_equipment(self, player, game, level):
         """Gives player a random piece of equipment appropriate to level"""
@@ -907,7 +822,7 @@ class RandomEventSystem:
         stamina_amount = int(player.max_stamina * percentage)
         player.heal(heal_amount)
         player.restore_stamina(stamina_amount)
-        print(f"You feel energised and restored! Restored {stamina_amount} and healed {heal_amount} HP.")
+        print(f"You feel energised and restored! Restored {stamina_amount} stamina and healed {heal_amount} HP.")
         
     def _take_damage(self, player, min_damage, max_damage, message=""):
         """Deal damage to player"""
@@ -924,7 +839,7 @@ class RandomEventSystem:
         game.encounter() # Handles enemy selection and battle
         random.random = old_random # Restore normal behaviour
     
-    def _give_random_buff(self, player):
+    def _give_random_buff_percentile(self, player):
         """Gives player a random temporary buff"""
         buff_types = [
             ("attack", {
@@ -975,8 +890,11 @@ class RandomEventSystem:
         stat = random.choice(stat)
         buff_duration = random.randint(min_dura, max_dura)
         buff_amount = random.randint(min_amnt, max_amnt)
-        if stat == "accuracy":
+        if stat in ["accuracy", "crit_chance"]:
             buff_amount *= 2
+            player.apply_buff(stat, buff_amount, buff_duration, combat_only=False)
+        elif stat in ["armour_penetration", "damage_reduction"]:
+            buff_amount //= 2
             player.apply_buff(stat, buff_amount, buff_duration, combat_only=False)
         else:
             player.apply_buff(stat, buff_amount, buff_duration, combat_only=False)
@@ -1100,4 +1018,11 @@ class RandomEventSystem:
             "legendary": 20,
             "mythical": 25
         }
-        return tier_levels.get(item.tier, 0) <= level
+        # Find the highest tier available at player's level
+        highest_available_tier = None
+        for tier, req_level in tier_levels.items():
+            if level >= req_level:
+                highest_available_tier = tier
+                
+        # Return true only if item is of the highest available tier
+        return item.tier == highest_available_tier
