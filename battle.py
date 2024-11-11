@@ -103,14 +103,16 @@ class Battle:
 
     def handle_post_attack_effects(self, enemy, attack_hit, total_damage, attack_type):
         # Handle damage reflection
-        reflected_damage = 0
-        for effect in enemy.status_effects:
-            if effect.name == "Damage Reflect":
-                reflected_damage += effect.apply(enemy, total_damage)
-        
-        if reflected_damage > 0:
-            self.player.take_damage(reflected_damage)
-            print(f"{self.player.name} takes {reflected_damage} reflected damage!\n")
+        if attack_hit: # Only reflect damage if the attack hits
+            reflected_damage = 0
+            for effect in enemy.status_effects:
+                if effect.name == "Damage Reflect":
+                    reflected_damage = effect.apply_func(enemy, effect.strength, total_damage) # Pass total damage to function
+                    if isinstance(reflected_damage, tuple):
+                        reflected_damage, _ = reflected_damage
+                        if reflected_damage > 0:
+                            self.player.take_damage(reflected_damage)
+                            print(f"{self.player.name} takes {reflected_damage} reflected damage!\n")
 
         # Handle stance effects
         if attack_type == "defensive":

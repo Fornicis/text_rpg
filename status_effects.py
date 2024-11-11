@@ -139,14 +139,11 @@ STAMINA_DRAIN = lambda strength: StatusEffect("Stamina Drain", 1, stamina_drain_
 
 def damage_reflect_apply(character, strength, damage_dealt=0):
     if damage_dealt > 0:
-        reflected_damage = int(damage_dealt * 0.5 * strength)
-        print(f"{character.name} reflects {reflected_damage} damage!")
-        return reflected_damage
-    else:
-        print(f"{character.name} has a reflective barrier active!")
-        return 0
+        reflected_damage = int(damage_dealt * 0.5) # Reflect 50% of damage
+        return reflected_damage, True
+    return 0, True
 
-DAMAGE_REFLECT = lambda duration, strength=1: StatusEffect("Damage Reflect", duration, damage_reflect_apply, strength=strength, is_debuff=False)
+DAMAGE_REFLECT = lambda duration, strength=1: StatusEffect("Damage Reflect", duration, damage_reflect_apply, None, strength=strength, is_debuff=False)
 
 def defence_break_apply(character, strength):
     character.apply_debuff("defence", strength)
