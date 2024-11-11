@@ -1,3 +1,4 @@
+from enemies import ScalingEnemy, create_scaled_enemy
 from enum import Enum
 import random
 
@@ -13,6 +14,7 @@ class RandomEvent:
         self.event_type = event_type
         self.choices = choices # List of tuples (choice_text, outcome_func)
         self.conditions = conditions or {} # Dictionary of requirements
+        self.create_scaled_enemy = create_scaled_enemy
         
     def can_occur(self, player, location):
         """Check if an event can occur based on conditions"""
@@ -53,7 +55,7 @@ class RandomEventSystem:
         
         # Beneficial events
         
-        """events.append(RandomEvent(
+        events.append(RandomEvent(
             "Hidden Cache",
             "You notice something glinting behind some rocks...",
             EventType.BENEFICIAL,
@@ -202,7 +204,7 @@ class RandomEventSystem:
                 "min level": 8,
                 "location_type": ["Ruins", "Temple", "Ancient Ruins", "Death Caves", "Heavens"]
             }
-        ))"""
+        ))
         
         events.append(RandomEvent(
             "Mysterious Campfire",
@@ -222,7 +224,7 @@ class RandomEventSystem:
         
         # Dangerous events
         
-        """events.append(RandomEvent(
+        events.append(RandomEvent(
             "Unstable Ground",
             "The ground beneath your feet feels unnaturally soft...",
             EventType.DANGEROUS,
@@ -246,14 +248,30 @@ class RandomEventSystem:
                 ("Something seems off, leave them alone", self._outcome_ignore)
             ],
             {"location_type": ["Forest", "Swamp", "Cave", "Deepwoods", "Toxic Swamp", "Valley", "Ruins", "Death Caves", "Death Valley", "Ancient Ruins"]}
-        ))"""
+        ))
+        
+        events.append(RandomEvent(
+            "Cursed Shrine",
+            "You come across a dark altar radiating malevolent power. Ancient runes pulse with an ominous blood red glow...",
+            EventType.DANGEROUS,
+            [
+                ("Make a blood sacrifice...", self._outcome_shrine_blood),
+                ("Offer gold (Unknown amount!)", self._outcome_shrine_gold),
+                ("Attempt to destroy the shrine...", self._outcome_shrine_destroy),
+                ("Leave it alone and attempt to leave...", self._outcome_shrine_ignore)
+            ],
+            {
+                "min_level": 5,
+                "location_type": ["Cave", "Ruins", "Temple", "Deepwoods", "Ancient Ruins", "Death Caves", "Volcanic Valley", "Shadowed Valley", "Mountain", "Mountain Peaks"]
+            }
+        ))
         
         return events
 
     def trigger_random_event(self, player, game):
         """Attempt to trigger an event"""
         # 15% chance for a random event
-        if random.random() < 1.0:
+        if random.random() < 0.15:
             # Filter eligible events
             eligible_events = [
                 event for event in self.events
@@ -582,7 +600,7 @@ class RandomEventSystem:
         outcomes = [
             (0.6, lambda: print("You pass through safely and quietly.")),
             (0.3, lambda: self._give_gold(player, 10, 30)),
-            (0.1, lambda: self._permanent_stat_increase_specific(player, "accuracy", 1))
+            (0.1, lambda: self._permanent_stat_increase_specific(player, 1, ["accuracy"]))
         ]
         self._resolve_weighted_outcome(outcomes, player)
     
@@ -804,10 +822,113 @@ class RandomEventSystem:
         outcomes = [
             (0.2, lambda: (self._heal_player(player, 0.5), self._give_random_buff_specific(player, 5, 10, 8, 12, ["attack", "accuracy", "crit_damage", "crit_chance"]))),
             (0.2, lambda: (self._restore_stamina(player, 0.5)), self._give_random_buff_specific(player, 5, 10, 8, 12, ["defence", "evasion", "block_chance"])),
-            (0.6, lambda: self._take_damage(player, 10, 20, "That was probably not a smart idea..."))
+            (0.6, lambda: self._take_damage(player, 10, 20, "That was probably not a smart idea... "))
+        ]
+        self._resolve_weighted_outcome(outcomes, player)
+    
+    def _outcome_shrine_blood(self, player, game):
+        """Make a blood sacrifice at the cursed shrine."""
+        print("You approach the dark altar, knowing it demands a sacrifice of life essence...")
+        
+        if player.hp <= 20:
+            print("You're too weak to safely make a blood sacrifice!")
+            self._take_damage(player, 5, 10, "The shrine doesn't care about that, dark energies reach out and drain some of your vitality! ")
+            return
+        
+        # Use the health trading helper method
+        success = self._trade_hp_for_reward(player, game, min_percent=15, max_percent=60)
+        
+        if not success:
+            # Handle failed or cancelled sacrifice
+            if random.random() < 0.5: # 50% chance of shrine being angry!
+                print("The shrine pulses angrily at your hesitation!")
+                self._take_damage(player, 5, 15, "Dark energy lashes out at you! It takes some of your life as recompense!")
+                
+    def _outcome_shrine_gold(self, player, game):
+        """Offer gold to the cursed shrine, great risk, great reward"""
+        required_gold = random.randint(10, 30) * player.level
+        if player.gold < required_gold:
+            print("You don't have enough gold to make an offering")
+            if random.random() < 0.5: # 50% chance of negative outcome
+                self._take_damage(player, 10, 20, "The shrine punishes you for not having anything to offer! ")
+            return
+        
+        player.gold -= required_gold
+        print("You place your gold upon the altar. It slowly disintegrates into a dark mist...")
+        
+        outcomes = [
+            (0.3, lambda: (print("The shrine accepts your offering..."),
+                           self._give_random_buff_specific(player, 8, 12, 10, 15,
+                            ["attack", "defence", "evasion", "accuracy", "crit_chance"]),
+                           self._give_gold(player, required_gold * 2, required_gold * 3))),
+            (0.3, lambda: (print("Dark energy surges through you!"),
+                           self._give_major_buff(player, 5, 10, 15, 20),
+                           self._take_damage(player, 5, 10, "The power overwhelms you briefly! "))),
+            (0.2, lambda: (print("The shrine's power infuses your very being!"),
+                           self._permanent_stat_increase_specific(player, 3,
+                            ["attack", "defence", "accuracy", "armour_penetration"]))),
+            (0.2, lambda:(print("The shrine rejects your offering violently!"),
+                          self._take_damage(player, 20, 30, "Dark energy explodes outward! ")))
         ]
         self._resolve_weighted_outcome(outcomes, player)
         
+    def _outcome_shrine_destroy(self, player, game):
+        """Attempt to destroy the cursed shrine"""
+        print("You attempt to destroy the dark altar...")
+        
+        # Check if player is strong enough based on level
+        if player.level < 10:
+            print("The shrine's power is too great for your current abilities!")
+            self._take_damage(player, 25, 35, "Dark energy overwhelms you! ")
+            return
+        
+        # Higher level = better chance of success
+        success_chance = min(0.7, 0.3 + (player.level -10) * 0.05) # Caps at 70%
+        
+        if random.random() < success_chance:
+            # Successful destruction...
+            outcomes = [
+                (0.4, lambda: (print("You destroy the shrine and absorb it's power!"),
+                               self._give_major_buff(player, 10, 15, 10, 15),
+                               self._gain_exp(player, 50, 100, "Dark knowledge floods your mind!"),
+                               self._trigger_scaled_encounter(player, game, ["Shrine Guardian"]))),
+                (0.3, lambda: (print("The shrine shatters revealing hidden treasures!"),
+                               self._give_gold(player, 200, 400),
+                               self._give_tier_equipment(player, game, player.level + 2),
+                               self._trigger_scaled_encounter(player, game, ["Shrine Guardian"]))),
+                (0.3, lambda: (print("As the shrine crumbles, its power permanently enhances you!"),
+                               self._permanent_stat_increase_specific(player, 4,
+                                ["attack", "defence", "evasion", "accuracy"]),
+                               self._trigger_scaled_encounter(player, game, ["Shrine Guardian"])))
+            ]
+            self._resolve_weighted_outcome(outcomes, player)
+        else:
+            # Failed destruction attempt
+            print("Your attempt to destroy the shrine backfires horribly!")
+            
+            # Multiple negative effects
+            self._take_damage(player, 30, 50, "Dark energy tears through you! ")
+            outcomes = [
+                (0.5, lambda: (print("The shrine's curse weakens you!"),
+                               player.apply_debuff("attack", 10),
+                               player.apply_debuff("defence", 10))),
+                (0.3, lambda: (print("The shrine drains your vitality!"),
+                               self._drain_stamina(player, 0.5),
+                               self._permanent_stat_decrease_specific(player, "max_hp", 10))),
+                (0.2, lambda: (print("The shrine's guardian appears!"),
+                               self._trigger_scaled_encounter(player, game, ["Shrine Guardian"])))
+            ]
+            self._resolve_weighted_outcome(outcomes, player)
+    
+    def _outcome_shrine_ignore(self, player, game):
+        # Attempt to ignore the shrine
+        if random.random() < 0.5:
+            print("The shrine won't allow you to go that easily!")
+            self._take_damage(player, 10, 20, "The shrine rips some health away from you before you escape! ")
+        else:
+            print("You hear something behind you as you attempt to leave, you turn around...")
+            self._trigger_scaled_encounter(player, game, ["Shrine Guardian"])
+       
     def _outcome_ignore(self, player, game):
         """Ignore the event"""
         print("You decide to move on...")
@@ -1116,15 +1237,16 @@ class RandomEventSystem:
         setattr(player, stat, getattr(player, stat) - amount)
         print(f"You feel permanently weakened! {stat.replace('_', ' ').title()} decreased by {amount}!")
     
-    def _permanent_stat_increase_specific(self, player, stat, value):
+    def _permanent_stat_increase_specific(self, player, value, stat=[]):
         """Give a small increase to chosen stat"""
+        stat = random.choice(stat)
         setattr(player, stat, getattr(player, stat) + value)
-        print(f"You feel permanently strengthened! {stat.title()} increased by {value}!")
+        print(f"You feel permanently strengthened! {stat.replace('_', ' ').title()} increased by {value}!")
     
     def _permanent_stat_decrease_specific(self, player, stat, value):
         """Give a small decrease to chosen stat"""
         setattr(player, stat, getattr(player, stat) - value)
-        print(f"You feel permanently weakened! {stat.title()} decreased by {value}!")
+        print(f"You feel permanently weakened! {stat.replace('_', ' ').title()} decreased by {value}!")
         
     def _discover_location(self, player, game, number):
         """Discover a number of unvisited locations"""
@@ -1137,7 +1259,109 @@ class RandomEventSystem:
             print("You gain information about a new area of the map (Allows teleportation to location)")
         else:
             self._give_gold(player, 50, 100, "You already know of all locations, the Deities provide a monetary gain instead!")
+    
+    def _trade_hp_for_reward(self, player, game, min_percent = 10, max_percent = 75):
+        """
+        Trade a portion of health for a reward that scales with the sacrifice
+        Default minimum 10%, maximum 75%, changeable when calling method
+        """
+        # Calculate the health cost (percentage of current HP)
+        max_sacrifice = int(player.hp * (max_percent / 100))
+        min_sacrifice = int(player.hp * (min_percent / 100))
         
+        if player.hp <= min_sacrifice:
+            print("You don't have enough health to sacrifice!")
+            return
+        
+        # Let the player choose the sacrifice amount within range
+        print(f"\nChoose amount of health to sacrifice ({min_sacrifice} - {max_sacrifice} HP):")
+        print(f"Current HP: {player.hp}/{player.max_hp}")
+        
+        try:
+            sacrifice = int(input(f"Enter amount to sacrifice (0 to cancel): "))
+            if sacrifice == 0:
+                return False
+            if sacrifice < min_sacrifice or sacrifice > max_sacrifice:
+                print("Invalid sacrifice amount!")
+                return False
+            
+            # Calculate reward scaling factor (higher sacrifice = higher reward)
+            scaling = sacrifice / max_sacrifice # 0.0 to 1.0
+            
+            # Pay the health cost
+            self._take_damage(player, sacrifice, sacrifice, "The dark powers accept your sacrifice... ")
+            
+            # Choose reward type based on sacrifice amount
+            if random.random() < 0.2 + (scaling * 0.3): # 20-50% chance for special reward
+                reward_type = 'special'
+            elif random.random() < 0.5 + (scaling * 0.2): # 50-70% chance for major reward
+                reward_type = 'major'
+            elif random.random() < 0.7 + (scaling * 0.2): # 70-90% chance for minor reward
+                reward_type = 'minor'
+            else:
+                reward_type = 'basic'
+                
+            # Grant reward based on type
+            if reward_type == 'special':
+                # Special rewards - rare/powerful items or significant permanent bonuses
+                if random.random() < 0.5:
+                    self._give_special_item(player, game, "The dark powers grant you an item of great power!")
+                else:
+                    print("Dark energy surges through you, permanently enhancing one of your stats!")
+                    self._permanent_stat_increase_specific(player, 5, ["attack", "defence", "evasion", "accuracy", "armour_penetration"])
+            elif reward_type == 'major':
+                # Major rewards, significant temporary buffs or valuable items
+                if random.random() < 0.5:
+                    print("The dark energy surrounds you and empowers you!") 
+                    print("Gain a significant temporary bonus to all stats!")
+                    print("And a small permanent increase to one stat!")
+                    buff_amount = int(15 + (scaling * 10)) # 15-25 stat boost
+                    duration = int(10 + (scaling * 5)) # 10-15 turns
+                    self._give_major_buff(player, buff_amount, buff_amount, duration, duration)
+                    self._permanent_stat_increase(player)
+                else:
+                    gold_amount = int(100 + (scaling * 400)) # 100-500 gold
+                    self._give_gold(player, gold_amount, gold_amount, "The dark energy provides a golden reward and a strong piece of equipment!")
+                    self._give_tier_equipment(player, game, player.level * 2)
+            elif reward_type == 'minor':
+                # Minor rewards, small buffs or random consumables
+                if random.random() < 0.5:
+                    print("The dark energy provides a small temporary buff!")
+                    buff_amount = int(5 + (scaling * 10)) # 5-15 stat boost
+                    duration = int(5 + (scaling * 5)) # 5-10 turns
+                    self._give_random_buff_specific(player, duration, duration, buff_amount, buff_amount,
+                                                    ["attack", "defence", "evasion", "accuracy"])
+                else:
+                    gold_amount = int(50 + (scaling * 150)) # 50-200 gold
+                    self._give_gold(player, gold_amount, gold_amount, "The dark energy provides a small financial boon!")
+                    print("It also provides a couple of consumables!")
+                    self._give_multiple_consumables_random(player, game, 2)
+            else:
+                # Give a basic piece of equipment
+                print("The dark energy spits out a piece of equipment at you! Hawk Tuah!")
+                self._give_tier_equipment(player, game, player.level)
+            return True
+    
+        except ValueError:
+            print("Invalid input!")
+            return False
+    
+    def _trigger_scaled_encounter(self, player, game, enemy_type=[]):
+        """Trigger an encounter with a level-scaled enemy"""
+        # Randomly choose between giving enemies
+        enemy_type = random.choice(enemy_type)
+        enemy = create_scaled_enemy(enemy_type, player)
+        
+        if enemy:
+            print(f"A {enemy.name} materialises before you!")
+            if game.battle is None:
+                game.initialise_battle()
+            game.battle.battle(enemy)
+        else:
+            # Fallback to normal encounter
+            print("\nSomething approaches! Prepare yourself!")
+            game.encounter()
+                
     def _is_appropriate_tier(self, item, level):
         """Check if item tier is appropriate for level"""
         tier_levels = {
