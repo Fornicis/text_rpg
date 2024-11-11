@@ -877,13 +877,13 @@ class RandomEventSystem:
         print("You attempt to destroy the dark altar...")
         
         # Check if player is strong enough based on level
-        if player.level < 10:
+        if player.level < 1:
             print("The shrine's power is too great for your current abilities!")
             self._take_damage(player, 25, 35, "Dark energy overwhelms you! ")
             return
         
         # Higher level = better chance of success
-        success_chance = min(0.7, 0.3 + (player.level -10) * 0.05) # Caps at 70%
+        success_chance = max(1.0, 0.3 + (player.level -10) * 0.05) # Caps at 70%
         
         if random.random() < success_chance:
             # Successful destruction...

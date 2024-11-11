@@ -1,6 +1,6 @@
 import random
 from player import Player
-from enemies import Enemy, ENEMY_ATTACK_TYPES
+from enemies import Enemy, ENEMY_ATTACK_TYPES, MONSTER_VARIANTS
 from status_effects import *
 
 
@@ -310,18 +310,42 @@ class Battle:
         
     
     def loot_drop(self, enemy_tier):
-        """Enhanced loot drop system with stack handling"""
+        """Enhanced loot drop system with stack handling and enemy variants"""
         # Base 30% chance for loot
         if random.random() < 0.3:
-            drops = self.generate_loot(enemy_tier)
+            variant_name = None
+            variant_data = None
+            
+            # Check if enemy name contains variant prefix
+            enemy_name = self.enemy.name if hasattr(self, 'enemy') else ""
+            for variant in MONSTER_VARIANTS:
+                if variant in enemy_name:
+                    variant_name = variant
+                    variant_data = MONSTER_VARIANTS[variant]["loot_modifiers"]
+                    break
+                
+            drops = self.generate_loot(enemy_tier, variant_data)
             if drops:
                 self.display_loot(drops)
                 self.add_loot_to_player(drops)
                 
-    def generate_loot(self, enemy_tier):
-        """Generate loot based on enemy tier with stack handling"""
+    def generate_loot(self, enemy_tier, variant_data=None):
+        """Generate loot based on enemy tier with enemy variants"""
         drops = []
-        loot_tiers = self.get_loot_tiers(enemy_tier)
+        base_loot_tiers = self.get_loot_tiers(enemy_tier)
+        loot_tiers = base_loot_tiers.copy()
+        
+        # Apply variant quality boost if applicable
+        if variant_data and "quality_boost" in variant_data:
+            chance = variant_data["quality_boost"]
+            if random.random() < chance:
+                # Upgrade tier
+                tier_order = ["common", "uncommon", "rare", "epic", "masterwork", "legendary", "mythical"]
+                for base_tier in base_loot_tiers:
+                    if base_tier in tier_order:
+                        current_index = tier_order.index(base_tier)
+                        if current_index < len(tier_order) - 1:
+                            loot_tiers.append(tier_order[current_index + 1])
         
         # Get valid items for the loot pool
         loot_pool = [item for item in self.items.values() if item.tier in loot_tiers]
@@ -331,50 +355,72 @@ class Battle:
         
         # Determine number of items to drop
         num_drops = 1
+        
+        # Add variant quantity boost if applicable
+        if variant_data and "quantity_bonus" in variant_data:
+            num_drops += variant_data["quantity_bonus"]
+            
         # 10% chance for additional drop
         while random.random() < 0.1 and num_drops < 3:
             num_drops += 1
+        
+        # Handle guaranteed drops first if variant specifies them
+        if variant_data and "guaranteed_drops" in variant_data:
+            for guaranteed_type in variant_data["guaranteed_drops"]:
+                if guaranteed_type in tier_order: # If it's a tier guarantee
+                    tier_items = [item for item in loot_pool if item.tier == guaranteed_type]
+                    if tier_items:
+                        item = random.choice(tier_items)
+                        drops.append(self.create_item_drop(item))
+                else: # If it's a type of guarantee (like "consumable")
+                    type_items = [item for item in loot_pool if item.type == guaranteed_type]
+                    if type_items:
+                        item = random.choice(type_items)
+                        drops.append(self.create_item_drop(item))
+                num_drops -= 1
             
         for _ in range(num_drops):
             item = random.choice(loot_pool)
-            
-            # Handle stackable items
-            if item.is_stackable():
-                # Caluclate stack size based on tier
-                base_stack = {
-                    "common": (1, 3),
-                    "uncommon": (1, 2),
-                    "rare": (1, 2),
-                    "epic": 1,
-                    "masterwork": 1,
-                    "legendary": 1,
-                    "mythical": 1
-                }
-                
-                # Get stack range for item tier
-                stack_range = base_stack.get(item.tier, (1, 1))
-                
-                # Calculate stack size
-                if isinstance(stack_range, tuple):
-                    stack_size = random.randint(*stack_range)
-                else:
-                    stack_size = stack_range
-                    
-                # Create new item with stack size
-                new_item = type(item)(
-                    item.name, item.type, item.value, item.tier,
-                    effect_type=item.effect_type, effect=item.effect,
-                    cooldown=item.cooldown, duration=item.duration,
-                    tick_effect=item.tick_effect,
-                    weapon_type=item.weapon_type,
-                    stamina_restore=item.stamina_restore
-                )
-                new_item.stack_size = stack_size
-                drops.append(new_item)
-            else:
-                drops.append(item)
+            drops.append(self.create_item_drop(item))
                 
         return drops
+    
+    def create_item_drop(self, item):
+        """Helper method to create a new item instance with appropriate stack size"""
+        if item.is_stackable():
+            # Calculate stack size based on tier
+            base_stack = {
+                "common": (1, 3),
+                "uncommon": (1, 2),
+                "rare": (1, 2),
+                "epic": 1,
+                "masterwork": 1,
+                "legendary": 1,
+                "mythical": 1
+            }
+            
+            # Get stack range for item tier
+            stack_range = base_stack.get(item.tier, (1, 1))
+            
+            # Calculate stack size
+            if isinstance(stack_range, tuple):
+                stack_size = random.randint(*stack_range)
+            else:
+                stack_size = stack_range
+            
+            # Create new item with stack size
+            new_item = type(item)(
+                item.name, item.type, item.value, item.tier,
+                effect_type=item.effect_type, effect=item.effect,
+                cooldown=item.cooldown, duration=item.duration,
+                tick_effect=item.tick_effect,
+                weapon_type=item.weapon_type,
+                stamina_restore=item.stamina_restore
+            )
+            new_item.stack_size = stack_size
+            return new_item
+        else:
+            return item
     
     def display_loot(self, drops):
         """Display dropped loot with stack information"""
@@ -456,19 +502,24 @@ class Battle:
         # Add chance for better loot
         tiers = basic_tiers.get(enemy_tier, ["common"])
         
-        # 5% chance for next tier up
-        if random.random() < 0.05:
-            next_tier_map = {
-                "common": "uncommon",
-                "uncommon": "rare",
-                "rare": "epic",
-                "epic": "masterwork",
-                "masterwork": "legendary",
-                "legendary": "mythical"
-            }
-            
-            if tiers[0] in next_tier_map:
-                tiers.append(next_tier_map[tiers[0]])
+        # Check for variant in enemy name and apply tier boost if applicable
+        enemy_name = self.enemy.name if hasattr(self, 'enemy') else ""
+        for variant in MONSTER_VARIANTS:
+            if variant in enemy_name:
+                variant_data = MONSTER_VARIANTS[variant]["loot_modifiers"]
+                if random.random() < variant_data.get("quality_boost", 0):
+                    # Add next tier up if possible
+                    next_tier_map = {
+                        "common": "uncommon",
+                        "uncommon": "rare",
+                        "rare": "epic",
+                        "epic": "masterwork",
+                        "masterwork": "legendary",
+                        "legendary": "mythical"
+                    }
+                    if tiers[0] in next_tier_map:
+                        tiers.append(next_tier_map[tiers[0]])
+                break
                 
         return tiers
     
