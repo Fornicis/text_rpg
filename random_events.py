@@ -1,4 +1,4 @@
-from enemies import ScalingEnemy, create_scaled_enemy
+from enemies import Enemy, create_enemy
 from enum import Enum
 import random
 
@@ -14,7 +14,7 @@ class RandomEvent:
         self.event_type = event_type
         self.choices = choices # List of tuples (choice_text, outcome_func)
         self.conditions = conditions or {} # Dictionary of requirements
-        self.create_scaled_enemy = create_scaled_enemy
+        self.create_enemy = create_enemy
         
     def can_occur(self, player, location):
         """Check if an event can occur based on conditions"""
@@ -499,7 +499,7 @@ class RandomEventSystem:
     def _outcome_shrine_desecrate(self, player, game):
         """Desecrate the shrine"""
         outcomes = [
-            (0.5, lambda: self._take_damage(player, 30, "The god whose shrine this is smites you for your unholy act!")),
+            (0.5, lambda: self._take_damage(player, 20, 30, "The god whose shrine this is smites you for your unholy act!")),
             (0.3, lambda: self._give_gold(player, 50, 100, "You find some of the gold other adventurers have left and steal it!")),
             (0.1, lambda: self._give_tier_equipment(player, game, player.level)),
             (0.1, lambda: print("Nothing happens, but you do feel guilty."))
@@ -1350,7 +1350,7 @@ class RandomEventSystem:
         """Trigger an encounter with a level-scaled enemy"""
         # Randomly choose between giving enemies
         enemy_type = random.choice(enemy_type)
-        enemy = create_scaled_enemy(enemy_type, player)
+        enemy = create_enemy(enemy_type, player)
         
         if enemy:
             print(f"A {enemy.name} materialises before you!")

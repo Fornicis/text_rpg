@@ -11,6 +11,7 @@ class Battle:
         self.game = game
         self.turn_counter = 0
         self.battle_ended = False
+        self.enemy = None
         
     def player_attack(self, enemy):
         # First check for status effects that prevent attacking
@@ -227,6 +228,7 @@ class Battle:
     
     def battle(self, enemy):
         #Battle logic, displays player and enemy stats, updates the cooldowns of any items and buffs
+        self.enemy = enemy
         print(f"\nBattle start! {self.player.name} vs {enemy.name}")
         
         while not self.battle_ended:
@@ -307,45 +309,50 @@ class Battle:
             print("You successfully ran away from the battle.")
         
         self.player.cleanup_after_battle()
+        self.enemy = None
         
     
     def loot_drop(self, enemy_tier):
         """Enhanced loot drop system with stack handling and enemy variants"""
-        # Base 30% chance for loot
-        if random.random() < 0.3:
-            variant_name = None
-            variant_data = None
-            
-            # Check if enemy name contains variant prefix
-            enemy_name = self.enemy.name if hasattr(self, 'enemy') else ""
-            for variant in MONSTER_VARIANTS:
-                if variant in enemy_name:
-                    variant_name = variant
-                    variant_data = MONSTER_VARIANTS[variant]["loot_modifiers"]
-                    break
+        # Get variant info from the enemy if it exists
+        variant_data = getattr(self.enemy, 'variant', None)
+        drops = []
+        
+        # Handle variant-specific drops first, if applicable
+        if variant_data and 'loot_modifiers' in variant_data:
+            # Handle guaranteed drops from variants
+            guaranteed_drops = variant_data['loot_modifiers'].get('guaranteed_drops', [])
+            for guaranteed_type in guaranteed_drops:
+                if guaranteed_type in ["common", "uncommon", "rare", "epic", "masterwork", "legendary", "mythical"]:
+                    # Get items of the guaranteed tier
+                    tier_items = [item for item in self.items.values() if item.tier == guaranteed_type]
+                    if tier_items:
+                        drops.append(self.create_item_drop(random.choice(tier_items)))
+                else:
+                    # Get items of the guaranteed type (like "consumable")
+                    type_items = [item for item in self.items.values() if item.type == guaranteed_type]
+                    if type_items:
+                        drops.append(self.create_item_drop(random.choice(type_items)))
+                        
+            # Get base drops with variant modifiers (this handles quantity bonus)
+            base_drops = self.generate_loot(enemy_tier, variant_data['loot_modifiers'])
+            drops.extend(base_drops)
+        else:
+            # Regular random loot check (30% chance)
+            if random.random() < 0.3:
+                base_drops = self.generate_loot(enemy_tier, None)
+                drops.extend(base_drops)
+        
+        # Display and add drops if any were generated
+        if drops:
+            self.display_loot(drops)
+            self.add_loot_to_player(drops)
                 
-            drops = self.generate_loot(enemy_tier, variant_data)
-            if drops:
-                self.display_loot(drops)
-                self.add_loot_to_player(drops)
-                
-    def generate_loot(self, enemy_tier, variant_data=None):
+    def generate_loot(self, enemy_tier, variant_modifiers=None):
         """Generate loot based on enemy tier with enemy variants"""
         drops = []
         base_loot_tiers = self.get_loot_tiers(enemy_tier)
         loot_tiers = base_loot_tiers.copy()
-        
-        # Apply variant quality boost if applicable
-        if variant_data and "quality_boost" in variant_data:
-            chance = variant_data["quality_boost"]
-            if random.random() < chance:
-                # Upgrade tier
-                tier_order = ["common", "uncommon", "rare", "epic", "masterwork", "legendary", "mythical"]
-                for base_tier in base_loot_tiers:
-                    if base_tier in tier_order:
-                        current_index = tier_order.index(base_tier)
-                        if current_index < len(tier_order) - 1:
-                            loot_tiers.append(tier_order[current_index + 1])
         
         # Get valid items for the loot pool
         loot_pool = [item for item in self.items.values() if item.tier in loot_tiers]
@@ -356,33 +363,32 @@ class Battle:
         # Determine number of items to drop
         num_drops = 1
         
-        # Add variant quantity boost if applicable
-        if variant_data and "quantity_bonus" in variant_data:
-            num_drops += variant_data["quantity_bonus"]
-            
+        # Add variant quantity bonus if applicable
+        if variant_modifiers and "quantity_bonus" in variant_modifiers:
+            num_drops += variant_modifiers["quantity_bonus"]
+        
         # 10% chance for additional drop
         while random.random() < 0.1 and num_drops < 3:
             num_drops += 1
-        
-        # Handle guaranteed drops first if variant specifies them
-        if variant_data and "guaranteed_drops" in variant_data:
-            for guaranteed_type in variant_data["guaranteed_drops"]:
-                if guaranteed_type in tier_order: # If it's a tier guarantee
-                    tier_items = [item for item in loot_pool if item.tier == guaranteed_type]
-                    if tier_items:
-                        item = random.choice(tier_items)
-                        drops.append(self.create_item_drop(item))
-                else: # If it's a type of guarantee (like "consumable")
-                    type_items = [item for item in loot_pool if item.type == guaranteed_type]
-                    if type_items:
-                        item = random.choice(type_items)
-                        drops.append(self.create_item_drop(item))
-                num_drops -= 1
             
         for _ in range(num_drops):
             item = random.choice(loot_pool)
             drops.append(self.create_item_drop(item))
-                
+        
+        # Apply variant quality boost if applicable
+        if variant_modifiers and "quality_boost" in variant_modifiers:
+            tier_order = ["common", "uncommon", "rare", "epic", "masterwork", "legendary", "mythical"]
+            for item in drops:
+                if random.random() < variant_modifiers["quality_boost"]:
+                    current_tier_idx = tier_order.index(item.tier)
+                    if current_tier_idx < len(tier_order) - 1:
+                        # Get an item of the next tier
+                        next_tier = tier_order[current_tier_idx + 1]
+                        next_tier_items = [i for i in self.items.values() if i.tier == next_tier]
+                        if next_tier_items:
+                            upgraded_item = self.create_item_drop(random.choice(next_tier_items))
+                            drops[drops.index(item)] = upgraded_item
+        
         return drops
     
     def create_item_drop(self, item):

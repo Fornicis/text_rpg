@@ -19,7 +19,7 @@ class WorldMap:
             "Desert": {"enemies": ["Sand Wurm", "Dried Mummy", "Dust Devil", "Desert Bandit", "Leopard"], "connected_to": ["Plains", "Valley", "Scorching Plains"], "min_level": 3},
             
             #Medium-Hard Monster Areas (levels 10-14)
-            "Valley": {"enemies": ["Canyon Cougar", "Twisted Mesquite", "Dustier Devil", "Petrified Warrior", "Thunderbird"], "connected_to": ["Mountain", "Desert", "Shadowed Valley"], "min_level": 7},
+            "Valley": {"enemies": ["Canyon Cougar", "Twisted Mesquite", "Dustier Devil", "Petrified Warrior", "Thunderbird", "Valley Tiger"], "connected_to": ["Mountain", "Desert", "Shadowed Valley"], "min_level": 7},
             
             #Hard Monster Areas (levels 15-19)
             "Toxic Swamp": {"enemies": ["Venomous Hydra", "Plague Bearer", "Mire Leviathan", "Toxic Shambler", "Swamp Hag"], "connected_to": ["Swamp", "Death Caves"], "min_level": 13},

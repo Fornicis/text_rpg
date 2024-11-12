@@ -97,7 +97,7 @@ class Character:
             'crit_damage': 'Critical Damage',
             'block_chance': 'Block Chance',
             'damage_reduction': 'Damage Reduction',
-            'armour_penetration': 'Armor Penetration',
+            'armour_penetration': 'Armour Penetration',
             'all stats': 'All Stats'
         }.get(stat, stat.replace('_', ' ').title())
 

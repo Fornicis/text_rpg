@@ -2,374 +2,2115 @@ from player import Character
 import random
 
 class Enemy(Character):
-    def __init__(self, name, hp, attack, defence, accuracy, evasion, crit_chance, crit_damage, armour_penetration, damage_reduction, block_chance, exp, gold, tier, level=0, attack_types=None):
-        super().__init__(name, hp, attack, defence, accuracy, evasion, crit_chance, crit_damage, armour_penetration, damage_reduction, block_chance)
+    def __init__(self, name=None, hp=None, attack=None, defence=None, accuracy=None, evasion=None, 
+                 crit_chance=None, crit_damage=None, armour_penetration=None, damage_reduction=None, 
+                 block_chance=None, exp=None, gold=None, tier=None, level=0, attack_types=None, template=None, player=None):
+        """
+        Initialise enemy either from direct stats or from a template + player scaling
+        If template and player are provided, scale stats based on player
+        Otherwise use provided stats directly
+        """
+        if template and player:
+        # Calculate stats from template and player
+            base_percentages = template["stats"].copy()
+            
+            # First roll for whether this should be a variant at all (10% chance)
+            final_name = template['name']
+            if random.random() < 0.1:  # 10% chance for any variant
+                # Create a list of variants with their relative weights
+                available_variants = [(name, var_data["chance"]) 
+                                    for name, var_data in MONSTER_VARIANTS.items()]
+                
+                # Get total weight for normalization
+                total_weight = sum(weight for _, weight in available_variants)
+                
+                # Roll for specific variant
+                variant_roll = random.random() * total_weight
+                current_weight = 0
+                
+                for variant_name, weight in available_variants:
+                    current_weight += weight
+                    if variant_roll <= current_weight:
+                        variant = MONSTER_VARIANTS[variant_name]
+                        # Store the complete variant data
+                        self.variant = {
+                            'name': variant_name,
+                            'loot_modifiers': variant.get('loot_modifiers', {}).copy()
+                        }
+                        final_name = f"{variant_name} {template['name']}"
+                        
+                        # Apply variant stat modifiers
+                        for stat, modifier in variant["stats"].items():
+                            if stat in base_percentages:
+                                base_percentages[stat] = int(base_percentages[stat] * (modifier / 100))
+                        
+                        # Handle additional attacks if specified
+                        if "additional_attacks" in variant:
+                            template["attack_types"].extend(variant["additional_attacks"])
+                        
+                        break
+                else:
+                    self.variant = None
+            else:
+                self.variant = None
+            
+            # Calculate actual stats
+            hp = int(player.max_hp * base_percentages["hp_percent"] / 100)
+            defence = int((player.base_attack + player.level_modifiers["attack"] + player.equipment_modifiers["attack"]) * base_percentages["attack_percent"] / 100)
+            attack = int((player.base_defence + player.level_modifiers["defence"] + player.equipment_modifiers["defence"]) * base_percentages["defence_percent"] / 100)
+            accuracy = int((player.base_accuracy + player.level_modifiers["accuracy"] + player.equipment_modifiers["accuracy"]) * base_percentages["accuracy_percent"] / 100)
+            evasion = int((player.base_evasion + player.level_modifiers["evasion"] + player.equipment_modifiers["evasion"]) * base_percentages["evasion_percent"] / 100)
+            crit_chance = int((player.base_crit_chance + player.level_modifiers["crit_chance"] + player.equipment_modifiers["crit_chance"]) * base_percentages["crit_chance_percent"] / 100)
+            crit_damage = int((player.base_crit_damage + player.level_modifiers["crit_damage"] + player.equipment_modifiers["crit_damage"]) * base_percentages["crit_damage_percent"] / 100)
+            armour_penetration = int((player.base_armour_penetration + player.level_modifiers["armour_penetration"] + player.equipment_modifiers["armour_penetration"]) * base_percentages["armour_penetration_percent"] / 100)
+            damage_reduction = int((player.base_damage_reduction + player.level_modifiers["damage_reduction"] + player.equipment_modifiers["damage_reduction"]) * base_percentages["damage_reduction_percent"] / 100)
+            block_chance = int((player.base_block_chance + player.level_modifiers["block_chance"] + player.equipment_modifiers["block_chance"]) * base_percentages["block_chance_percent"] / 100)
+            
+            # Ensure minimum values
+            hp = max(1, hp)
+            attack = max(1, attack)
+            defence = max(1, defence)
+            accuracy = max(1, accuracy)
+            evasion = max(1, evasion)
+            crit_chance = max(1, crit_chance)
+            crit_damage = max(100, crit_damage)
+            armour_penetration = max(0, armour_penetration)
+            damage_reduction = max(0, damage_reduction)
+            block_chance = max(0, block_chance)
+            
+            # Set rewards
+            exp = random.randint(10, 20) * player.level
+            gold = random.randint(10, 15) * player.level
+            
+            if self.variant:
+                exp = int(exp * 1.5)
+                if 'loot_modifiers' in variant and 'gold_multiplier' in variant['loot_modifiers']:
+                    gold = int(gold * variant['loot_modifiers']['gold_multiplier'])
+                # Store variant info for loot drops
+                self.variant = variant
+                name = f"{variant_name} {template['name']}"
+            else:
+                self.variant = None
+            
+            # Handle attack types
+            attack_types = template["attack_types"].copy()
+            if self.variant and "additional_attacks" in variant:
+                attack_types.extend(variant["additional_attacks"])
+            
+            # Get level and tier from template
+            level = random.randint(max(1, player.level - random.randint(1, 2)), player.level + random.randint(1, 2))
+            tier = template["tier"]
+        
+        # Initialise the character with either calculated or provided stats
+        super().__init__(final_name if template and player else name, hp, attack, defence, accuracy, evasion, 
+                        crit_chance, crit_damage, armour_penetration, 
+                        damage_reduction, block_chance)
+        
         self.exp = exp
         self.gold = gold
         self.tier = tier
         self.level = level
         self.stunned = False
+        
+        # Initialise attack types
         if attack_types:
             self.attack_types = {attack_type: ENEMY_ATTACK_TYPES[attack_type] for attack_type in attack_types}
         else:
             self.attack_types = {"normal": ENEMY_ATTACK_TYPES["normal"]}
-        
-        
+
     def choose_attack(self):
         if self.stunned:
             self.stunned = False
             return None
         return random.choice(list(self.attack_types.keys()))
+
+    def get_level_appropriate_attacks(self):
+        """Get attacks available at current level"""
+        attack_unlocks = {
+            1: ["normal", "double", "power"],
+            5: ["stunning", "poison", "burn", "freeze"],
+            10: ["draining", "vampiric", "attack_weaken"],
+            15: ["reckless", "defence_break", "confusion"],
+            20: ["triple", "damage_reflect"]
+        }
         
-    """ Effects to add
-            "execute_low_health": f"The attack deals extra damage due to {player.name}'s low health!",
-            "mana_drain": f"{player.name}'s energy is drained! They lose some stamina.",
-            "absorb_buff": f"{self.name} absorbs some of {player.name}'s power, growing stronger!",
-            "random_effect": "A chaotic energy surges through the battlefield!",
-            # Add descriptions for boss-specific effects
-            "divine_smite": "Divine energy rains down, dealing massive damage!",
-            "random_debuff": "Reality shifts around you, applying random negative effects!",
-            "ignore_defense": "The cosmic energy bypasses your defenses completely!",
-            "heal_damage": f"{self.name} consumes the void, healing itself!",
-            "alter_stats": "The fabric of reality changes, altering your stats!",
-            "invulnerability": f"{self.name} is surrounded by an impenetrable divine shield!",
-            "ultimate_damage": "Cosmic forces converge to deal devastating damage!"
-        }"""
+        available_attacks = []
+        for req_level, attacks in attack_unlocks.items():
+            if self.level >= req_level:
+                available_attacks.extend(attacks)
+                
+        return [attack for attack in available_attacks if attack in self.attack_types]
+
+# Helper function to create enemies
+def create_enemy(enemy_type, player=None):
+    """Create a new enemy either from template + player scaling or from ENEMY_TEMPLATES directly"""
+    if enemy_type in ENEMY_TEMPLATES:
+        template = ENEMY_TEMPLATES[enemy_type]
+        return Enemy(template=template, player=player)
+    return None
+
+ENEMY_TEMPLATES = {
+    # Easy Enemies
+    "Rat": {
+        "name": "Rat",
+        "stats": {
+            "hp_percent": random.randint(50, 70),      # Small but quick
+            "attack_percent": random.randint(80, 90),  
+            "defence_percent": random.randint(50, 70),  # Poor defense
+            "accuracy_percent": random.randint(90, 100), 
+            "evasion_percent": random.randint(90, 110), # High evasion
+            "crit_chance_percent": random.randint(70, 90),
+            "crit_damage_percent": random.randint(80, 100),
+            "armour_penetration_percent": random.randint(40, 60),
+            "damage_reduction_percent": random.randint(40, 60),
+            "block_chance_percent": random.randint(30, 50)
+        },
+        "tier": "low",
+        "attack_types": ["normal", "double", "poison", "attack_weaken"]
+    },
+
+    "Boar": {
+        "name": "Boar",
+        "stats": {
+            "hp_percent": random.randint(100, 120),     # Tanky
+            "attack_percent": random.randint(90, 100),  # Strong
+            "defence_percent": random.randint(90, 100), 
+            "accuracy_percent": random.randint(70, 80), 
+            "evasion_percent": random.randint(40, 60),  # Poor evasion
+            "crit_chance_percent": random.randint(50, 70),
+            "crit_damage_percent": random.randint(100, 120),
+            "armour_penetration_percent": random.randint(50, 70),
+            "damage_reduction_percent": random.randint(70, 90),
+            "block_chance_percent": random.randint(50, 70)
+        },
+        "tier": "low",
+        "attack_types": ["normal", "power", "reckless", "stunning"]
+    },
+
+    "Plains Hawk": {
+        "name": "Plains Hawk",
+        "stats": {
+            "hp_percent": random.randint(50, 70),       # Very fragile
+            "attack_percent": random.randint(90, 100),  
+            "defence_percent": random.randint(40, 60),  # Poor defense
+            "accuracy_percent": random.randint(100, 120), # Highly accurate
+            "evasion_percent": random.randint(100, 120), # Very evasive
+            "crit_chance_percent": random.randint(80, 100),
+            "crit_damage_percent": random.randint(100, 120),
+            "armour_penetration_percent": random.randint(50, 70),
+            "damage_reduction_percent": random.randint(30, 50),
+            "block_chance_percent": random.randint(20, 40)
+        },
+        "tier": "low",
+        "attack_types": ["normal", "double", "triple", "attack_weaken"]
+    },
+
+    "Strider": {
+        "name": "Strider",
+        "stats": {
+            "hp_percent": random.randint(70, 90),     # Balanced HP
+            "attack_percent": random.randint(80, 90), # Balanced attack
+            "defence_percent": random.randint(60, 80),
+            "accuracy_percent": random.randint(80, 100),
+            "evasion_percent": random.randint(80, 100), 
+            "crit_chance_percent": random.randint(60, 80),
+            "crit_damage_percent": random.randint(80, 100),
+            "armour_penetration_percent": random.randint(50, 70),
+            "damage_reduction_percent": random.randint(50, 70),
+            "block_chance_percent": random.randint(40, 60)
+        },
+        "tier": "low",
+        "attack_types": ["normal", "double", "stunning", "defence_break"]
+    },
+
+    "Bull": {
+        "name": "Bull",
+        "stats": {
+            "hp_percent": random.randint(100, 120),    # Very tanky
+            "attack_percent": random.randint(100, 120), # Very strong
+            "defence_percent": random.randint(80, 100),
+            "accuracy_percent": random.randint(50, 70), # Poor accuracy
+            "evasion_percent": random.randint(30, 50),  # Very poor evasion
+            "crit_chance_percent": random.randint(40, 60),
+            "crit_damage_percent": random.randint(100, 120),
+            "armour_penetration_percent": random.randint(60, 80),
+            "damage_reduction_percent": random.randint(70, 90),
+            "block_chance_percent": random.randint(40, 60)
+        },
+        "tier": "low",
+        "attack_types": ["normal", "power", "reckless", "stunning"]
+    },
+
+    "Bat": {
+        "name": "Bat",
+        "stats": {
+            "hp_percent": random.randint(50, 70),      # Fragile
+            "attack_percent": random.randint(80, 90),
+            "defence_percent": random.randint(50, 70),
+            "accuracy_percent": random.randint(90, 110),
+            "evasion_percent": random.randint(100, 120), # Very evasive
+            "crit_chance_percent": random.randint(70, 90),
+            "crit_damage_percent": random.randint(80, 100),
+            "armour_penetration_percent": random.randint(40, 60),
+            "damage_reduction_percent": random.randint(30, 50),
+            "block_chance_percent": random.randint(20, 40)
+        },
+        "tier": "low",
+        "attack_types": ["normal", "double", "vampiric", "draining"]
+    },
+
+    "Goblin": {
+        "name": "Goblin",
+        "stats": {
+            "hp_percent": random.randint(60, 80),
+            "attack_percent": random.randint(80, 90),
+            "defence_percent": random.randint(50, 70),
+            "accuracy_percent": random.randint(80, 100),
+            "evasion_percent": random.randint(70, 90),
+            "crit_chance_percent": random.randint(70, 90),
+            "crit_damage_percent": random.randint(80, 100),
+            "armour_penetration_percent": random.randint(50, 70),
+            "damage_reduction_percent": random.randint(40, 60),
+            "block_chance_percent": random.randint(30, 50)
+        },
+        "tier": "low",
+        "attack_types": ["normal", "double", "poison", "attack_weaken"]
+    },
+
+    "Spider": {
+        "name": "Spider",
+        "stats": {
+            "hp_percent": random.randint(50, 70),       # Fragile
+            "attack_percent": random.randint(80, 100),
+            "defence_percent": random.randint(50, 70),
+            "accuracy_percent": random.randint(100, 120), # Very accurate
+            "evasion_percent": random.randint(90, 110),
+            "crit_chance_percent": random.randint(80, 100),
+            "crit_damage_percent": random.randint(90, 110),
+            "armour_penetration_percent": random.randint(50, 70),
+            "damage_reduction_percent": random.randint(30, 50),
+            "block_chance_percent": random.randint(20, 40)
+        },
+        "tier": "low",
+        "attack_types": ["normal", "double", "poison", "defence_break"]
+    },
+
+    "Slime": {
+        "name": "Slime",
+        "stats": {
+            "hp_percent": random.randint(100, 120),     # High HP
+            "attack_percent": random.randint(80, 90),   
+            "defence_percent": random.randint(90, 110), # High defense
+            "accuracy_percent": random.randint(60, 80),
+            "evasion_percent": random.randint(40, 60),
+            "crit_chance_percent": random.randint(30, 50),
+            "crit_damage_percent": random.randint(70, 90),
+            "armour_penetration_percent": random.randint(30, 50),
+            "damage_reduction_percent": random.randint(90, 110),
+            "block_chance_percent": random.randint(50, 70)
+        },
+        "tier": "low",
+        "attack_types": ["normal", "poison", "draining", "defence_break"]
+    },
+
+    "Frog": {
+        "name": "Frog",
+        "stats": {
+            "hp_percent": random.randint(70, 90),
+            "attack_percent": random.randint(80, 90),
+            "defence_percent": random.randint(60, 80),
+            "accuracy_percent": random.randint(80, 100),
+            "evasion_percent": random.randint(90, 110),
+            "crit_chance_percent": random.randint(60, 80),
+            "crit_damage_percent": random.randint(80, 100),
+            "armour_penetration_percent": random.randint(40, 60),
+            "damage_reduction_percent": random.randint(50, 70),
+            "block_chance_percent": random.randint(30, 50)
+        },
+        "tier": "low",
+        "attack_types": ["normal", "double", "poison", "stunning"]
+    },
+
+    "Tree Sprite": {
+        "name": "Tree Sprite",
+        "stats": {
+            "hp_percent": random.randint(60, 80),
+            "attack_percent": random.randint(80, 90),
+            "defence_percent": random.randint(50, 70),
+            "accuracy_percent": random.randint(80, 100),
+            "evasion_percent": random.randint(80, 100),
+            "crit_chance_percent": random.randint(60, 80),
+            "crit_damage_percent": random.randint(80, 100),
+            "armour_penetration_percent": random.randint(40, 60),
+            "damage_reduction_percent": random.randint(50, 70),
+            "block_chance_percent": random.randint(40, 60)
+        },
+        "tier": "low",
+        "attack_types": ["normal", "draining", "stunning", "attack_weaken"]
+    },
+
+    "Snake": {
+        "name": "Snake",
+        "stats": {
+            "hp_percent": random.randint(60, 80),
+            "attack_percent": random.randint(90, 100),
+            "defence_percent": random.randint(50, 70),
+            "accuracy_percent": random.randint(90, 110),
+            "evasion_percent": random.randint(90, 110),
+            "crit_chance_percent": random.randint(70, 90),
+            "crit_damage_percent": random.randint(90, 110),
+            "armour_penetration_percent": random.randint(50, 70),
+            "damage_reduction_percent": random.randint(30, 50),
+            "block_chance_percent": random.randint(20, 40)
+        },
+        "tier": "low",
+        "attack_types": ["normal", "double", "poison", "defence_break"]
+    },
+
+    "Forest Hawk": {
+        "name": "Forest Hawk",
+        "stats": {
+            "hp_percent": random.randint(50, 70),
+            "attack_percent": random.randint(90, 100),
+            "defence_percent": random.randint(50, 70),
+            "accuracy_percent": random.randint(100, 120),
+            "evasion_percent": random.randint(100, 120),
+            "crit_chance_percent": random.randint(80, 100),
+            "crit_damage_percent": random.randint(100, 120),
+            "armour_penetration_percent": random.randint(50, 70),
+            "damage_reduction_percent": random.randint(30, 50),
+            "block_chance_percent": random.randint(20, 40)
+        },
+        "tier": "low",
+        "attack_types": ["normal", "double", "stunning", "triple"]
+    },
+
+    "Locust": {
+        "name": "Locust",
+        "stats": {
+            "hp_percent": random.randint(50, 70),
+            "attack_percent": random.randint(80, 90),
+            "defence_percent": random.randint(50, 70),
+            "accuracy_percent": random.randint(90, 110),
+            "evasion_percent": random.randint(90, 110),
+            "crit_chance_percent": random.randint(60, 80),
+            "crit_damage_percent": random.randint(80, 100),
+            "armour_penetration_percent": random.randint(50, 70),
+            "damage_reduction_percent": random.randint(30, 50),
+            "block_chance_percent": random.randint(20, 40)
+        },
+        "tier": "low",
+        "attack_types": ["normal", "double", "poison", "triple"]
+    },
+
+    "Leprechaun": {
+        "name": "Leprechaun",
+        "stats": {
+            "hp_percent": random.randint(70, 90),
+            "attack_percent": random.randint(80, 85),
+            "defence_percent": random.randint(50, 70),
+            "accuracy_percent": random.randint(90, 110),
+            "evasion_percent": random.randint(100, 120),
+            "crit_chance_percent": random.randint(90, 110),
+            "crit_damage_percent": random.randint(100, 120),
+            "armour_penetration_percent": random.randint(40, 60),
+            "damage_reduction_percent": random.randint(40, 60),
+            "block_chance_percent": random.randint(50, 70)
+        },
+        "tier": "low",
+        "attack_types": ["normal", "double", "stunning", "draining"]
+    },
     
-def initialise_enemies():
-    return {
-            # Easy Enemies (Levels 1-4)
-            "Rat": Enemy("Rat", 21, 21, 5, 76, 12, 5, 118, 0, 0, 0, 10, random.randrange(3, 10), "low", 1, 
-                        ["normal", "double", "poison", "defence_break"]),
-
-            "Boar": Enemy("Boar", 30, 24, 7, 71, 6, 7, 128, 2, 4, 0, 15, random.randrange(5, 15), "low", 2, 
-                        ["normal", "power", "reckless", "stunning"]),
-
-            "Plains Hawk": Enemy("Plains Hawk", 19, 26, 4, 84, 16, 8, 137, 1, 0, 0, 20, random.randrange(8, 18), "low", 1, 
-                                ["normal", "double", "stunning", "triple"]),
-
-            "Strider": Enemy("Strider", 34, 25, 8, 79, 13, 6, 123, 1, 2, 3, 25, random.randrange(10, 20), "low", 2, 
-                            ["normal", "double", "power", "defence_break"]),
-
-            "Bull": Enemy("Bull", 43, 27, 10, 69, 4, 5, 146, 3, 6, 0, 30, random.randrange(12, 24), "low", 3, 
-                        ["normal", "power", "reckless", "stunning"]),
-
-            "Bat": Enemy("Bat", 24, 23, 6, 81, 19, 7, 127, 0, 0, 0, 10, random.randrange(3, 10), "low", 1, 
-                        ["normal", "double", "vampiric", "draining"]),
-
-            "Goblin": Enemy("Goblin", 27, 25, 8, 74, 11, 6, 122, 1, 2, 3, 15, random.randrange(5, 15), "low", 2, 
-                            ["normal", "double", "poison", "stunning"]),
-
-            "Spider": Enemy("Spider", 22, 26, 5, 83, 14, 8, 132, 1, 0, 0, 20, random.randrange(8, 18), "low", 1, 
-                            ["normal", "double", "poison", "attack_weaken"]),
-
-            "Slime": Enemy("Slime", 38, 22, 9, 68, 7, 3, 109, 0, 6, 0, 25, random.randrange(10, 20), "low", 2, 
-                        ["normal", "poison", "stunning", "draining"]),
-
-            "Frog": Enemy("Frog", 36, 26, 8, 73, 17, 5, 119, 0, 3, 0, 30, random.randrange(12, 24), "low", 3, 
-                        ["normal", "double", "poison", "stunning"]),
-
-            "Tree Sprite": Enemy("Tree Sprite", 20, 24, 6, 78, 13, 6, 121, 0, 2, 2, 10, random.randrange(3, 10), "low", 1, 
-                                ["normal", "double", "draining", "stunning"]),
-
-            "Snake": Enemy("Snake", 24, 27, 5, 82, 18, 7, 136, 2, 0, 0, 15, random.randrange(5, 15), "low", 1, 
-                        ["normal", "double", "poison", "attack_weaken"]),
-
-            "Forest Hawk": Enemy("Forest Hawk", 29, 25, 7, 87, 21, 8, 141, 1, 0, 0, 20, random.randrange(8, 18), "low", 2, 
-                                ["normal", "double", "stunning", "triple"]),
-
-            "Locust": Enemy("Locust", 26, 26, 6, 80, 16, 6, 126, 1, 1, 0, 25, random.randrange(10, 20), "low", 2, 
-                            ["normal", "double", "poison", "triple"]),
-
-            "Leprechaun": Enemy("Leprechaun", 41, 23, 9, 85, 24, 10, 147, 0, 0, 5, 30, random.randrange(12, 24), "low", 3, 
-                                ["normal", "double", "stunning", "draining"]),
-
-            "Wood Spirit": Enemy("Wood Spirit", 26, 24, 7, 77, 11, 5, 117, 0, 3, 3, 10, random.randrange(3, 10), "low", 1, 
-                                ["normal", "draining", "stunning", "double"]),
-
-            "Deepwood Stalker": Enemy("Deepwood Stalker", 32, 26, 9, 83, 15, 7, 131, 2, 2, 0, 15, random.randrange(5, 15), "low", 2, 
-                                    ["normal", "double", "poison", "attack_weaken"]),
-
-            "Deep Bat": Enemy("Deep Bat", 27, 27, 7, 79, 20, 8, 135, 1, 0, 0, 20, random.randrange(8, 18), "low", 2, 
-                            ["normal", "double", "vampiric", "draining"]),
-
-            "Giant Firefly": Enemy("Giant Firefly", 34, 24, 8, 86, 19, 6, 124, 0, 1, 0, 25, random.randrange(10, 20), "low", 2, 
-                                ["normal", "double", "poison", "burn"]),
-
-            "Treant": Enemy("Treant", 51, 25, 12, 67, 2, 3, 116, 0, 6, 4, 30, random.randrange(12, 24), "low", 3, 
-                            ["normal", "power", "stunning", "draining"]),
-            
-            # Medium Enemies (Levels 5-9)
-            "Alligator": Enemy("Alligator", 77, 43, 30, 74, 6, 6, 142, 5, 8, 7, 35, random.randrange(30, 41), "medium", 5, 
-                            ["normal", "power", "reckless", "stunning"]),
-
-            "Poison Frog": Enemy("Poison Frog", 60, 45, 28, 81, 16, 8, 131, 2, 3, 0, 40, random.randrange(35, 46), "medium", 4, 
-                                ["normal", "double", "poison", "defence_break"]),
-
-            "Swamp Troll": Enemy("Swamp Troll", 89, 44, 32, 69, 4, 5, 148, 3, 10, 4, 45, random.randrange(40, 51), "medium", 6, 
-                                ["normal", "power", "poison", "damage_reflect"]),
-
-            "Mosquito Swarm": Enemy("Mosquito Swarm", 64, 47, 26, 92, 27, 10, 118, 0, 0, 0, 35, random.randrange(30, 41), "medium", 4, 
-                                    ["normal", "triple", "poison", "draining"]),
-
-            "Bog Witch": Enemy("Bog Witch", 72, 43, 29, 83, 11, 7, 136, 2, 4, 0, 50, random.randrange(45, 56), "medium", 5, 
-                            ["normal", "poison", "burn", "draining"]),
-
-            "Stone Golem": Enemy("Stone Golem", 102, 42, 34, 66, 1, 3, 157, 5, 10, 9, 55, random.randrange(50, 61), "medium", 6, 
-                                ["normal", "power", "stunning", "defence_break"]),
-
-            "Cultist": Enemy("Cultist", 68, 46, 28, 79, 13, 8, 139, 3, 2, 3, 40, random.randrange(35, 46), "medium", 4, 
-                            ["normal", "burn", "poison", "attack_weaken"]),
-
-            "Mummy": Enemy("Mummy", 81, 44, 31, 73, 7, 6, 132, 2, 7, 6, 45, random.randrange(40, 51), "medium", 5, 
-                        ["normal", "draining", "stunning", "poison"]),
-
-            "Animated Statue": Enemy("Animated Statue", 85, 43, 32, 71, 2, 4, 143, 4, 9, 8, 50, random.randrange(45, 56), "medium", 5, 
-                                    ["normal", "power", "stunning", "damage_reflect"]),
-
-            "Temple Guardian": Enemy("Temple Guardian", 94, 43, 33, 76, 5, 5, 141, 3, 8, 10, 55, random.randrange(50, 61), "medium", 6, 
-                                    ["normal", "power", "stunning", "defence_break"]),
-
-            "Mountain Lion": Enemy("Mountain Lion", 72, 48, 29, 86, 19, 10, 151, 3, 2, 0, 40, random.randrange(35, 46), "medium", 4, 
-                                ["normal", "double", "reckless", "power"]),
-
-            "Rock Elemental": Enemy("Rock Elemental", 98, 41, 35, 64, 1, 3, 154, 5, 10, 8, 50, random.randrange(45, 56), "medium", 6, 
-                                    ["normal", "power", "stunning", "damage_reflect"]),
-
-            "Harpy": Enemy("Harpy", 68, 48, 27, 89, 21, 9, 138, 2, 0, 0, 45, random.randrange(40, 51), "medium", 4, 
-                        ["normal", "double", "stunning", "triple"]),
-
-            "Yeti": Enemy("Yeti", 89, 45, 33, 72, 6, 6, 146, 4, 7, 5, 50, random.randrange(45, 56), "medium", 6, 
-                        ["normal", "power", "reckless", "freeze"]),
-
-            "Orc": Enemy("Orc", 81, 46, 30, 74, 9, 7, 137, 3, 6, 4, 40, random.randrange(35, 46), "medium", 5, 
-                        ["normal", "power", "reckless", "stunning"]),
-
-            "Sand Wurm": Enemy("Sand Wurm", 94, 44, 34, 68, 4, 5, 149, 5, 9, 6, 45, random.randrange(40, 51), "medium", 6, 
-                            ["normal", "power", "poison", "stunning"]),
-
-            "Dried Mummy": Enemy("Dried Mummy", 85, 43, 31, 72, 7, 6, 133, 2, 8, 5, 40, random.randrange(35, 46), "medium", 5, 
-                                ["normal", "draining", "poison", "burn"]),
-
-            "Dust Devil": Enemy("Dust Devil", 64, 49, 28, 87, 23, 8, 129, 1, 2, 0, 45, random.randrange(40, 51), "medium", 4, 
-                                ["normal", "double", "attack_weaken", "triple"]),
-
-            "Desert Bandit": Enemy("Desert Bandit", 77, 47, 30, 82, 17, 9, 141, 3, 3, 2, 50, random.randrange(45, 56), "medium", 5, 
-                                ["normal", "double", "poison", "defence_break"]),
-
-            "Leopard": Enemy("Leopard", 68, 40, 27, 91, 22, 12, 158, 2, 0, 0, 35, random.randrange(30, 41), "medium", 3, 
-                            ["normal", "double", "reckless", "triple"]),
-            
-            # Medium-Hard Enemies (Levels 10-14)
-            "Canyon Cougar": Enemy("Canyon Cougar", 111, 60, 50, 87, 22, 11, 152, 4, 3, 0, 70, random.randrange(65, 81), "medium-hard", 10, 
-                                ["normal", "double", "reckless", "power", "stunning"]),
-
-            "Twisted Mesquite": Enemy("Twisted Mesquite", 136, 57, 52, 78, 8, 7, 138, 2, 11, 6, 75, random.randrange(70, 86), "medium-hard", 12, 
-                                    ["normal", "poison", "stunning", "draining", "damage_reflect"]),
-
-            "Dustier Devil": Enemy("Dustier Devil", 123, 61, 49, 92, 26, 9, 143, 3, 2, 0, 80, random.randrange(75, 91), "medium-hard", 11, 
-                                ["normal", "double", "stunning", "triple", "draining"]),
-
-            "Petrified Warrior": Enemy("Petrified Warrior", 119, 60, 48, 81, 5, 8, 147, 5, 13, 9, 85, random.randrange(80, 96), "medium-hard", 10, 
-                                    ["normal", "power", "stunning", "defence_break", "damage_reflect"]),
-
-            "Thunderbird": Enemy("Thunderbird", 132, 63, 49, 93, 24, 12, 155, 3, 1, 0, 90, random.randrange(85, 101), "medium-hard", 11, 
-                                ["normal", "double", "stunning", "triple", "attack_weaken"]),
-            
-            # Hard Enemies (Levels 15-19)
-            "Venomous Hydra": Enemy("Venomous Hydra", 170, 78, 87, 86, 13, 10, 158, 7, 12, 5, 120, random.randrange(95, 116), "hard", 15, 
-                                    ["normal", "power", "poison", "double", "triple"]),
-
-            "Plague Bearer": Enemy("Plague Bearer", 162, 81, 84, 89, 11, 12, 163, 5, 15, 3, 125, random.randrange(100, 121), "hard", 16, 
-                                ["normal", "poison", "vampiric", "draining", "attack_weaken"]),
-
-            "Mire Leviathan": Enemy("Mire Leviathan", 204, 83, 86, 82, 8, 9, 167, 8, 18, 7, 130, random.randrange(105, 126), "hard", 17, 
-                                    ["normal", "power", "stunning", "poison", "defence_break"]),
-
-            "Toxic Shambler": Enemy("Toxic Shambler", 153, 87, 82, 88, 15, 13, 170, 6, 14, 2, 135, random.randrange(110, 131), "hard", 18, 
-                                    ["normal", "poison", "vampiric", "draining", "double"]),
-
-            "Swamp Hag": Enemy("Swamp Hag", 166, 89, 80, 91, 18, 14, 172, 4, 11, 0, 140, random.randrange(115, 136), "hard", 19, 
-                            ["normal", "poison", "stunning", "draining", "attack_weaken"]),
-
-            "Ancient Golem": Enemy("Ancient Golem", 230, 75, 90, 79, 5, 7, 165, 9, 18, 10, 120, random.randrange(120, 141), "hard", 15, 
-                                ["normal", "power", "stunning", "damage_reflect", "defence_break"]),
-
-            "Cursed Pharaoh": Enemy("Cursed Pharaoh", 187, 79, 86, 87, 12, 11, 168, 6, 16, 6, 125, random.randrange(125, 146), "hard", 16, 
-                                    ["normal", "poison", "stunning", "draining", "attack_weaken"]),
-
-            "Temporal Anomaly": Enemy("Temporal Anomaly", 170, 84, 83, 93, 22, 15, 175, 5, 8, 0, 130, random.randrange(130, 151), "hard", 17, 
-                                    ["normal", "double", "stunning", "defence_break", "attack_weaken"]),
-
-            "Ruin Wraith": Enemy("Ruin Wraith", 179, 86, 81, 90, 20, 13, 171, 7, 10, 0, 135, random.randrange(135, 156), "hard", 18, 
-                                ["normal", "draining", "vampiric", "stunning", "attack_weaken"]),
-
-            "Forgotten Titan": Enemy("Forgotten Titan", 221, 88, 85, 84, 7, 8, 169, 10, 17, 8, 140, random.randrange(140, 161), "hard", 19, 
-                                    ["normal", "power", "reckless", "stunning", "defence_break"]),
-
-            "Frost Giant": Enemy("Frost Giant", 221, 76, 89, 81, 6, 9, 166, 8, 18, 9, 100, random.randrange(145, 166), "hard", 15, 
-                                ["normal", "power", "stunning", "freeze", "defence_break"]),
-
-            "Storm Harpy": Enemy("Storm Harpy", 170, 83, 82, 94, 23, 14, 173, 5, 7, 0, 105, random.randrange(150, 171), "hard", 16, 
-                                ["normal", "double", "stunning", "triple", "attack_weaken"]),
-
-            "Avalanche Elemental": Enemy("Avalanche Elemental", 204, 85, 84, 83, 9, 10, 168, 7, 17, 7, 110, random.randrange(155, 176), "hard", 17, 
-                                        ["normal", "power", "freeze", "stunning", "damage_reflect"]),
-
-            "Mountain Wyvern": Enemy("Mountain Wyvern", 187, 88, 79, 92, 19, 13, 174, 6, 11, 3, 115, random.randrange(160, 181), "hard", 18, 
-                                    ["normal", "double", "reckless", "stunning", "poison"]),
-
-            "Yeti Alpha": Enemy("Yeti Alpha", 213, 90, 81, 85, 10, 11, 170, 8, 16, 6, 120, random.randrange(165, 186), "hard", 19, 
-                                ["normal", "power", "reckless", "freeze", "stunning"]),
-
-            "Fire Elemental": Enemy("Fire Elemental", 196, 77, 88, 88, 14, 12, 171, 7, 15, 0, 100, random.randrange(170, 191), "hard", 15, 
-                                    ["normal", "power", "reckless", "burn", "stunning"]),
-
-            "Sandstorm Djinn": Enemy("Sandstorm Djinn", 179, 82, 83, 91, 21, 13, 169, 5, 9, 0, 105, random.randrange(175, 196), "hard", 16, 
-                                    ["normal", "double", "stunning", "damage_reflect", "attack_weaken"]),
-
-            "Mirage Assassin": Enemy("Mirage Assassin", 170, 86, 80, 95, 24, 15, 176, 6, 6, 0, 110, random.randrange(180, 201), "hard", 17, 
-                                    ["normal", "double", "poison", "triple", "stunning"]),
-
-            "Sunburst Phoenix": Enemy("Sunburst Phoenix", 196, 89, 78, 93, 18, 14, 175, 7, 13, 0, 115, random.randrange(185, 206), "hard", 18, 
-                                    ["normal", "power", "reckless", "burn", "stunning"]),
-
-            "Desert Colossus": Enemy("Desert Colossus", 230, 91, 76, 80, 4, 8, 167, 9, 18, 8, 120, random.randrange(190, 211), "hard", 19, 
-                                    ["normal", "power", "stunning", "defence_break", "damage_reflect"]),
-
-            "Nightmare Stalker": Enemy("Nightmare Stalker", 187, 80, 85, 92, 20, 14, 172, 6, 12, 0, 110, random.randrange(195, 216), "hard", 15, 
-                                    ["normal", "double", "vampiric", "stunning", "attack_weaken"]),
-
-            "Void Weaver": Enemy("Void Weaver", 179, 84, 81, 90, 19, 13, 170, 7, 14, 0, 115, random.randrange(200, 221), "hard", 16, 
-                                ["normal", "draining", "stunning", "attack_weaken", "poison"]),
-
-            "Shadow Dragon": Enemy("Shadow Dragon", 221, 87, 82, 89, 16, 12, 173, 8, 16, 5, 120, random.randrange(205, 226), "hard", 17, 
-                                ["normal", "power", "triple", "stunning", "draining"]),
-
-            "Ethereal Banshee": Enemy("Ethereal Banshee", 170, 90, 77, 94, 22, 15, 177, 5, 8, 0, 125, random.randrange(210, 231), "hard", 18, 
-                                    ["normal", "draining", "stunning", "attack_weaken", "double"]),
-
-            "Abyssal Behemoth": Enemy("Abyssal Behemoth", 238, 91, 79, 83, 6, 9, 168, 10, 18, 7, 130, random.randrange(215, 236), "hard", 19, 
-                                    ["normal", "power", "reckless", "stunning", "defence_break"]),
-            
-            # Very Hard Enemies (Levels 20-24) - 6 attacks each
-            "Necropolis Guardian": Enemy("Necropolis Guardian", 323, 106, 93, 88, 9, 11, 175, 12, 22, 15, 300, random.randrange(240, 271), "very-hard", 20, 
-                                        ["normal", "power", "stunning", "draining", "defence_break", "damage_reflect"]),
-
-            "Soul Reaver": Enemy("Soul Reaver", 298, 112, 88, 95, 18, 14, 182, 10, 15, 5, 325, random.randrange(250, 281), "very-hard", 21, 
-                                ["normal", "triple", "vampiric", "draining", "stunning", "attack_weaken"]),
-
-            "Bone Colossus": Enemy("Bone Colossus", 357, 117, 90, 85, 7, 10, 178, 14, 20, 12, 350, random.randrange(260, 291), "very-hard", 22, 
-                                ["normal", "power", "stunning", "reckless", "defence_break", "damage_reflect"]),
-
-            "Spectral Devourer": Enemy("Spectral Devourer", 315, 122, 84, 93, 20, 15, 185, 11, 14, 0, 375, random.randrange(270, 301), "very-hard", 23, 
-                                    ["normal", "vampiric", "poison", "draining", "stunning", "attack_weaken"]),
-
-            "Lich King": Enemy("Lich King", 340, 125, 87, 91, 13, 13, 180, 13, 18, 8, 400, random.randrange(280, 311), "very-hard", 24, 
-                            ["normal", "draining", "poison", "freeze", "stunning", "attack_weaken"]),
-
-            "Timeless Sphinx": Enemy("Timeless Sphinx", 340, 104, 95, 94, 16, 12, 177, 9, 19, 10, 300, random.randrange(290, 321), "very-hard", 20, 
-                                    ["normal", "stunning", "draining", "poison", "attack_weaken", "damage_reflect"]),
-
-            "Eternal Pharaoh": Enemy("Eternal Pharaoh", 323, 110, 90, 92, 14, 13, 179, 11, 21, 11, 325, random.randrange(300, 331), "very-hard", 21, 
-                                    ["normal", "power", "poison", "draining", "stunning", "defence_break"]),
-
-            "Anubis Reborn": Enemy("Anubis Reborn", 340, 115, 92, 93, 17, 14, 181, 12, 20, 9, 350, random.randrange(310, 341), "very-hard", 22, 
-                                ["normal", "vampiric", "stunning", "double", "triple", "defence_break"]),
-
-            "Mummy Emperor": Enemy("Mummy Emperor", 357, 120, 86, 90, 12, 12, 176, 13, 22, 13, 375, random.randrange(320, 351), "very-hard", 23, 
-                                ["normal", "draining", "poison", "stunning", "defence_break", "damage_reflect"]),
-
-            "Living Obelisk": Enemy("Living Obelisk", 383, 124, 89, 87, 8, 11, 174, 15, 22, 14, 400, random.randrange(330, 361), "very-hard", 24, 
-                                    ["normal", "power", "stunning", "reckless", "defence_break", "damage_reflect"]),
-
-            "Apocalypse Horseman": Enemy("Apocalypse Horseman", 340, 114, 91, 94, 19, 15, 183, 12, 17, 7, 350, random.randrange(310, 341), "very-hard", 22, 
-                                        ["normal", "reckless", "poison", "draining", "stunning", "attack_weaken"]),
-
-            "Abyssal Wyrm": Enemy("Abyssal Wyrm", 357, 119, 85, 92, 15, 14, 180, 14, 19, 8, 375, random.randrange(320, 351), "very-hard", 23, 
-                                ["normal", "power", "poison", "stunning", "defence_break", "reckless"]),
-
-            "Void Titan": Enemy("Void Titan", 383, 123, 88, 89, 10, 13, 178, 15, 21, 11, 400, random.randrange(330, 361), "very-hard", 24, 
-                                ["normal", "reckless", "stunning", "draining", "defence_break", "damage_reflect"]),
-
-            "Chaos Incarnate": Enemy("Chaos Incarnate", 366, 121, 83, 96, 22, 16, 186, 13, 16, 0, 425, random.randrange(340, 371), "very-hard", 23, 
-                                    ["normal", "double", "poison", "vampiric", "stunning", "attack_weaken"]),
-
-            "Eternity Warden": Enemy("Eternity Warden", 400, 125, 86, 91, 13, 14, 181, 14, 20, 12, 450, random.randrange(350, 381), "very-hard", 24, 
-                                    ["normal", "power", "stunning", "freeze", "defence_break", "damage_reflect"]),
-
-            "Ancient Wyvern": Enemy("Ancient Wyvern", 349, 111, 89, 93, 18, 15, 182, 13, 18, 6, 300, random.randrange(390, 421), "very-hard", 21, 
-                                    ["normal", "triple", "poison", "reckless", "stunning", "attack_weaken"]),
-
-            "Elemental Drake": Enemy("Elemental Drake", 340, 108, 92, 92, 16, 14, 179, 12, 19, 9, 325, random.randrange(400, 431), "very-hard", 20, 
-                                    ["normal", "burn", "poison", "freeze", "stunning", "defence_break"]),
-
-            "Dragonlord": Enemy("Dragonlord", 366, 116, 91, 94, 17, 15, 183, 14, 20, 10, 350, random.randrange(410, 441), "very-hard", 22, 
-                                ["normal", "power", "reckless", "stunning", "poison", "damage_reflect"]),
-
-            "Chromatic Dragon": Enemy("Chromatic Dragon", 374, 121, 85, 95, 19, 16, 184, 13, 18, 7, 375, random.randrange(420, 451), "very-hard", 23, 
-                                    ["normal", "burn", "poison", "freeze", "stunning", "attack_weaken"]),
-
-            "Elder Dragon": Enemy("Elder Dragon", 391, 124, 88, 93, 15, 15, 182, 15, 21, 11, 400, random.randrange(440, 471), "very-hard", 24, 
-                                ["normal", "power", "stunning", "draining", "defence_break", "damage_reflect"]),
-            
-            # Extreme Enemies (Levels 25+) - 7 attacks each
-            "Magma Colossus": Enemy("Magma Colossus", 589, 115, 118, 88, 6, 13, 185, 18, 25, 15, 500, random.randrange(480, 531), "extreme", 25, 
-                                    ["normal", "power", "reckless", "stunning", "draining", "burn", "damage_reflect"]),
-
-            "Phoenix Overlord": Enemy("Phoenix Overlord", 557, 122, 115, 96, 22, 17, 190, 16, 18, 8, 520, random.randrange(500, 551), "extreme", 26, 
-                                    ["normal", "double", "stunning", "triple", "reckless", "burn", "attack_weaken"]),
-
-            "Volcanic Titan": Enemy("Volcanic Titan", 655, 117, 122, 90, 8, 14, 188, 19, 24, 14, 540, random.randrange(520, 571), "extreme", 27, 
-                                    ["normal", "power", "reckless", "stunning", "draining", "burn", "defence_break"]),
-
-            "Inferno Wyrm": Enemy("Inferno Wyrm", 622, 121, 116, 94, 18, 16, 192, 17, 20, 10, 560, random.randrange(540, 591), "extreme", 28, 
-                                ["normal", "double", "triple", "reckless", "stunning", "burn", "attack_weaken"]),
-
-            "Cinder Archfiend": Enemy("Cinder Archfiend", 576, 126, 111, 93, 15, 18, 195, 18, 22, 12, 580, random.randrange(560, 611), "extreme", 29, 
-                                    ["normal", "power", "poison", "vampiric", "draining", "burn", "defence_break"]),
-
-            "Cosmic Devourer": Enemy("Cosmic Devourer", 610, 128, 120, 95, 20, 19, 198, 20, 23, 11, 600, random.randrange(580, 631), "extreme", 30, 
-                                    ["normal", "double", "stunning", "draining", "reckless", "poison", "attack_weaken"]),
-
-            "Astral Behemoth": Enemy("Astral Behemoth", 643, 130, 125, 92, 12, 15, 193, 21, 25, 13, 620, random.randrange(600, 651), "extreme", 31, 
-                                    ["normal", "power", "defence_break", "stunning", "vampiric", "damage_reflect", "reckless"]),
-
-            "Galactic Leviathan": Enemy("Galactic Leviathan", 678, 133, 128, 91, 10, 16, 196, 22, 24, 14, 640, random.randrange(620, 671), "extreme", 32, 
-                                        ["normal", "power", "poison", "stunning", "draining", "defence_break", "attack_weaken"]),
-
-            "Nebula Colossus": Enemy("Nebula Colossus", 712, 136, 131, 89, 8, 14, 191, 23, 25, 15, 660, random.randrange(640, 691), "extreme", 33, 
-                                    ["normal", "power", "reckless", "stunning", "vampiric", "damage_reflect", "defence_break"]),
-
-            "Celestial Titan": Enemy("Celestial Titan", 745, 139, 134, 93, 14, 17, 197, 24, 23, 13, 680, random.randrange(660, 711), "extreme", 34, 
-                                    ["normal", "double", "stunning", "vampiric", "draining", "attack_weaken", "defence_break"]),
-            
-            # Boss Monsters - 7 attacks each
-            "Seraphim Guardian": Enemy("Seraphim Guardian", 916, 131, 137, 97, 15, 18, 200, 25, 28, 20, 1000, random.randrange(950, 1051), "boss", 35, 
-                                    ["normal", "power", "stunning", "draining", "reckless", "freeze", "damage_reflect"]),
-
-            "Celestial Arbiter": Enemy("Celestial Arbiter", 851, 141, 128, 99, 20, 20, 210, 22, 25, 15, 1100, random.randrange(1050, 1151), "boss", 36, 
-                                    ["normal", "double", "draining", "stunning", "triple", "vampiric", "attack_weaken"]),
-
-            "Astral Demiurge": Enemy("Astral Demiurge", 982, 134, 136, 98, 18, 19, 205, 24, 27, 18, 1200, random.randrange(1150, 1251), "boss", 37, 
-                                    ["normal", "power", "poison", "freeze", "stunning", "vampiric", "defence_break"]),
-
-            "Ethereal Leviathan": Enemy("Ethereal Leviathan", 1047, 145, 126, 96, 22, 21, 215, 26, 24, 12, 1300, random.randrange(1250, 1351), "boss", 38, 
-                                        ["normal", "reckless", "draining", "double", "poison", "triple", "damage_reflect"]),
-
-            "Divine Architect": Enemy("Divine Architect", 1113, 138, 132, 95, 17, 17, 208, 28, 30, 22, 1500, random.randrange(1450, 1551), "boss", 39, 
-                                    ["normal", "power", "stunning", "freeze", "draining", "reckless", "defence_break"])
+    "Deep Bat": {
+        "name": "Deep Bat",
+        "stats": {
+            "hp_percent": random.randint(60, 80),
+            "attack_percent": random.randint(80, 95),
+            "defence_percent": random.randint(50, 70),
+            "accuracy_percent": random.randint(90, 110),
+            "evasion_percent": random.randint(100, 120),
+            "crit_chance_percent": random.randint(80, 100),
+            "crit_damage_percent": random.randint(90, 110),
+            "armour_penetration_percent": random.randint(50, 70),
+            "damage_reduction_percent": random.randint(30, 50),
+            "block_chance_percent": random.randint(20, 40)
+        },
+        "tier": "low",
+        "attack_types": ["normal", "double", "vampiric", "draining"]
+    },
+
+    "Giant Firefly": {
+        "name": "Giant Firefly",
+        "stats": {
+            "hp_percent": random.randint(60, 80),
+            "attack_percent": random.randint(85, 95),
+            "defence_percent": random.randint(50, 70),
+            "accuracy_percent": random.randint(90, 110),
+            "evasion_percent": random.randint(100, 120),
+            "crit_chance_percent": random.randint(70, 90),
+            "crit_damage_percent": random.randint(80, 100),
+            "armour_penetration_percent": random.randint(40, 60),
+            "damage_reduction_percent": random.randint(30, 50),
+            "block_chance_percent": random.randint(20, 40)
+        },
+        "tier": "low",
+        "attack_types": ["normal", "double", "burn", "poison"]
+    },
+
+    "Deepwood Stalker": {
+        "name": "Deepwood Stalker",
+        "stats": {
+            "hp_percent": random.randint(70, 90),
+            "attack_percent": random.randint(85, 100),
+            "defence_percent": random.randint(60, 80),
+            "accuracy_percent": random.randint(90, 110),
+            "evasion_percent": random.randint(80, 100),
+            "crit_chance_percent": random.randint(80, 100),
+            "crit_damage_percent": random.randint(90, 110),
+            "armour_penetration_percent": random.randint(50, 70),
+            "damage_reduction_percent": random.randint(40, 60),
+            "block_chance_percent": random.randint(30, 50)
+        },
+        "tier": "low",
+        "attack_types": ["normal", "double", "poison", "attack_weaken"]
+    },
+
+    "Wood Spirit": {
+        "name": "Wood Spirit",
+        "stats": {
+            "hp_percent": random.randint(70, 90),
+            "attack_percent": random.randint(86, 95),
+            "defence_percent": random.randint(60, 80),
+            "accuracy_percent": random.randint(80, 100),
+            "evasion_percent": random.randint(70, 90),
+            "crit_chance_percent": random.randint(60, 80),
+            "crit_damage_percent": random.randint(80, 100),
+            "armour_penetration_percent": random.randint(40, 60),
+            "damage_reduction_percent": random.randint(50, 70),
+            "block_chance_percent": random.randint(50, 70)
+        },
+        "tier": "low",
+        "attack_types": ["normal", "draining", "stunning", "defence_break"]
+    },
+
+    "Treant": {
+        "name": "Treant",
+        "stats": {
+            "hp_percent": random.randint(100, 120),     # High HP
+            "attack_percent": random.randint(80, 95),
+            "defence_percent": random.randint(90, 110), # High defense
+            "accuracy_percent": random.randint(50, 70),  # Poor accuracy
+            "evasion_percent": random.randint(30, 50),  # Very poor evasion
+            "crit_chance_percent": random.randint(40, 60),
+            "crit_damage_percent": random.randint(80, 100),
+            "armour_penetration_percent": random.randint(40, 60),
+            "damage_reduction_percent": random.randint(80, 100),
+            "block_chance_percent": random.randint(60, 80)
+        },
+        "tier": "low",
+        "attack_types": ["normal", "power", "stunning", "damage_reflect"]
+    },
+    # Medium Enemies
+    "Alligator": {
+        "name": "Alligator",
+        "stats": {
+            "hp_percent": random.randint(95, 120),     # Very tough hide
+            "attack_percent": random.randint(90, 115),  # Strong bite
+            "defence_percent": random.randint(95, 120), # Armored scales
+            "accuracy_percent": random.randint(55, 80), # Not the most accurate
+            "evasion_percent": random.randint(40, 65),   # Slow on land
+            "crit_chance_percent": random.randint(50, 75), 
+            "crit_damage_percent": random.randint(95, 120), # Powerful bite
+            "armour_penetration_percent": random.randint(80, 105), # Strong jaws
+            "damage_reduction_percent": random.randint(90, 115),   # Thick scales
+            "block_chance_percent": random.randint(75, 100)        # Tough hide
+        },
+        "tier": "medium",
+        "attack_types": ["normal", "power", "reckless", "stunning"]
+    },
+
+    "Poison Frog": {
+        "name": "Poison Frog",
+        "stats": {
+            "hp_percent": random.randint(55, 80),       # Small and fragile
+            "attack_percent": random.randint(85, 100),
+            "defence_percent": random.randint(50, 75),   # Soft body
+            "accuracy_percent": random.randint(85, 110),
+            "evasion_percent": random.randint(95, 120), # Very jumpy
+            "crit_chance_percent": random.randint(75, 100),
+            "crit_damage_percent": random.randint(70, 95),
+            "armour_penetration_percent": random.randint(65, 90),
+            "damage_reduction_percent": random.randint(50, 75),    # No natural armor
+            "block_chance_percent": random.randint(40, 65)        # Dodges instead
+        },
+        "tier": "medium",
+        "attack_types": ["normal", "double", "poison", "defence_break"]
+    },
+
+    "Swamp Troll": {
+        "name": "Swamp Troll",
+        "stats": {
+            "hp_percent": random.randint(105, 130),    # Very tough
+            "attack_percent": random.randint(95, 120),
+            "defence_percent": random.randint(100, 125),
+            "accuracy_percent": random.randint(60, 85), # Not very precise
+            "evasion_percent": random.randint(50, 75), # Slow
+            "crit_chance_percent": random.randint(55, 80),
+            "crit_damage_percent": random.randint(100, 125),
+            "armour_penetration_percent": random.randint(85, 110),
+            "damage_reduction_percent": random.randint(95, 120), # Tough hide
+            "block_chance_percent": random.randint(80, 105)      # Uses size to block
+        },
+        "tier": "medium",
+        "attack_types": ["normal", "power", "poison", "damage_reflect"]
+    },
+
+    "Mosquito Swarm": {
+        "name": "Mosquito Swarm",
+        "stats": {
+            "hp_percent": random.randint(55, 80),        # Fragile insects
+            "attack_percent": random.randint(85, 110),
+            "defence_percent": random.randint(50, 75),   # Very weak individually
+            "accuracy_percent": random.randint(105, 130), # Hard to miss as a swarm
+            "evasion_percent": random.randint(105, 130), # Hard to hit
+            "crit_chance_percent": random.randint(90, 115),
+            "crit_damage_percent": random.randint(70, 95),
+            "armour_penetration_percent": random.randint(80, 105), # Can find gaps
+            "damage_reduction_percent": random.randint(50, 75),    # No protection
+            "block_chance_percent": random.randint(40, 65)        # Can't block
+        },
+        "tier": "medium",
+        "attack_types": ["normal", "triple", "poison", "draining"]
+    },
+
+    "Bog Witch": {
+        "name": "Bog Witch",
+        "stats": {
+            "hp_percent": random.randint(80, 105),
+            "attack_percent": random.randint(90, 115),
+            "defence_percent": random.randint(75, 100),
+            "accuracy_percent": random.randint(95, 120), # Magical accuracy
+            "evasion_percent": random.randint(85, 110),
+            "crit_chance_percent": random.randint(80, 105),
+            "crit_damage_percent": random.randint(95, 120),
+            "armour_penetration_percent": random.randint(85, 110), # Magic ignores armor
+            "damage_reduction_percent": random.randint(80, 105),   # Magical protection
+            "block_chance_percent": random.randint(70, 95)       # Magical barriers
+        },
+        "tier": "medium",
+        "attack_types": ["normal", "poison", "burn", "draining"]
+    },
+
+    "Stone Golem": {
+        "name": "Stone Golem",
+        "stats": {
+            "hp_percent": random.randint(105, 130),    # Stone body
+            "attack_percent": random.randint(80, 105),
+            "defence_percent": random.randint(105, 130), # Made of stone
+            "accuracy_percent": random.randint(60, 85), # Slow
+            "evasion_percent": random.randint(50, 75),  # Very slow
+            "crit_chance_percent": random.randint(50, 75),
+            "crit_damage_percent": random.randint(100, 125),
+            "armour_penetration_percent": random.randint(85, 110),
+            "damage_reduction_percent": random.randint(105, 130), # Stone body
+            "block_chance_percent": random.randint(90, 115)     # Good at blocking
+        },
+        "tier": "medium",
+        "attack_types": ["normal", "power", "stunning", "defence_break"]
+    },
+
+    "Cultist": {
+        "name": "Cultist",
+        "stats": {
+            "hp_percent": random.randint(75, 100),
+            "attack_percent": random.randint(90, 115),
+            "defence_percent": random.randint(70, 95),
+            "accuracy_percent": random.randint(90, 115), # Trained fighter
+            "evasion_percent": random.randint(85, 110),
+            "crit_chance_percent": random.randint(85, 110),
+            "crit_damage_percent": random.randint(95, 120),
+            "armour_penetration_percent": random.randint(85, 110), # Ritual weapons
+            "damage_reduction_percent": random.randint(75, 100),   # Dark magic protection
+            "block_chance_percent": random.randint(80, 105)       # Combat training
+        },
+        "tier": "medium",
+        "attack_types": ["normal", "burn", "poison", "attack_weaken"]
+    },
+    
+    "Mummy": {
+        "name": "Mummy",
+        "stats": {
+            "hp_percent": random.randint(90, 115),     # Undead durability
+            "attack_percent": random.randint(85, 110),
+            "defence_percent": random.randint(95, 120), # Wrapped protection
+            "accuracy_percent": random.randint(70, 95), # Stiff movement
+            "evasion_percent": random.randint(60, 85),  # Slow
+            "crit_chance_percent": random.randint(65, 90),
+            "crit_damage_percent": random.randint(90, 115),
+            "armour_penetration_percent": random.randint(75, 100),
+            "damage_reduction_percent": random.randint(95, 120), # Ancient preservation
+            "block_chance_percent": random.randint(85, 110)      # Good at blocking
+        },
+        "tier": "medium",
+        "attack_types": ["normal", "draining", "stunning", "poison"]
+    },
+
+    "Animated Statue": {
+        "name": "Animated Statue",
+        "stats": {
+            "hp_percent": random.randint(100, 125),     # Stone construction
+            "attack_percent": random.randint(85, 110),
+            "defence_percent": random.randint(105, 130), # Made of stone
+            "accuracy_percent": random.randint(65, 90), # Rigid movement
+            "evasion_percent": random.randint(55, 70),  # Very stiff
+            "crit_chance_percent": random.randint(55, 80),
+            "crit_damage_percent": random.randint(95, 120),
+            "armour_penetration_percent": random.randint(90, 115), # Stone strength
+            "damage_reduction_percent": random.randint(100, 125),   # Stone body
+            "block_chance_percent": random.randint(95, 120)       # Excellent blocker
+        },
+        "tier": "medium",
+        "attack_types": ["normal", "power", "stunning", "damage_reflect"]
+    },
+
+    "Temple Guardian": {
+        "name": "Temple Guardian",
+        "stats": {
+            "hp_percent": random.randint(100, 125),     # Enchanted durability
+            "attack_percent": random.randint(90, 115),  # Combat training
+            "defence_percent": random.randint(100, 125), # Magical protection
+            "accuracy_percent": random.randint(85, 110), # Well trained
+            "evasion_percent": random.randint(70, 95),
+            "crit_chance_percent": random.randint(75, 100),
+            "crit_damage_percent": random.randint(95, 120),
+            "armour_penetration_percent": random.randint(85, 110),
+            "damage_reduction_percent": random.randint(95, 120), # Magical wards
+            "block_chance_percent": random.randint(100, 125)     # Trained defender
+        },
+        "tier": "medium",
+        "attack_types": ["normal", "power", "stunning", "defence_break"]
+    },
+
+    "Mountain Lion": {
+        "name": "Mountain Lion",
+        "stats": {
+            "hp_percent": random.randint(80, 105),
+            "attack_percent": random.randint(100, 125),   # Strong predator
+            "defence_percent": random.randint(75, 100),   # Light armor
+            "accuracy_percent": random.randint(95, 120), # Hunter's precision
+            "evasion_percent": random.randint(100, 125), # Very agile
+            "crit_chance_percent": random.randint(95, 120), # Knows vital spots
+            "crit_damage_percent": random.randint(105, 130), # Powerful pounce
+            "armour_penetration_percent": random.randint(90, 115), # Sharp claws
+            "damage_reduction_percent": random.randint(65, 90),    # Light hide
+            "block_chance_percent": random.randint(50, 75)         # Prefers dodging
+        },
+        "tier": "medium",
+        "attack_types": ["normal", "double", "reckless", "power"]
+    },
+
+    "Rock Elemental": {
+        "name": "Rock Elemental",
+        "stats": {
+            "hp_percent": random.randint(105, 130),    # Stone body
+            "attack_percent": random.randint(80, 105),
+            "defence_percent": random.randint(105, 130), # Stone form
+            "accuracy_percent": random.randint(55, 80),  # Slow
+            "evasion_percent": random.randint(50, 75),  # Very slow
+            "crit_chance_percent": random.randint(50, 75),
+            "crit_damage_percent": random.randint(100, 125),
+            "armour_penetration_percent": random.randint(95, 120), # Stone crushing
+            "damage_reduction_percent": random.randint(105, 130),   # Stone body
+            "block_chance_percent": random.randint(95, 120)       # Natural shield
+        },
+        "tier": "medium",
+        "attack_types": ["normal", "power", "stunning", "damage_reflect"]
+    },
+
+    "Harpy": {
+        "name": "Harpy",
+        "stats": {
+            "hp_percent": random.randint(70, 95),      # Light frame
+            "attack_percent": random.randint(90, 115),
+            "defence_percent": random.randint(65, 90),  # Light bones
+            "accuracy_percent": random.randint(100, 125), # Aerial precision
+            "evasion_percent": random.randint(105, 130), # Aerial agility
+            "crit_chance_percent": random.randint(85, 110),
+            "crit_damage_percent": random.randint(95, 120),
+            "armour_penetration_percent": random.randint(80, 105),
+            "damage_reduction_percent": random.randint(55, 80),    # No armor
+            "block_chance_percent": random.randint(55, 70)        # Dodges instead
+        },
+        "tier": "medium",
+        "attack_types": ["normal", "double", "stunning", "triple"]
+    },
+
+    "Yeti": {
+        "name": "Yeti",
+        "stats": {
+            "hp_percent": random.randint(100, 125),    # Large and tough
+            "attack_percent": random.randint(95, 120), # Strong
+            "defence_percent": random.randint(90, 115), # Thick fur
+            "accuracy_percent": random.randint(65, 90),
+            "evasion_percent": random.randint(60, 85),  # Bulky
+            "crit_chance_percent": random.randint(65, 90),
+            "crit_damage_percent": random.randint(100, 125), # Powerful strikes
+            "armour_penetration_percent": random.randint(85, 110),
+            "damage_reduction_percent": random.randint(90, 115), # Thick hide
+            "block_chance_percent": random.randint(75, 100)      # Uses size
+        },
+        "tier": "medium",
+        "attack_types": ["normal", "power", "reckless", "freeze"]
+    },
+
+    "Orc": {
+        "name": "Orc",
+        "stats": {
+            "hp_percent": random.randint(90, 115),    # Tough
+            "attack_percent": random.randint(95, 120), # Strong
+            "defence_percent": random.randint(85, 110), # Hardy
+            "accuracy_percent": random.randint(70, 95), # Unrefined
+            "evasion_percent": random.randint(65, 90), # Not agile
+            "crit_chance_percent": random.randint(75, 100),
+            "crit_damage_percent": random.randint(95, 120),
+            "armour_penetration_percent": random.randint(90, 115), # Brutal strength
+            "damage_reduction_percent": random.randint(80, 105),    # Tough skin
+            "block_chance_percent": random.randint(75, 100)        # Combat trained
+        },
+        "tier": "medium",
+        "attack_types": ["normal", "power", "reckless", "stunning"]
+    },
+
+    "Sand Wurm": {
+        "name": "Sand Wurm",
+        "stats": {
+            "hp_percent": random.randint(105, 130),    # Large creature
+            "attack_percent": random.randint(90, 115),
+            "defence_percent": random.randint(100, 125), # Tough scales
+            "accuracy_percent": random.randint(75, 100), # Burrow attack
+            "evasion_percent": random.randint(80, 105), # Good at hiding
+            "crit_chance_percent": random.randint(70, 95),
+            "crit_damage_percent": random.randint(100, 125),
+            "armour_penetration_percent": random.randint(95, 120), # Strong bite
+            "damage_reduction_percent": random.randint(95, 120),   # Scales
+            "block_chance_percent": random.randint(80, 105)        # Scales help block
+        },
+        "tier": "medium",
+        "attack_types": ["normal", "power", "poison", "stunning"]
+    },
+    
+    "Dried Mummy": {
+        "name": "Dried Mummy",
+        "stats": {
+            "hp_percent": random.randint(95, 120),     # Preserved durability
+            "attack_percent": random.randint(85, 110),
+            "defence_percent": random.randint(90, 115), # Bandage wrapping
+            "accuracy_percent": random.randint(65, 90), # Stiff movement
+            "evasion_percent": random.randint(60, 85),  # Very stiff
+            "crit_chance_percent": random.randint(65, 90),
+            "crit_damage_percent": random.randint(90, 115),
+            "armour_penetration_percent": random.randint(75, 100),
+            "damage_reduction_percent": random.randint(95, 120), # Magical preservation
+            "block_chance_percent": random.randint(80, 105)      # Ancient training
+        },
+        "tier": "medium",
+        "attack_types": ["normal", "draining", "poison", "burn"]
+    },
+
+    "Dust Devil": {
+        "name": "Dust Devil",
+        "stats": {
+            "hp_percent": random.randint(60, 85),       # Ethereal form
+            "attack_percent": random.randint(95, 120),
+            "defence_percent": random.randint(65, 90),  # Hard to hit but not tough
+            "accuracy_percent": random.randint(100, 125),
+            "evasion_percent": random.randint(105, 130), # Wind form
+            "crit_chance_percent": random.randint(80, 105),
+            "crit_damage_percent": random.randint(85, 110),
+            "armour_penetration_percent": random.randint(90, 115), # Wind penetration
+            "damage_reduction_percent": random.randint(50, 75),    # No physical form
+            "block_chance_percent": random.randint(50, 75)        # Can't really block
+        },
+        "tier": "medium",
+        "attack_types": ["normal", "double", "attack_weaken", "triple"]
+    },
+
+    "Desert Bandit": {
+        "name": "Desert Bandit",
+        "stats": {
+            "hp_percent": random.randint(75, 100),
+            "attack_percent": random.randint(90, 115),  # Combat trained
+            "defence_percent": random.randint(80, 105),  # Light armor
+            "accuracy_percent": random.randint(95, 120), # Well practiced
+            "evasion_percent": random.randint(90, 115), # Agile fighter
+            "crit_chance_percent": random.randint(85, 110), # Knows weak spots
+            "crit_damage_percent": random.randint(95, 120),
+            "armour_penetration_percent": random.randint(90, 115), # Knows where to strike
+            "damage_reduction_percent": random.randint(70, 95),    # Light armor
+            "block_chance_percent": random.randint(80, 105)        # Combat training
+        },
+        "tier": "medium",
+        "attack_types": ["normal", "double", "poison", "defence_break"]
+    },
+
+    "Leopard": {
+        "name": "Leopard",
+        "stats": {
+            "hp_percent": random.randint(75, 100),       # Lean predator
+            "attack_percent": random.randint(100, 125),  # Strong hunter
+            "defence_percent": random.randint(65, 90),  # Light frame
+            "accuracy_percent": random.randint(105, 130), # Expert hunter
+            "evasion_percent": random.randint(105, 130), # Extremely agile
+            "crit_chance_percent": random.randint(100, 125), # Precise strikes
+            "crit_damage_percent": random.randint(105, 130), # Deadly pounce
+            "armour_penetration_percent": random.randint(95, 120), # Sharp claws
+            "damage_reduction_percent": random.randint(55, 80),     # Light hide
+            "block_chance_percent": random.randint(50, 75)         # Dodges instead
+        },
+        "tier": "medium",
+        "attack_types": ["normal", "double", "reckless", "triple"]
+    },
+    
+    # Medium-Hard enemies
+    "Canyon Cougar": {
+        "name": "Canyon Cougar",
+        "stats": {
+            "hp_percent": random.randint(90, 120),
+            "attack_percent": random.randint(110, 140),   # Very strong attack
+            "defence_percent": random.randint(80, 110),
+            "accuracy_percent": random.randint(105, 135), # Good hunter
+            "evasion_percent": random.randint(110, 140),  # Extremely agile
+            "crit_chance_percent": random.randint(100, 130), # Good at vital spots
+            "crit_damage_percent": random.randint(110, 140), # Powerful strikes
+            "armour_penetration_percent": random.randint(95, 125), # Sharp claws
+            "damage_reduction_percent": random.randint(65, 95),    # Not very armored
+            "block_chance_percent": random.randint(50, 80)         # Dodges rather than blocks
+        },
+        "tier": "medium-hard",
+        "attack_types": ["normal", "double", "reckless", "power", "stunning"]
+    },
+
+    "Twisted Mesquite": {
+        "name": "Twisted Mesquite",
+        "stats": {
+            "hp_percent": random.randint(110, 140),     # Very tough, ancient tree
+            "attack_percent": random.randint(90, 120),
+            "defence_percent": random.randint(105, 135), # Hard bark
+            "accuracy_percent": random.randint(75, 105), # Slow but deliberate
+            "evasion_percent": random.randint(50, 70),  # Stationary tree
+            "crit_chance_percent": random.randint(70, 100),
+            "crit_damage_percent": random.randint(95, 125),
+            "armour_penetration_percent": random.randint(80, 110),
+            "damage_reduction_percent": random.randint(100, 130), # Very resistant
+            "block_chance_percent": random.randint(90, 120)     # Good at blocking
+        },
+        "tier": "medium-hard",
+        "attack_types": ["normal", "poison", "stunning", "draining", "damage_reflect"]
+    },
+
+    "Dustier Devil": {
+        "name": "Dustier Devil",
+        "stats": {
+            "hp_percent": random.randint(75, 105),      # Insubstantial form
+            "attack_percent": random.randint(100, 130),
+            "defence_percent": random.randint(65, 95),  # Hard to hit but not tough
+            "accuracy_percent": random.randint(110, 140),
+            "evasion_percent": random.randint(110, 140), # Extremely evasive
+            "crit_chance_percent": random.randint(90, 120),
+            "crit_damage_percent": random.randint(100, 130),
+            "armour_penetration_percent": random.randint(85, 115),
+            "damage_reduction_percent": random.randint(50, 80),  # No physical armor
+            "block_chance_percent": random.randint(50, 70)      # Doesn't block, evades
+        },
+        "tier": "medium-hard",
+        "attack_types": ["normal", "double", "stunning", "triple", "draining"]
+    },
+
+    "Petrified Warrior": {
+        "name": "Petrified Warrior",
+        "stats": {
+            "hp_percent": random.randint(100, 130),
+            "attack_percent": random.randint(95, 125),
+            "defence_percent": random.randint(110, 140),  # Stone body
+            "accuracy_percent": random.randint(80, 110),  # Trained warrior
+            "evasion_percent": random.randint(50, 80),   # Heavy stone form
+            "crit_chance_percent": random.randint(75, 105), # Trained
+            "crit_damage_percent": random.randint(100, 130),
+            "armour_penetration_percent": random.randint(90, 120),
+            "damage_reduction_percent": random.randint(105, 135), # Stone body
+            "block_chance_percent": random.randint(95, 125)     # Skilled defender
+        },
+        "tier": "medium-hard",
+        "attack_types": ["normal", "power", "stunning", "defence_break", "damage_reflect"]
+    },
+
+    "Thunderbird": {
+        "name": "Thunderbird",
+        "stats": {
+            "hp_percent": random.randint(85, 115),
+            "attack_percent": random.randint(105, 135),
+            "defence_percent": random.randint(65, 95),   # Light bones
+            "accuracy_percent": random.randint(110, 140), # Excellent vision
+            "evasion_percent": random.randint(110, 140), # Aerial agility
+            "crit_chance_percent": random.randint(100, 130),
+            "crit_damage_percent": random.randint(110, 140),
+            "armour_penetration_percent": random.randint(95, 125), # Lightning attacks
+            "damage_reduction_percent": random.randint(60, 90),    # Light frame
+            "block_chance_percent": random.randint(50, 80)         # Dodges instead
+        },
+        "tier": "medium-hard",
+        "attack_types": ["normal", "double", "stunning", "triple", "attack_weaken"]
+    },
+
+    "Valley Tiger": {
+        "name": "Valley Tiger",
+        "stats": {
+            "hp_percent": random.randint(95, 125),
+            "attack_percent": random.randint(110, 140),   # Apex predator
+            "defence_percent": random.randint(75, 105),   # Medium hide
+            "accuracy_percent": random.randint(105, 135), # Expert hunter
+            "evasion_percent": random.randint(100, 130),  # Very agile
+            "crit_chance_percent": random.randint(105, 135), # Knows vital spots
+            "crit_damage_percent": random.randint(110, 140), # Powerful strikes
+            "armour_penetration_percent": random.randint(100, 130), # Sharp claws/teeth
+            "damage_reduction_percent": random.randint(65, 95),    # Hide only
+            "block_chance_percent": random.randint(55, 85)         # Prefers evasion
+        },
+        "tier": "medium-hard",
+        "attack_types": ["normal", "double", "reckless", "triple", "power"]
+    },
+    
+    # Hard Enemies
+    "Venomous Hydra": {
+        "name": "Venomous Hydra",
+        "stats": {
+            "hp_percent": random.randint(115, 150),      # Multiple heads = high HP
+            "attack_percent": random.randint(110, 145),  # Multiple attacks
+            "defence_percent": random.randint(95, 130), # Tough but not invincible
+            "accuracy_percent": random.randint(100, 135), # Multiple heads help aim
+            "evasion_percent": random.randint(60, 95),  # Large target
+            "crit_chance_percent": random.randint(95, 130), # Good at finding weak spots
+            "crit_damage_percent": random.randint(120, 150), # Devastating bites
+            "armour_penetration_percent": random.randint(100, 135), # Sharp fangs
+            "damage_reduction_percent": random.randint(85, 120),    # Scales
+            "block_chance_percent": random.randint(50, 85)         # Too aggressive to block
+        },
+        "tier": "hard",
+        "attack_types": ["normal", "power", "poison", "double", "triple"]
+    },
+
+    "Plague Bearer": {
+        "name": "Plague Bearer",
+        "stats": {
+            "hp_percent": random.randint(85, 120),       # Diseased form
+            "attack_percent": random.randint(80, 115),   # Not physically strong
+            "defence_percent": random.randint(75, 110),
+            "accuracy_percent": random.randint(105, 140), # Disease spreads easily
+            "evasion_percent": random.randint(65, 100),  # Shambling
+            "crit_chance_percent": random.randint(100, 135), # Finds weak spots
+            "crit_damage_percent": random.randint(110, 145), # Infection damage
+            "armour_penetration_percent": random.randint(115, 150), # Disease ignores armor
+            "damage_reduction_percent": random.randint(70, 105),    # Decaying body
+            "block_chance_percent": random.randint(50, 85)         # Doesn't block much
+        },
+        "tier": "hard",
+        "attack_types": ["normal", "poison", "vampiric", "draining", "attack_weaken"]
+    },
+
+    "Mire Leviathan": {
+        "name": "Mire Leviathan",
+        "stats": {
+            "hp_percent": random.randint(120, 150),      # Massive size
+            "attack_percent": random.randint(115, 150),  # Incredible strength
+            "defence_percent": random.randint(110, 145), # Natural armor
+            "accuracy_percent": random.randint(65, 100),  # Unwieldy
+            "evasion_percent": random.randint(50, 85),   # Too big to dodge
+            "crit_chance_percent": random.randint(60, 95), # Not precise
+            "crit_damage_percent": random.randint(115, 150), # Crushing force
+            "armour_penetration_percent": random.randint(105, 140), # Pure strength
+            "damage_reduction_percent": random.randint(110, 145),   # Thick hide
+            "block_chance_percent": random.randint(100, 135)       # Uses size to block
+        },
+        "tier": "hard",
+        "attack_types": ["normal", "power", "stunning", "poison", "defence_break"]
+    },
+
+    "Toxic Shambler": {
+        "name": "Toxic Shambler",
+        "stats": {
+            "hp_percent": random.randint(80, 115),       # Rotting form
+            "attack_percent": random.randint(75, 110),   # Not strong
+            "defence_percent": random.randint(65, 100),  # Decaying
+            "accuracy_percent": random.randint(90, 125),
+            "evasion_percent": random.randint(55, 90),  # Shambling
+            "crit_chance_percent": random.randint(95, 130),
+            "crit_damage_percent": random.randint(105, 140),
+            "armour_penetration_percent": random.randint(110, 145), # Toxic corrodes
+            "damage_reduction_percent": random.randint(100, 135),   # Numb to pain
+            "block_chance_percent": random.randint(55, 90)        # Poor coordination
+        },
+        "tier": "hard",
+        "attack_types": ["normal", "poison", "vampiric", "draining", "double"]
+    },
+
+    "Swamp Hag": {
+        "name": "Swamp Hag",
+        "stats": {
+            "hp_percent": random.randint(75, 110),       # Frail form
+            "attack_percent": random.randint(110, 145),  # Magical power
+            "defence_percent": random.randint(70, 105),  # Physically weak
+            "accuracy_percent": random.randint(115, 150), # Magical precision
+            "evasion_percent": random.randint(100, 135), # Unnatural movement
+            "crit_chance_percent": random.randint(105, 140), # Knows weaknesses
+            "crit_damage_percent": random.randint(110, 145), # Hexes
+            "armour_penetration_percent": random.randint(120, 150), # Magic ignores armor
+            "damage_reduction_percent": random.randint(85, 120),    # Magical wards
+            "block_chance_percent": random.randint(60, 95)        # Magical barriers
+        },
+        "tier": "hard",
+        "attack_types": ["normal", "poison", "stunning", "draining", "attack_weaken"]
+    },
+
+    "Ancient Golem": {
+        "name": "Ancient Golem",
+        "stats": {
+            "hp_percent": random.randint(120, 150),      # Stone construction
+            "attack_percent": random.randint(105, 140),
+            "defence_percent": random.randint(120, 150), # Stone body
+            "accuracy_percent": random.randint(60, 95),  # Slow
+            "evasion_percent": random.randint(55, 80),   # Very slow
+            "crit_chance_percent": random.randint(55, 90), # Not precise
+            "crit_damage_percent": random.randint(110, 145), # Crushing blows
+            "armour_penetration_percent": random.randint(110, 145), # Stone strength
+            "damage_reduction_percent": random.randint(115, 150),   # Nearly impervious
+            "block_chance_percent": random.randint(110, 145)       # Living wall
+        },
+        "tier": "hard",
+        "attack_types": ["normal", "power", "stunning", "damage_reflect", "defence_break"]
+    },
+    
+    "Cursed Pharaoh": {
+        "name": "Cursed Pharaoh",
+        "stats": {
+            "hp_percent": random.randint(100, 135),      # Undead durability
+            "attack_percent": random.randint(85, 120),   # Not physically strong
+            "defence_percent": random.randint(95, 130), # Ancient wrappings
+            "accuracy_percent": random.randint(80, 115),  # Stiff movement
+            "evasion_percent": random.randint(55, 90),  # Very stiff
+            "crit_chance_percent": random.randint(75, 110),
+            "crit_damage_percent": random.randint(90, 125),
+            "armour_penetration_percent": random.randint(120, 150), # Curse ignores armor
+            "damage_reduction_percent": random.randint(105, 140),   # Ancient magic protection
+            "block_chance_percent": random.randint(90, 125)       # Ancient combat training
+        },
+        "tier": "hard",
+        "attack_types": ["normal", "poison", "stunning", "draining", "attack_weaken"]
+    },
+
+    "Temporal Anomaly": {
+        "name": "Temporal Anomaly",
+        "stats": {
+            "hp_percent": random.randint(65, 100),       # Unstable form
+            "attack_percent": random.randint(85, 120),   # Not physically strong
+            "defence_percent": random.randint(60, 95),  # Barely physical
+            "accuracy_percent": random.randint(115, 150), # Time manipulation
+            "evasion_percent": random.randint(120, 150), # Phase shifting
+            "crit_chance_percent": random.randint(105, 140), # Time strikes
+            "crit_damage_percent": random.randint(110, 145),
+            "armour_penetration_percent": random.randint(115, 150), # Time ignores armor
+            "damage_reduction_percent": random.randint(50, 85),     # Unstable form
+            "block_chance_percent": random.randint(55, 80)         # Dodges instead
+        },
+        "tier": "hard",
+        "attack_types": ["normal", "double", "stunning", "defence_break", "attack_weaken"]
+    },
+
+    "Ruin Wraith": {
+        "name": "Ruin Wraith",
+        "stats": {
+            "hp_percent": random.randint(70, 105),       # Spectral form
+            "attack_percent": random.randint(105, 140),  # Spectral power
+            "defence_percent": random.randint(60, 95),  # Incorporeal
+            "accuracy_percent": random.randint(110, 145), # Ghostly precision
+            "evasion_percent": random.randint(115, 150), # Phase through attacks
+            "crit_chance_percent": random.randint(100, 135), # Strike through souls
+            "crit_damage_percent": random.randint(110, 145),
+            "armour_penetration_percent": random.randint(120, 150), # Ghost through armor
+            "damage_reduction_percent": random.randint(55, 90),    # Can't block physical
+            "block_chance_percent": random.randint(55, 80)         # Phases instead
+        },
+        "tier": "hard",
+        "attack_types": ["normal", "draining", "vampiric", "stunning", "attack_weaken"]
+    },
+
+    "Forgotten Titan": {
+        "name": "Forgotten Titan",
+        "stats": {
+            "hp_percent": random.randint(120, 150),      # Colossal size
+            "attack_percent": random.randint(115, 150),  # Immense strength
+            "defence_percent": random.randint(110, 145), # Ancient armor
+            "accuracy_percent": random.randint(60, 95),  # Too big to aim well
+            "evasion_percent": random.randint(55, 80),   # Massive target
+            "crit_chance_percent": random.randint(55, 90), # Not precise
+            "crit_damage_percent": random.randint(115, 150), # Devastating blows
+            "armour_penetration_percent": random.randint(105, 140), # Pure strength
+            "damage_reduction_percent": random.randint(110, 145),   # Ancient protection
+            "block_chance_percent": random.randint(100, 135)       # Uses size
+        },
+        "tier": "hard",
+        "attack_types": ["normal", "power", "reckless", "stunning", "defence_break"]
+    },
+
+    "Frost Giant": {
+        "name": "Frost Giant",
+        "stats": {
+            "hp_percent": random.randint(115, 150),      # Giant size
+            "attack_percent": random.randint(110, 145),  # Giant strength
+            "defence_percent": random.randint(105, 140), # Ice armor
+            "accuracy_percent": random.randint(65, 100),  # Slow attacks
+            "evasion_percent": random.randint(50, 85),   # Too big
+            "crit_chance_percent": random.randint(60, 95), # Not precise
+            "crit_damage_percent": random.randint(110, 145), # Crushing blows
+            "armour_penetration_percent": random.randint(100, 135),
+            "damage_reduction_percent": random.randint(105, 140),   # Ice protection
+            "block_chance_percent": random.randint(95, 130)       # Ice shield
+        },
+        "tier": "hard",
+        "attack_types": ["normal", "power", "stunning", "freeze", "defence_break"]
+    },
+
+    "Storm Harpy": {
+        "name": "Storm Harpy",
+        "stats": {
+            "hp_percent": random.randint(75, 110),       # Light frame
+            "attack_percent": random.randint(100, 135),
+            "defence_percent": random.randint(65, 100),  # Fragile
+            "accuracy_percent": random.randint(110, 145), # Aerial precision
+            "evasion_percent": random.randint(115, 150), # Aerial mastery
+            "crit_chance_percent": random.randint(105, 140), # Diving strikes
+            "crit_damage_percent": random.randint(110, 145),
+            "armour_penetration_percent": random.randint(105, 140), # Lightning
+            "damage_reduction_percent": random.randint(55, 90),    # No armor
+            "block_chance_percent": random.randint(50, 85)         # Dodges instead
+        },
+        "tier": "hard",
+        "attack_types": ["normal", "double", "stunning", "triple", "attack_weaken"]
+    },
+    
+    "Avalanche Elemental": {
+        "name": "Avalanche Elemental",
+        "stats": {
+            "hp_percent": random.randint(110, 145),      # Mass of ice and snow
+            "attack_percent": random.randint(105, 140),  # Crushing force
+            "defence_percent": random.randint(115, 150), # Ice armor
+            "accuracy_percent": random.randint(55, 90),  # Wild force
+            "evasion_percent": random.randint(55, 80),   # Slow moving mass
+            "crit_chance_percent": random.randint(60, 95), # Not precise
+            "crit_damage_percent": random.randint(110, 145), # Overwhelming force
+            "armour_penetration_percent": random.randint(105, 140), # Pure mass
+            "damage_reduction_percent": random.randint(110, 145),   # Ice protection
+            "block_chance_percent": random.randint(100, 135)       # Natural shield
+        },
+        "tier": "hard",
+        "attack_types": ["normal", "power", "freeze", "stunning", "damage_reflect"]
+    },
+
+    "Mountain Wyvern": {
+        "name": "Mountain Wyvern",
+        "stats": {
+            "hp_percent": random.randint(100, 135),      # Tough but agile
+            "attack_percent": random.randint(110, 145),  # Powerful hunter
+            "defence_percent": random.randint(85, 120),  # Dragon scales
+            "accuracy_percent": random.randint(105, 140), # Hunter's eye
+            "evasion_percent": random.randint(100, 135), # Aerial agility
+            "crit_chance_percent": random.randint(95, 130), # Precise strikes
+            "crit_damage_percent": random.randint(110, 145), # Devastating attacks
+            "armour_penetration_percent": random.randint(105, 140), # Sharp claws
+            "damage_reduction_percent": random.randint(80, 115),    # Dragon hide
+            "block_chance_percent": random.randint(60, 95)        # Prefers dodging
+        },
+        "tier": "hard",
+        "attack_types": ["normal", "double", "reckless", "stunning", "poison"]
+    },
+
+    "Yeti Alpha": {
+        "name": "Yeti Alpha",
+        "stats": {
+            "hp_percent": random.randint(115, 150),      # Massive beast
+            "attack_percent": random.randint(110, 145),  # Primal strength
+            "defence_percent": random.randint(100, 135), # Thick fur
+            "accuracy_percent": random.randint(75, 110),  # Wild swings
+            "evasion_percent": random.randint(60, 95),  # Bulky
+            "crit_chance_percent": random.randint(75, 110),
+            "crit_damage_percent": random.randint(115, 150), # Crushing blows
+            "armour_penetration_percent": random.randint(100, 135), # Raw power
+            "damage_reduction_percent": random.randint(95, 130),   # Thick hide
+            "block_chance_percent": random.randint(85, 120)        # Uses size
+        },
+        "tier": "hard",
+        "attack_types": ["normal", "power", "reckless", "freeze", "stunning"]
+    },
+
+    "Fire Elemental": {
+        "name": "Fire Elemental",
+        "stats": {
+            "hp_percent": random.randint(85, 120),       # Unstable form
+            "attack_percent": random.randint(115, 150),  # Intense heat
+            "defence_percent": random.randint(70, 105),  # Fluid form
+            "accuracy_percent": random.randint(100, 135),
+            "evasion_percent": random.randint(100, 135), # Fluid movement
+            "crit_chance_percent": random.randint(95, 130),
+            "crit_damage_percent": random.randint(115, 150), # Melting strikes
+            "armour_penetration_percent": random.randint(115, 150), # Heat pierces armor
+            "damage_reduction_percent": random.randint(60, 95),    # Can't block physical
+            "block_chance_percent": random.randint(50, 85)         # Fluid form
+        },
+        "tier": "hard",
+        "attack_types": ["normal", "power", "reckless", "burn", "stunning"]
+    },
+
+    "Sandstorm Djinn": {
+        "name": "Sandstorm Djinn",
+        "stats": {
+            "hp_percent": random.randint(75, 110),       # Ethereal being
+            "attack_percent": random.randint(95, 130),
+            "defence_percent": random.randint(65, 100),  # Insubstantial
+            "accuracy_percent": random.randint(110, 145), # Sand control
+            "evasion_percent": random.randint(115, 150), # Wind form
+            "crit_chance_percent": random.randint(100, 135),
+            "crit_damage_percent": random.randint(105, 140),
+            "armour_penetration_percent": random.randint(110, 145), # Sand penetrates
+            "damage_reduction_percent": random.randint(55, 90),    # Can't block physical
+            "block_chance_percent": random.randint(50, 85)         # Dodges instead
+        },
+        "tier": "hard",
+        "attack_types": ["normal", "double", "stunning", "damage_reflect", "attack_weaken"]
+    },
+
+    "Mirage Assassin": {
+        "name": "Mirage Assassin",
+        "stats": {
+            "hp_percent": random.randint(65, 100),       # Light frame
+            "attack_percent": random.randint(110, 145),  # Lethal strikes
+            "defence_percent": random.randint(60, 95),  # No armor
+            "accuracy_percent": random.randint(115, 150), # Expert precision
+            "evasion_percent": random.randint(120, 150), # Nearly invisible
+            "crit_chance_percent": random.randint(115, 150), # Vital strikes
+            "crit_damage_percent": random.randint(115, 150), # Assassination
+            "armour_penetration_percent": random.randint(110, 145), # Finds weak points
+            "damage_reduction_percent": random.randint(50, 85),     # No armor
+            "block_chance_percent": random.randint(55, 80)         # Pure evasion
+        },
+        "tier": "hard",
+        "attack_types": ["normal", "double", "poison", "triple", "stunning"]
+    },
+    
+    "Sunburst Phoenix": {
+        "name": "Sunburst Phoenix",
+        "stats": {
+            "hp_percent": random.randint(85, 120),       # Magical but fragile
+            "attack_percent": random.randint(110, 145),  # Solar power
+            "defence_percent": random.randint(70, 105),  # Light frame
+            "accuracy_percent": random.randint(105, 140), # Precise striker
+            "evasion_percent": random.randint(110, 145), # Aerial master
+            "crit_chance_percent": random.randint(100, 135),
+            "crit_damage_percent": random.randint(115, 150), # Solar fury
+            "armour_penetration_percent": random.randint(115, 150), # Heat melts armor
+            "damage_reduction_percent": random.randint(60, 95),    # Light frame
+            "block_chance_percent": random.randint(50, 85)         # Dodges instead
+        },
+        "tier": "hard",
+        "attack_types": ["normal", "power", "reckless", "burn", "stunning"]
+    },
+
+    "Desert Colossus": {
+        "name": "Desert Colossus",
+        "stats": {
+            "hp_percent": random.randint(120, 150),      # Massive size
+            "attack_percent": random.randint(110, 145),  # Giant strength
+            "defence_percent": random.randint(115, 150), # Ancient stone
+            "accuracy_percent": random.randint(60, 95),  # Slow
+            "evasion_percent": random.randint(55, 80),   # Too large
+            "crit_chance_percent": random.randint(55, 90), # Not precise
+            "crit_damage_percent": random.randint(110, 145), # Crushing force
+            "armour_penetration_percent": random.randint(105, 140), # Pure strength
+            "damage_reduction_percent": random.randint(110, 145),   # Stone body
+            "block_chance_percent": random.randint(100, 135)       # Living wall
+        },
+        "tier": "hard",
+        "attack_types": ["normal", "power", "stunning", "defence_break", "damage_reflect"]
+    },
+
+    "Nightmare Stalker": {
+        "name": "Nightmare Stalker",
+        "stats": {
+            "hp_percent": random.randint(75, 110),       # Shadow form
+            "attack_percent": random.randint(105, 140),  # Terror strikes
+            "defence_percent": random.randint(65, 100),  # No physical form
+            "accuracy_percent": random.randint(110, 145), # Strikes fears
+            "evasion_percent": random.randint(115, 150), # Shadow movement
+            "crit_chance_percent": random.randint(110, 145), # Knows fears
+            "crit_damage_percent": random.randint(110, 145), # Terror damage
+            "armour_penetration_percent": random.randint(115, 150), # Fear ignores armor
+            "damage_reduction_percent": random.randint(55, 90),    # No physical form
+            "block_chance_percent": random.randint(55, 80)         # Phases through
+        },
+        "tier": "hard",
+        "attack_types": ["normal", "double", "vampiric", "stunning", "attack_weaken"]
+    },
+
+    "Void Weaver": {
+        "name": "Void Weaver",
+        "stats": {
+            "hp_percent": random.randint(70, 105),       # Ethereal
+            "attack_percent": random.randint(105, 140),  # Void power
+            "defence_percent": random.randint(60, 95),  # No physical form
+            "accuracy_percent": random.randint(105, 140), # Reality warping
+            "evasion_percent": random.randint(115, 150), # Space bending
+            "crit_chance_percent": random.randint(105, 140),
+            "crit_damage_percent": random.randint(110, 145),
+            "armour_penetration_percent": random.randint(120, 150), # Void piercing
+            "damage_reduction_percent": random.randint(60, 95),    # Can't block physical
+            "block_chance_percent": random.randint(50, 85)         # Warps space instead
+        },
+        "tier": "hard",
+        "attack_types": ["normal", "draining", "stunning", "attack_weaken", "poison"]
+    },
+
+    "Shadow Dragon": {
+        "name": "Shadow Dragon",
+        "stats": {
+            "hp_percent": random.randint(105, 140),      # Dragon might
+            "attack_percent": random.randint(110, 145),  # Dragon strength
+            "defence_percent": random.randint(90, 125), # Shadow scales
+            "accuracy_percent": random.randint(100, 135), # Dragon precision
+            "evasion_percent": random.randint(105, 140), # Shadow form
+            "crit_chance_percent": random.randint(100, 135),
+            "crit_damage_percent": random.randint(110, 145), # Dragon fury
+            "armour_penetration_percent": random.randint(105, 140), # Shadow penetration
+            "damage_reduction_percent": random.randint(85, 120),    # Shadow defense
+            "block_chance_percent": random.randint(65, 100)        # Prefers evasion
+        },
+        "tier": "hard",
+        "attack_types": ["normal", "power", "triple", "stunning", "draining"]
+    },
+
+    "Ethereal Banshee": {
+        "name": "Ethereal Banshee",
+        "stats": {
+            "hp_percent": random.randint(65, 100),       # Spirit form
+            "attack_percent": random.randint(110, 145),  # Sonic power
+            "defence_percent": random.randint(55, 90),  # Incorporeal
+            "accuracy_percent": random.randint(115, 150), # Sonic precision
+            "evasion_percent": random.randint(115, 150), # Spirit movement
+            "crit_chance_percent": random.randint(105, 140), # Sonic resonance
+            "crit_damage_percent": random.randint(115, 150), # Deadly screams
+            "armour_penetration_percent": random.randint(120, 150), # Sound ignores armor
+            "damage_reduction_percent": random.randint(50, 85),     # No physical form
+            "block_chance_percent": random.randint(50, 75)         # Can't block
+        },
+        "tier": "hard",
+        "attack_types": ["normal", "draining", "stunning", "attack_weaken", "double"]
+    },
+
+    "Abyssal Behemoth": {
+        "name": "Abyssal Behemoth",
+        "stats": {
+            "hp_percent": random.randint(120, 150),      # Massive size
+            "attack_percent": random.randint(115, 150),  # Overwhelming force
+            "defence_percent": random.randint(110, 145), # Ancient hide
+            "accuracy_percent": random.randint(60, 95),  # Unwieldy
+            "evasion_percent": random.randint(55, 80),   # Too massive
+            "crit_chance_percent": random.randint(65, 100),
+            "crit_damage_percent": random.randint(115, 150), # Crushing force
+            "armour_penetration_percent": random.randint(105, 140), # Pure power
+            "damage_reduction_percent": random.randint(110, 145),   # Ancient protection
+            "block_chance_percent": random.randint(100, 135)       # Natural barrier
+        },
+        "tier": "hard",
+        "attack_types": ["normal", "power", "reckless", "stunning", "defence_break"]
+    },
+    
+    # Very Hard Enemies
+    "Necropolis Guardian": {
+        "name": "Necropolis Guardian",
+        "stats": {
+            "hp_percent": random.randint(120, 160),      # Ancient power
+            "attack_percent": random.randint(110, 150),  # Death strength
+            "defence_percent": random.randint(125, 160), # Undead fortification
+            "accuracy_percent": random.randint(80, 120),  # Slow but purposeful
+            "evasion_percent": random.randint(60, 100),  # Massive form
+            "crit_chance_percent": random.randint(75, 115), # Not precise
+            "crit_damage_percent": random.randint(120, 160), # Death blows
+            "armour_penetration_percent": random.randint(115, 155), # Ancient weapons
+            "damage_reduction_percent": random.randint(120, 160),   # Death's protection
+            "block_chance_percent": random.randint(110, 150)       # Guardian's duty
+        },
+        "tier": "very-hard",
+        "attack_types": ["normal", "power", "stunning", "draining", "defence_break", "damage_reflect"]
+    },
+
+    "Soul Reaver": {
+        "name": "Soul Reaver",
+        "stats": {
+            "hp_percent": random.randint(90, 130),      # Spirit form
+            "attack_percent": random.randint(120, 160),  # Soul stealing
+            "defence_percent": random.randint(75, 115),  # Ethereal
+            "accuracy_percent": random.randint(115, 155), # Soul seeking
+            "evasion_percent": random.randint(120, 160), # Spirit movement
+            "crit_chance_percent": random.randint(115, 155), # Soul weak points
+            "crit_damage_percent": random.randint(120, 160), # Soul rending
+            "armour_penetration_percent": random.randint(125, 160), # Spirit piercing
+            "damage_reduction_percent": random.randint(70, 110),    # No physical form
+            "block_chance_percent": random.randint(60, 100)        # Phases through
+        },
+        "tier": "very-hard",
+        "attack_types": ["normal", "triple", "vampiric", "draining", "attack_weaken", "stunning"]
+    },
+
+    "Bone Colossus": {
+        "name": "Bone Colossus",
+        "stats": {
+            "hp_percent": random.randint(130, 160),      # Massive construct
+            "attack_percent": random.randint(120, 160),  # Enormous strength
+            "defence_percent": random.randint(125, 160), # Wall of bone
+            "accuracy_percent": random.randint(70, 110),  # Unwieldy size
+            "evasion_percent": random.randint(55, 95),  # Too big
+            "crit_chance_percent": random.randint(65, 105), # Not precise
+            "crit_damage_percent": random.randint(125, 160), # Crushing force
+            "armour_penetration_percent": random.randint(115, 155), # Pure mass
+            "damage_reduction_percent": random.randint(120, 160),   # Bone fortress
+            "block_chance_percent": random.randint(110, 150)       # Living wall
+        },
+        "tier": "very-hard",
+        "attack_types": ["normal", "power", "stunning", "reckless", "defence_break", "damage_reflect"]
+    },
+
+    "Spectral Devourer": {
+        "name": "Spectral Devourer",
+        "stats": {
+            "hp_percent": random.randint(85, 125),       # Spirit essence
+            "attack_percent": random.randint(120, 160),  # Consuming force
+            "defence_percent": random.randint(70, 110),  # No physical form
+            "accuracy_percent": random.randint(120, 160), # Spirit hunting
+            "evasion_percent": random.randint(125, 160), # Ghost-like
+            "crit_chance_percent": random.randint(120, 160), # Vital consumption
+            "crit_damage_percent": random.randint(120, 160), # Soul devouring
+            "armour_penetration_percent": random.randint(125, 160), # Spirit teeth
+            "damage_reduction_percent": random.randint(65, 105),    # Ethereal form
+            "block_chance_percent": random.randint(55, 95)        # Can't block
+        },
+        "tier": "very-hard",
+        "attack_types": ["normal", "vampiric", "poison", "draining", "attack_weaken", "stunning"]
+    },
+
+    "Lich King": {
+        "name": "Lich King",
+        "stats": {
+            "hp_percent": random.randint(110, 150),      # Undead resilience
+            "attack_percent": random.randint(120, 160),  # Death magic
+            "defence_percent": random.randint(105, 145), # Magical barriers
+            "accuracy_percent": random.randint(115, 155), # Ancient precision
+            "evasion_percent": random.randint(105, 145), # Teleportation
+            "crit_chance_percent": random.randint(115, 155), # Death knowledge
+            "crit_damage_percent": random.randint(120, 160), # Fatal magic
+            "armour_penetration_percent": random.randint(125, 160), # Death touch
+            "damage_reduction_percent": random.randint(115, 155),   # Magical wards
+            "block_chance_percent": random.randint(100, 140)       # Spell shields
+        },
+        "tier": "very-hard",
+        "attack_types": ["normal", "draining", "poison", "freeze", "attack_weaken", "stunning"]
+    },
+    
+    "Timeless Sphinx": {
+        "name": "Timeless Sphinx",
+        "stats": {
+            "hp_percent": random.randint(100, 140),      # Ancient but not physical
+            "attack_percent": random.randint(115, 155),  # Time manipulation
+            "defence_percent": random.randint(95, 135), # Temporal shields
+            "accuracy_percent": random.randint(125, 160), # Sees all time
+            "evasion_percent": random.randint(120, 160), # Time shifting
+            "crit_chance_percent": random.randint(120, 160), # Knows weak moments
+            "crit_damage_percent": random.randint(120, 160), # Temporal strikes
+            "armour_penetration_percent": random.randint(125, 160), # Time piercing
+            "damage_reduction_percent": random.randint(105, 145),   # Time warping
+            "block_chance_percent": random.randint(80, 120)        # Prefers evasion
+        },
+        "tier": "very-hard",
+        "attack_types": ["normal", "stunning", "draining", "poison", "attack_weaken", "damage_reflect"]
+    },
+
+    "Eternal Pharaoh": {
+        "name": "Eternal Pharaoh",
+        "stats": {
+            "hp_percent": random.randint(115, 155),      # Immortal body
+            "attack_percent": random.randint(110, 150),  # Ancient might
+            "defence_percent": random.randint(120, 160), # Divine protection
+            "accuracy_percent": random.randint(100, 140), # Measured strikes
+            "evasion_percent": random.randint(75, 115),  # Regal movement
+            "crit_chance_percent": random.randint(105, 145), # Divine precision
+            "crit_damage_percent": random.randint(115, 155), # God's wrath
+            "armour_penetration_percent": random.randint(120, 160), # Divine power
+            "damage_reduction_percent": random.randint(120, 160),   # Sacred wards
+            "block_chance_percent": random.randint(110, 150)       # Divine shield
+        },
+        "tier": "very-hard",
+        "attack_types": ["normal", "power", "poison", "draining", "defence_break", "stunning"]
+    },
+
+    "Anubis Reborn": {
+        "name": "Anubis Reborn",
+        "stats": {
+            "hp_percent": random.randint(110, 150),      # Divine form
+            "attack_percent": random.randint(120, 160),  # Death god's might
+            "defence_percent": random.randint(105, 145), 
+            "accuracy_percent": random.randint(120, 160), # Death's precision
+            "evasion_percent": random.randint(115, 155), # Divine grace
+            "crit_chance_percent": random.randint(120, 160), # Death's knowledge
+            "crit_damage_percent": random.randint(120, 160), # Divine strikes
+            "armour_penetration_percent": random.randint(115, 155), # Soul rending
+            "damage_reduction_percent": random.randint(100, 140),   # Divine form
+            "block_chance_percent": random.randint(90, 130)       # Death's shield
+        },
+        "tier": "very-hard",
+        "attack_types": ["normal", "vampiric", "stunning", "double", "defence_break", "triple"]
+    },
+
+    "Mummy Emperor": {
+        "name": "Mummy Emperor",
+        "stats": {
+            "hp_percent": random.randint(120, 160),      # Imperial preservation
+            "attack_percent": random.randint(105, 145),  # Ancient strength
+            "defence_percent": random.randint(125, 160), # Royal wrappings
+            "accuracy_percent": random.randint(85, 125),  # Stiff movement
+            "evasion_percent": random.randint(65, 105),  # Very stiff
+            "crit_chance_percent": random.randint(90, 130),
+            "crit_damage_percent": random.randint(110, 150),
+            "armour_penetration_percent": random.randint(115, 155), # Ancient weapons
+            "damage_reduction_percent": random.randint(120, 160),   # Magical preservation
+            "block_chance_percent": random.randint(115, 155)       # Royal guard training
+        },
+        "tier": "very-hard",
+        "attack_types": ["normal", "power", "poison", "stunning", "damage_reflect", "damage_reflect"]
+    },
+
+    "Living Obelisk": {
+        "name": "Living Obelisk",
+        "stats": {
+            "hp_percent": random.randint(130, 160),      # Stone construct
+            "attack_percent": random.randint(115, 155),  # Massive weight
+            "defence_percent": random.randint(130, 160), # Solid stone
+            "accuracy_percent": random.randint(70, 110),  # Immobile
+            "evasion_percent": random.randint(55, 95),  # Can't dodge
+            "crit_chance_percent": random.randint(65, 105), # Not precise
+            "crit_damage_percent": random.randint(120, 160), # Crushing weight
+            "armour_penetration_percent": random.randint(120, 160), # Stone force
+            "damage_reduction_percent": random.randint(125, 160),   # Stone body
+            "block_chance_percent": random.randint(120, 160)       # Living wall
+        },
+        "tier": "very-hard",
+        "attack_types": ["normal", "power", "stunning", "reckless", "damage_reflect", "defence_break"]
+    },
+
+    "Apocalypse Horseman": {
+        "name": "Apocalypse Horseman",
+        "stats": {
+            "hp_percent": random.randint(110, 150),      # Supernatural being
+            "attack_percent": random.randint(125, 160),  # Harbinger of doom
+            "defence_percent": random.randint(100, 140), 
+            "accuracy_percent": random.randint(120, 160), # Never misses
+            "evasion_percent": random.randint(115, 155), # Supernatural grace
+            "crit_chance_percent": random.randint(120, 160), # Death strikes
+            "crit_damage_percent": random.randint(125, 160), # Apocalyptic force
+            "armour_penetration_percent": random.randint(120, 160), # Divine weapon
+            "damage_reduction_percent": random.randint(105, 145),   # Supernatural form
+            "block_chance_percent": random.randint(90, 130)       # Prefers offense
+        },
+        "tier": "very-hard",
+        "attack_types": ["normal", "reckless", "poison", "draining", "attack_weaken", "stunning"]
+    },
+    
+    "Abyssal Wyrm": {
+        "name": "Abyssal Wyrm",
+        "stats": {
+            "hp_percent": random.randint(115, 155),      # Massive dragon
+            "attack_percent": random.randint(120, 160),  # Ancient dragon might
+            "defence_percent": random.randint(110, 150), # Dragon scales
+            "accuracy_percent": random.randint(110, 150), # Hunting instinct
+            "evasion_percent": random.randint(90, 130), # Large target
+            "crit_chance_percent": random.randint(115, 155), # Deadly precision
+            "crit_damage_percent": random.randint(120, 160), # Dragon fury
+            "armour_penetration_percent": random.randint(120, 160), # Dragon fangs
+            "damage_reduction_percent": random.randint(105, 145),   # Dragon hide
+            "block_chance_percent": random.randint(85, 125)        # Uses size
+        },
+        "tier": "very-hard",
+        "attack_types": ["normal", "power", "poison", "stunning", "defence_break", "reckless"]
+    },
+
+    "Void Titan": {
+        "name": "Void Titan",
+        "stats": {
+            "hp_percent": random.randint(125, 160),      # Colossal size
+            "attack_percent": random.randint(120, 160),  # Void strength
+            "defence_percent": random.randint(115, 155), # Void armor
+            "accuracy_percent": random.randint(75, 115),  # Too massive
+            "evasion_percent": random.randint(65, 105),  # Huge target
+            "crit_chance_percent": random.randint(80, 120),
+            "crit_damage_percent": random.randint(125, 160), # Crushing void
+            "armour_penetration_percent": random.randint(120, 160), # Reality breaking
+            "damage_reduction_percent": random.randint(115, 155),   # Void protection
+            "block_chance_percent": random.randint(110, 150)       # Living barrier
+        },
+        "tier": "very-hard",
+        "attack_types": ["normal", "reckless", "stunning", "draining", "defence_break", "confusion"]
+    },
+
+    "Chaos Incarnate": {
+        "name": "Chaos Incarnate",
+        "stats": {
+            "hp_percent": random.randint(100, 140),      # Unstable form
+            "attack_percent": random.randint(125, 160),  # Chaotic power
+            "defence_percent": random.randint(80, 120),  # Shifting form
+            "accuracy_percent": random.randint(120, 160), # Reality warping
+            "evasion_percent": random.randint(120, 160), # Chaos shifting
+            "crit_chance_percent": random.randint(120, 160), # Chaos strikes
+            "crit_damage_percent": random.randint(125, 160), # Reality breaking
+            "armour_penetration_percent": random.randint(125, 160), # Chaos piercing
+            "damage_reduction_percent": random.randint(75, 115),    # Unstable defense
+            "block_chance_percent": random.randint(60, 100)        # Can't focus
+        },
+        "tier": "very-hard",
+        "attack_types": ["normal", "double", "poison", "vampiric", "attack_weaken", "stunning"]
+    },
+
+    "Eternity Warden": {
+        "name": "Eternity Warden",
+        "stats": {
+            "hp_percent": random.randint(120, 160),      # Timeless being
+            "attack_percent": random.randint(110, 150),  # Time strength
+            "defence_percent": random.randint(120, 160), # Eternal defense
+            "accuracy_percent": random.randint(115, 155), # Time sight
+            "evasion_percent": random.randint(105, 145), # Time shifting
+            "crit_chance_percent": random.randint(110, 150), # Knows weakpoints
+            "crit_damage_percent": random.randint(115, 155), # Time strikes
+            "armour_penetration_percent": random.randint(115, 155), # Time piercing
+            "damage_reduction_percent": random.randint(120, 160),   # Time shield
+            "block_chance_percent": random.randint(115, 155)       # Guardian's duty
+        },
+        "tier": "very-hard",
+        "attack_types": ["normal", "power", "stunning", "freeze", "defence_break", "damage_reflect"]
+    },
+
+    "Ancient Wyvern": {
+        "name": "Ancient Wyvern",
+        "stats": {
+            "hp_percent": random.randint(115, 155),      # Ancient dragon
+            "attack_percent": random.randint(125, 160),  # Dragon might
+            "defence_percent": random.randint(105, 145), # Old scales
+            "accuracy_percent": random.randint(115, 155), # Hunter's eye
+            "evasion_percent": random.randint(110, 150), # Aerial grace
+            "crit_chance_percent": random.randint(115, 155), # Experienced hunter
+            "crit_damage_percent": random.randint(120, 160), # Ancient fury
+            "armour_penetration_percent": random.randint(115, 155), # Ancient claws
+            "damage_reduction_percent": random.randint(100, 140),   # Aged scales
+            "block_chance_percent": random.randint(80, 120)        # Dodges instead
+        },
+        "tier": "very-hard",
+        "attack_types": ["normal", "triple", "poison", "reckless", "stunning", "attack_weaken"]
+    },
+
+    "Elemental Drake": {
+        "name": "Elemental Drake",
+        "stats": {
+            "hp_percent": random.randint(110, 150),      # Dragon form
+            "attack_percent": random.randint(120, 160),  # Elemental fury
+            "defence_percent": random.randint(100, 140), # Dragon hide
+            "accuracy_percent": random.randint(115, 155), # Elemental precision
+            "evasion_percent": random.randint(110, 150), # Elemental flight
+            "crit_chance_percent": random.randint(115, 155), # Elemental mastery
+            "crit_damage_percent": random.randint(120, 160), # Elemental burst
+            "armour_penetration_percent": random.randint(120, 160), # Element piercing
+            "damage_reduction_percent": random.randint(105, 145),   # Elemental shield
+            "block_chance_percent": random.randint(75, 115)        # Avoids instead
+        },
+        "tier": "very-hard",
+        "attack_types": ["normal", "burn", "poison", "freeze", "stunning", "confusion"]
+    },
+    
+    "Dragonlord": {
+        "name": "Dragonlord",
+        "stats": {
+            "hp_percent": random.randint(120, 160),      # Dragon emperor
+            "attack_percent": random.randint(125, 160),  # Supreme dragon might
+            "defence_percent": random.randint(110, 150), # Royal scales
+            "accuracy_percent": random.randint(115, 155), # Ancient precision
+            "evasion_percent": random.randint(100, 140), # Royal grace
+            "crit_chance_percent": random.randint(120, 160), # Dragon mastery
+            "crit_damage_percent": random.randint(125, 160), # Supreme power
+            "armour_penetration_percent": random.randint(120, 160), # Royal fangs
+            "damage_reduction_percent": random.randint(110, 150),   # Dragon lord's hide
+            "block_chance_percent": random.randint(95, 135)       # Prefers domination
+        },
+        "tier": "very-hard",
+        "attack_types": ["normal", "power", "reckless", "stunning", "damage_reflect", "confusion"]
+    },
+
+    "Chromatic Dragon": {
+        "name": "Chromatic Dragon",
+        "stats": {
+            "hp_percent": random.randint(115, 155),      # Powerful dragon
+            "attack_percent": random.randint(120, 160),  # Multi-element power
+            "defence_percent": random.randint(105, 145), # Shifting scales
+            "accuracy_percent": random.randint(120, 160), # Elemental precision
+            "evasion_percent": random.randint(115, 155), # Color shifting
+            "crit_chance_percent": random.randint(120, 160), # Elemental mastery
+            "crit_damage_percent": random.randint(120, 160), # Prismatic fury
+            "armour_penetration_percent": random.randint(125, 160), # Element piercing
+            "damage_reduction_percent": random.randint(100, 140),   # Shifting defense
+            "block_chance_percent": random.randint(80, 120)        # Relies on evasion
+        },
+        "tier": "very-hard",
+        "attack_types": ["normal", "burn", "poison", "freeze", "stunning", "confusion"]
+    },
+
+    "Elder Dragon": {
+        "name": "Elder Dragon",
+        "stats": {
+            "hp_percent": random.randint(125, 160),      # Ancient vitality
+            "attack_percent": random.randint(125, 160),  # Primordial strength
+            "defence_percent": random.randint(120, 160), # Ancient scales
+            "accuracy_percent": random.randint(105, 145), # Old but deadly
+            "evasion_percent": random.randint(85, 125),  # Ancient weight
+            "crit_chance_percent": random.randint(115, 155), # Ancient wisdom
+            "crit_damage_percent": random.randint(125, 160), # Primordial fury
+            "armour_penetration_percent": random.randint(120, 160), # Ancient fangs
+            "damage_reduction_percent": random.randint(120, 160),   # Primordial hide
+            "block_chance_percent": random.randint(105, 145)       # Ancient defenses
+        },
+        "tier": "very-hard",
+        "attack_types": ["normal", "power", "stunning", "draining", "defence_break", "damage_reflect"]
+    },
+    
+    # Extreme Enemies
+    "Magma Colossus": {
+        "name": "Magma Colossus",
+        "stats": {
+            "hp_percent": random.randint(130, 160),      # Massive molten form
+            "attack_percent": random.randint(130, 160),  # Magma strength
+            "defence_percent": random.randint(130, 160), # Molten armor
+            "accuracy_percent": random.randint(80, 110),  # Slow moving
+            "evasion_percent": random.randint(70, 100),  # Too massive
+            "crit_chance_percent": random.randint(85, 115), # Not precise
+            "crit_damage_percent": random.randint(130, 160), # Melting strikes
+            "armour_penetration_percent": random.randint(130, 160), # Melts armor
+            "damage_reduction_percent": random.randint(130, 160),   # Molten body
+            "block_chance_percent": random.randint(120, 150)       # Living wall
+        },
+        "tier": "extreme",
+        "attack_types": ["normal", "power", "reckless", "burn", "stunning", "damage_reflect", "defence_break"]
+    },
+
+    "Phoenix Overlord": {
+        "name": "Phoenix Overlord",
+        "stats": {
+            "hp_percent": random.randint(110, 140),      # Immortal but fragile
+            "attack_percent": random.randint(130, 160),  # Solar might
+            "defence_percent": random.randint(100, 130), # Light frame
+            "accuracy_percent": random.randint(130, 160), # Perfect sight
+            "evasion_percent": random.randint(130, 160), # Solar flight
+            "crit_chance_percent": random.randint(130, 160), # Vital strikes
+            "crit_damage_percent": random.randint(130, 160), # Solar fury
+            "armour_penetration_percent": random.randint(130, 160), # Burning through
+            "damage_reduction_percent": random.randint(90, 120),    # Light body
+            "block_chance_percent": random.randint(80, 110)        # Dodges instead
+        },
+        "tier": "extreme",
+        "attack_types": ["normal", "double", "stunning", "triple", "burn", "attack_weaken", "vampiric"]
+    },
+
+    "Volcanic Titan": {
+        "name": "Volcanic Titan",
+        "stats": {
+            "hp_percent": random.randint(130, 160),      # Mountain size
+            "attack_percent": random.randint(130, 160),  # Volcanic might
+            "defence_percent": random.randint(130, 160), # Stone body
+            "accuracy_percent": random.randint(85, 115),  # Slow attacks
+            "evasion_percent": random.randint(70, 100),  # Mountain sized
+            "crit_chance_percent": random.randint(90, 120), # Raw power
+            "crit_damage_percent": random.randint(130, 160), # Eruption
+            "armour_penetration_percent": random.randint(130, 160), # Melting strikes
+            "damage_reduction_percent": random.randint(130, 160),   # Stone hide
+            "block_chance_percent": random.randint(120, 150)       # Mountain shield
+        },
+        "tier": "extreme",
+        "attack_types": ["normal", "power", "stunning", "damage_reflect", "burn", "defence_break", "reckless"]
+    },
+
+    "Inferno Wyrm": {
+        "name": "Inferno Wyrm",
+        "stats": {
+            "hp_percent": random.randint(120, 150),      # Dragon frame
+            "attack_percent": random.randint(130, 160),  # Infernal might
+            "defence_percent": random.randint(110, 140), # Fire scales
+            "accuracy_percent": random.randint(125, 155), # Hunter's eye
+            "evasion_percent": random.randint(120, 150), # Fire flight
+            "crit_chance_percent": random.randint(125, 155), # Vital hunting
+            "crit_damage_percent": random.randint(130, 160), # Infernal strikes
+            "armour_penetration_percent": random.randint(130, 160), # Melting fangs
+            "damage_reduction_percent": random.randint(110, 140),   # Fire resistance
+            "block_chance_percent": random.randint(90, 120)        # Aggressive nature
+        },
+        "tier": "extreme",
+        "attack_types": ["normal", "double", "power", "reckless", "defence_break" "burn", "attack_weaken"]
+    },
+
+    "Cinder Archfiend": {
+        "name": "Cinder Archfiend",
+        "stats": {
+            "hp_percent": random.randint(115, 145),      # Demon form
+            "attack_percent": random.randint(130, 160),  # Hellfire power
+            "defence_percent": random.randint(105, 135), # Demon hide
+            "accuracy_percent": random.randint(130, 160), # Demonic precision
+            "evasion_percent": random.randint(125, 155), # Fire teleport
+            "crit_chance_percent": random.randint(130, 160), # Fatal strikes
+            "crit_damage_percent": random.randint(130, 160), # Demon power
+            "armour_penetration_percent": random.randint(130, 160), # Hellfire piercing
+            "damage_reduction_percent": random.randint(100, 130),   # Demon resistance
+            "block_chance_percent": random.randint(85, 115)        # Offensive nature
+        },
+        "tier": "extreme",
+        "attack_types": ["normal", "power", "confusion", "vampiric", "attack_weaken", "burn", "defence_break"]
+    },
+    
+    "Cosmic Devourer": {
+        "name": "Cosmic Devourer",
+        "stats": {
+            "hp_percent": random.randint(115, 145),      # Void entity
+            "attack_percent": random.randint(130, 160),  # Reality consuming
+            "defence_percent": random.randint(100, 130), # Ethereal form
+            "accuracy_percent": random.randint(130, 160), # Space warping
+            "evasion_percent": random.randint(130, 160), # Reality shifting
+            "crit_chance_percent": random.randint(130, 160), # Reality tears
+            "crit_damage_percent": random.randint(130, 160), # Cosmic destruction
+            "armour_penetration_percent": random.randint(130, 160), # Reality piercing
+            "damage_reduction_percent": random.randint(90, 120),    # Unstable form
+            "block_chance_percent": random.randint(80, 110)        # Can't block reality
+        },
+        "tier": "extreme",
+        "attack_types": ["normal", "double", "triple", "confusion", "stunning", "draining", "attack_weaken"]
+    },
+
+    "Astral Behemoth": {
+        "name": "Astral Behemoth",
+        "stats": {
+            "hp_percent": random.randint(130, 160),      # Star-forged body
+            "attack_percent": random.randint(130, 160),  # Stellar might
+            "defence_percent": random.randint(130, 160), # Cosmic armor
+            "accuracy_percent": random.randint(90, 120),  # Massive form
+            "evasion_percent": random.randint(75, 105),  # Too huge
+            "crit_chance_percent": random.randint(95, 125), # Raw power
+            "crit_damage_percent": random.randint(130, 160), # Star crushing
+            "armour_penetration_percent": random.randint(130, 160), # Gravity force
+            "damage_reduction_percent": random.randint(130, 160),   # Star forge
+            "block_chance_percent": random.randint(115, 145)       # Cosmic shield
+        },
+        "tier": "extreme",
+        "attack_types": ["normal", "power", "confusion", "reckless", "defence_break", "stunning", "damage_reflect"]
+    },
+
+    "Galactic Leviathan": {
+        "name": "Galactic Leviathan",
+        "stats": {
+            "hp_percent": random.randint(130, 160),      # Cosmic whale
+            "attack_percent": random.randint(130, 160),  # Space crushing
+            "defence_percent": random.randint(125, 155), # Stellar hide
+            "accuracy_percent": random.randint(115, 145), # Space sensing
+            "evasion_percent": random.randint(110, 140), # Space swimming
+            "crit_chance_percent": random.randint(110, 140), # Void strikes
+            "crit_damage_percent": random.randint(130, 160), # Stellar force
+            "armour_penetration_percent": random.randint(130, 160), # Space teeth
+            "damage_reduction_percent": random.randint(120, 150),   # Void shield
+            "block_chance_percent": random.randint(110, 140)       # Cosmic mass
+        },
+        "tier": "extreme",
+        "attack_types": ["normal", "power", "poison", "stunning", "defence_break"]
+    },
+
+    "Nebula Colossus": {
+        "name": "Nebula Colossus",
+        "stats": {
+            "hp_percent": random.randint(130, 160),      # Star born
+            "attack_percent": random.randint(125, 155),  # Star force
+            "defence_percent": random.randint(130, 160), # Nebula form
+            "accuracy_percent": random.randint(85, 115),  # Diffuse form
+            "evasion_percent": random.randint(80, 110),  # Too massive
+            "crit_chance_percent": random.randint(90, 120), # Star power
+            "crit_damage_percent": random.randint(130, 160), # Stellar crush
+            "armour_penetration_percent": random.randint(120, 150), # Star piercing
+            "damage_reduction_percent": random.randint(130, 160),   # Nebula shield
+            "block_chance_percent": random.randint(120, 150)       # Gas giant
+        },
+        "tier": "extreme",
+        "attack_types": ["normal", "power", "confusion", "damage_reflect", "reckless", "stunning", "defence_break"]
+    },
+
+    "Celestial Titan": {
+        "name": "Celestial Titan",
+        "stats": {
+            "hp_percent": random.randint(130, 160),      # Divine form
+            "attack_percent": random.randint(130, 160),  # Heaven's might
+            "defence_percent": random.randint(130, 160), # Divine armor
+            "accuracy_percent": random.randint(120, 150), # Divine sight
+            "evasion_percent": random.randint(100, 130), # Massive form
+            "crit_chance_percent": random.randint(120, 150), # Divine precision
+            "crit_damage_percent": random.randint(130, 160), # God's wrath
+            "armour_penetration_percent": random.randint(130, 160), # Divine pierce
+            "damage_reduction_percent": random.randint(125, 155),   # Holy shield
+            "block_chance_percent": random.randint(115, 145)       # Divine guard
+        },
+        "tier": "extreme",
+        "attack_types": ["normal", "power", "confusion", "double", "stunning", "draining", "defence_break"]
+    },
+    
+    # Boss Monsters
+    "Seraphim Guardian": {
+        "name": "Seraphim Guardian",
+        "stats": {
+            "hp_percent": random.randint(130, 160),      # Divine vitality
+            "attack_percent": random.randint(130, 160),  # Holy might
+            "defence_percent": random.randint(130, 160), # Divine protection
+            "accuracy_percent": random.randint(120, 150), # All-seeing
+            "evasion_percent": random.randint(115, 145), # Divine grace
+            "crit_chance_percent": random.randint(120, 150), # Divine judgment
+            "crit_damage_percent": random.randint(130, 160), # Holy smite
+            "armour_penetration_percent": random.randint(125, 155), # Holy pierce
+            "damage_reduction_percent": random.randint(130, 160),   # Divine ward
+            "block_chance_percent": random.randint(125, 155)       # Holy shield
+        },
+        "tier": "boss",
+        "attack_types": ["normal", "power", "stunning", "draining", "reckless", "damage_reflect", "triple"]
+    },
+
+    "Celestial Arbiter": {
+        "name": "Celestial Arbiter",
+        "stats": {
+            "hp_percent": random.randint(120, 150),      # Divine form
+            "attack_percent": random.randint(130, 160),  # Justice's might
+            "defence_percent": random.randint(115, 145), # Celestial form
+            "accuracy_percent": random.randint(130, 160), # Perfect judgment
+            "evasion_percent": random.randint(130, 160), # Divine movement
+            "crit_chance_percent": random.randint(130, 160), # Finding guilt
+            "crit_damage_percent": random.randint(130, 160), # Divine punishment
+            "armour_penetration_percent": random.randint(130, 160), # Justice pierces
+            "damage_reduction_percent": random.randint(110, 140),   # Light form
+            "block_chance_percent": random.randint(100, 130)       # Dodges instead
+        },
+        "tier": "boss",
+        "attack_types": ["normal", "double", "draining", "stunning", "triple", "vampiric", "attack_weaken"]
+    },
+
+    "Astral Demiurge": {
+        "name": "Astral Demiurge",
+        "stats": {
+            "hp_percent": random.randint(125, 155),      # Creator's form
+            "attack_percent": random.randint(130, 160),  # Creation power
+            "defence_percent": random.randint(125, 155), # Reality shield
+            "accuracy_percent": random.randint(130, 160), # Perfect sight
+            "evasion_percent": random.randint(120, 150), # Reality shift
+            "crit_chance_percent": random.randint(125, 155), # Finding weakness
+            "crit_damage_percent": random.randint(130, 160), # Reality strike
+            "armour_penetration_percent": random.randint(130, 160), # Unmaking
+            "damage_reduction_percent": random.randint(120, 150),   # Reality ward
+            "block_chance_percent": random.randint(115, 145)       # Creation shield
+        },
+        "tier": "boss",
+        "attack_types": ["normal", "power", "poison", "freeze", "stunning", "vampiric", "defence_break"]
+    },
+
+    "Ethereal Leviathan": {
+        "name": "Ethereal Leviathan",
+        "stats": {
+            "hp_percent": random.randint(130, 160),      # Cosmic mass
+            "attack_percent": random.randint(130, 160),  # Reality crusher
+            "defence_percent": random.randint(115, 145), # Spirit form
+            "accuracy_percent": random.randint(120, 150), # Void sense
+            "evasion_percent": random.randint(130, 160), # Phase shifting
+            "crit_chance_percent": random.randint(125, 155), # Reality rend
+            "crit_damage_percent": random.randint(130, 160), # Cosmic force
+            "armour_penetration_percent": random.randint(130, 160), # Reality pierce
+            "damage_reduction_percent": random.randint(110, 140),   # Spirit shield
+            "block_chance_percent": random.randint(100, 130)       # Phase through
+        },
+        "tier": "boss",
+        "attack_types": ["normal", "reckless", "draining", "double", "poison", "triple", "damage_reflect"]
+    },
+
+    "Divine Architect": {
+        "name": "Divine Architect",
+        "stats": {
+            "hp_percent": random.randint(130, 160),      # Creator's vitality
+            "attack_percent": random.randint(130, 160),  # Divine power
+            "defence_percent": random.randint(130, 160), # Perfect defense
+            "accuracy_percent": random.randint(125, 155), # Divine precision
+            "evasion_percent": random.randint(115, 145), # Reality bend
+            "crit_chance_percent": random.randint(125, 155), # Perfect strike
+            "crit_damage_percent": random.randint(130, 160), # Divine force
+            "armour_penetration_percent": random.randint(130, 160), # Creation pierce
+            "damage_reduction_percent": random.randint(130, 160),   # Perfect ward
+            "block_chance_percent": random.randint(125, 155)       # Divine shield
+        },
+        "tier": "boss",
+        "attack_types": ["normal", "power", "stunning", "freeze", "draining", "reckless", "defence_break"]
+    },
+    
+    # Event Enemies
+    "Shrine Guardian": {
+        "name": "Shrine Guardian",
+        "stats": {
+            "hp_percent": random.randint(105, 130),
+            "attack_percent": random.randint(75, 100),
+            "defence_percent": random.randint(65, 90),
+            "accuracy_percent": random.randint(70, 95),
+            "evasion_percent": random.randint(60, 85),
+            "crit_chance_percent": random.randint(65, 90),
+            "crit_damage_percent": random.randint(75, 100),
+            "armour_penetration_percent": random.randint(60, 85),
+            "damage_reduction_percent": random.randint(70, 95),
+            "block_chance_percent": random.randint(75, 100)
+        },
+        "tier": "medium",
+        "attack_types": ["normal", "power", "stunning", "damage_reflect", "defence_break"]
+    },
+    
+    "Echo Wraith": {
+        "name": "Echo Wraith",
+        "stats": {
+            "hp_percent": random.randint(75, 100),
+            "attack_percent": random.randint(90, 115),
+            "defence_percent": random.randint(55, 80),
+            "accuracy_percent": random.randint(85, 110),
+            "evasion_percent": random.randint(105, 130),
+            "crit_chance_percent": random.randint(115, 140),
+            "crit_damage_percent": random.randint(105, 130),
+            "armour_penetration_percent": random.randint(75, 100),
+            "damage_reduction_percent": random.randint(45, 70),
+            "block_chance_percent": random.randint(35, 60)
+        },
+        "tier": "medium",
+        "attack_types": ["normal", "double", "vampiric", "draining", "attack_weaken"]
     }
-    
+}
+
 ENEMY_ATTACK_TYPES = {
     "normal": {"name": "Normal Attack", "damage_modifier": 1, "effect": None},
     "power": {"name": "Power Attack", "damage_modifier": 1.5, "effect": None},
-    "double": {"name": "Double Strike", "damage_modifier": 0.8, "effect": None, "extra_attacks": 1},
-    "triple": {"name": "Triple Strike", "damage_modifier": 0.8, "extra_attacks": 2},
+    "double": {"name": "Double Strike", "damage_modifier": 0.9, "effect": None, "extra_attacks": 1},
+    "triple": {"name": "Triple Strike", "damage_modifier": 0.9, "extra_attacks": 2},
     "vampiric": {"name": "Vampiric Strike", "damage_modifier": 0.9, "effect": "lifesteal"},
     "reckless": {"name": "Reckless Assault", "damage_modifier": 2},
     "draining": {"name": "Draining Touch", "damage_modifier": 0.9, "effect": "stamina_drain"},
-    "stunning": {"name": "Stunning Blow", "damage_modifier": 0.7, "effect": "stun"},
+    "stunning": {"name": "Stunning Blow", "damage_modifier": 0.8, "effect": "stun"},
     "confusion": {"name": "Confounding Blow", "damage_modifier": 0.8, "effect": "confusion"},
     "poison": {"name": "Poison Strike", "damage_modifier": 0.9, "effect": "poison"},
     "freeze": {"name": "Frozen Strike", "damage_modifier": 0.9, "effect": "freeze"},
@@ -378,3 +2119,181 @@ ENEMY_ATTACK_TYPES = {
     "defence_break": {"name": "Defence Shatter", "damage_modifier": 0.7, "effect": "defence_break"},
     "attack_weaken": {"name": "Attack Weaken", "damage_modifier": 0.7, "effect": "attack_weaken"}
 }
+
+# Monster variant modifiers with stat changes and spawn chances
+MONSTER_VARIANTS = {
+    "Frenzied": {
+        "chance": 0.1, # 10% chance to spawn
+        "stats": {
+            # Increases stat by amount / 100 (150 = 1.5x stat)
+            "attack_percent": 150,
+            "accuracy_percent": 120,
+            "crit_chance_percent": 130,
+            "hp_percent": 80,
+            "defence_percent": 70
+        },
+        "lore": "Driven mad by dark energies, this creature attacks with unnatural ferocity!",
+        "additional_attacks": ["reckless"],
+        "loot_modifiers": {
+            """
+            quantity_bonus = extra items, quality_boost = chance for item tier up, gold_multiplier = self explanatory
+            """
+            "quantity_bonus": 1,
+            "quality_boost": 0.15,
+            "gold_multiplier": 1.3
+        }
+    },
+    "Ancient": {
+        "chance": 0.08,
+        "stats": {
+            "hp_percent": 150,
+            "defence_percent": 140,
+            "damage_reduction_percent": 130,
+            "attack_percent": 120,
+            "evasion_percent": 70,
+            "block_chance_percent": 60,
+        },
+        "lore": "This creature has lived for centuries, growing ever stronger with age!",
+        "additional_attacks": ["draining", "confusion"],
+        "loot_modifiers": {
+            """
+            guaranteed_drops = guaranteed item of given tier/type
+            """
+            "quantity_bonus": 2,
+            "quality_boost": 1.0,
+            "gold_multiplier": 1.5,
+            "guaranteed_drops": ["rare"]
+        }
+    },
+    "Ethereal": {
+        "chance": 0.07,
+        "stats": {
+            "evasion_percent": 200,
+            "accuracy_percent": 150,
+            "crit_damage_percent": 140,
+            "defence_percent": 60,
+            "hp_percent": 50
+        },
+        "lore": "Partially phased into another dimension, this being is incredibly hard to hit!",
+        "additional_attacks": ["attack_weaken", "defence_break"],
+        "loot_modifiers": {
+            "quanitity_bonus": 1,
+            "quality_boost": 0.2,
+            "gold_multiplier": 1.4,
+            "guaranteed_drops": ["consumable"]
+        }
+    },
+    "Colossal": {
+        "chance": 0.06,
+        "stats": {
+            "hp_percent": 200,
+            "defence_percent": 150,
+            "damage_reduction": 130,
+            "evasion_percent": 25,
+            "accuracy_percent": 75
+        },
+        "lore": "This monster has grown to an enourmous size, becoming a true titan!",
+        "additional_attacks": ["power"],
+        "loot_modifiers": {
+            "quanitity_bonus": random.randint(1, 2),
+            "quality_boost": 0.3,
+            "gold_multiplier": 1.5,
+            "guaranteed_drops": random.choice(["rare", "epic"])
+        }
+    },
+    "Corrupted": {
+        "chance": 0.09,
+        "stats": {
+            "attack_percent": 130,
+            "armour_penetration_percent": 150,
+            "hp_percent": 120,
+            "damage_reduction_percent": 60,
+            "defence_percent": 70,
+            "accuracy_percent": 80
+        },
+        "lore": "Dark energies have twisted this creature, granting both power and instability",
+        "additional_attacks": ["poison", "burn"],
+        "loot_modifiers": {
+            "quantity_bonus": 1,
+            "quality_boost": random.randint(10, 50) / 100,
+            "gold_multiplier": random.randint(130, 170) / 100,
+            "guaranteed_drops": ["consumable"]
+        }
+    },
+    "Swift": {
+        "chance": 0.1,
+        "stats": {
+            "accuracy_percent": 150,
+            "evasion_percent": 150,
+            "crit_chance_percent": 130,
+            "attack_percent": 90,
+            "defence_percent": 80,
+            "damage_reduction_percent": 60,
+            "block_chance_percent": 70
+        },
+        "lore": "Moving with supernatural speed, this creature sticks with deadly precision!",
+        "additional_attacks": ["double", "triple"],
+        "loot_modifiers": {
+            "quanitity_bonus": 2,
+            "quality_boost": 0.25,
+            "gold_multiplier": 1.5,
+            "guaranteed_drops": random.choice(["uncommon", "rare", "epic", "masterwork"])
+        }
+    },
+    "Vampiric": {
+        "chance": 0.08,
+        "stats": {
+            "attack_percent": 130,
+            "hp_percent": 120,
+            "crit_chance_percent": 140,
+            "defence_percent": 90,
+            "evasion_percent": 75
+        },
+        "lore": "This being drains the life force of its victims, growing stronger with each strike!",
+        "additional_attacks": ["vampiric"],
+        "loot_modifiers": {
+            "quanitity_bonus": 1,
+            "quality_boost": 0.15,
+            "gold_multiplier": 1.3,
+            "guaranteed_drops": ["consumable"]
+        }
+    },
+    "Armoured": {
+        "chance": 0.08,
+        "stats": {
+            "defence_percent": 180,
+            "damage_reduction_percent": 150,
+            "block_chance_percent": 140,
+            "attack_percent": 70,
+            "accuracy_percent": 80,
+            "evasion_percent": 75
+        },
+        "lore": "Covered in thick natural armour, this creature is incredibly difficult to harm!",
+        "additional_attacks": ["damage_reflect"],
+        "loot_modifiers": {
+            "quantity_bonus": random.randint(1, 3),
+            "quality_boost": random.randint(15, 40) / 100,
+            "gold_modifier": random.randint(120, 160) / 100,
+            "guaranteed_drops": ["epic"]
+        }
+    }
+}
+
+def guaranteed_drops(min_chance, max_chance, item=[]):
+    """Chance for a guaranteed drop of a certain tier item"""
+    if random.random < random.randint(min_chance, max_chance):
+        drop = random.choice(item)
+        return drop
+    return None
+
+def apply_variant_modifiers(template_stats, variant):
+    """Apply variant stat modifiers to template stats"""
+    modified_stats = template_stats.copy()
+    
+    for stat, modifier in variant["stats"].items():
+        if stat in modified_stats:
+            # Convert percentages to multiplier
+            multiplier = modifier / 100
+            modified_stats[stat] = int(modified_stats[stat] * multiplier)
+            
+    return modified_stats

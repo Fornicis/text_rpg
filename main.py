@@ -1,7 +1,7 @@
 import random
 from display import *
 from player import Player
-from enemies import initialise_enemies, Enemy
+from enemies import create_enemy, Enemy
 from items import initialise_items
 from shop import Armourer, Alchemist, Inn
 from battle import Battle
@@ -16,7 +16,6 @@ class Game:
         self.current_location = "Village"
         self.world_map = WorldMap()
         self.items = initialise_items()
-        self.enemies = initialise_enemies()
         self.armourer = Armourer(self.items)
         self.alchemist = Alchemist(self.items)
         self.inn = Inn(self.items)
@@ -133,42 +132,27 @@ class Game:
                 print("Invalid action. Try again.")
 
     def encounter(self):
-        # Check to see if random event triggers
+    # Check to see if random event triggers
         if self.random_events.trigger_random_event(self.player, self):
             return
-        
+
         # Handles enemy encounters during exploration.
         possible_enemies = self.world_map.get_enemies(self.current_location)
         if possible_enemies and random.random() < 0.7:
             enemy_type = random.choice(possible_enemies)
-            enemy_template = self.enemies[enemy_type]
+            enemy = create_enemy(enemy_type, self.player)
             
-            # Create an enemy instance with only the required attributes
-            enemy = Enemy(
-                name=enemy_template.name,
-                hp=enemy_template.hp,
-                attack=enemy_template.attack,
-                defence=enemy_template.defence,
-                accuracy=enemy_template.accuracy,
-                evasion=enemy_template.evasion,
-                crit_chance=enemy_template.crit_chance,
-                crit_damage=enemy_template.crit_damage,
-                armour_penetration=enemy_template.armour_penetration,
-                damage_reduction=enemy_template.damage_reduction,
-                block_chance=enemy_template.block_chance,
-                exp=enemy_template.exp,
-                gold=enemy_template.gold,
-                tier=enemy_template.tier,
-                level=enemy_template.level,
-                attack_types=enemy_template.attack_types
-            )
-            
-            print(f"You encountered a {enemy.name}!")
-            self.battle.battle(enemy)
-            
-            if self.current_location == "Village":
-                print("You find yourself back in the Village after your defeat.")
-                return
+            if enemy:
+                print(f"You encountered a {enemy.name}!")
+                if hasattr(enemy, 'variant') and enemy.variant and 'lore' in enemy.variant:
+                    print(enemy.variant['lore'])
+                self.battle.battle(enemy)
+
+                if self.current_location == "Village":
+                    print("You find yourself back in the Village after your defeat.")
+                    return
+            else:
+                print("You explored the area but found nothing of interest.")
         else:
             print("You explored the area but found nothing of interest.")
 
