@@ -11,8 +11,23 @@ class Enemy(Character):
         Otherwise use provided stats directly
         """
         if template and player:
-        # Calculate stats from template and player
-            base_percentages = template["stats"].copy()
+            # Set Default Percentages for all stats
+            default_percentages = {
+            "hp_percent": 100,
+            "attack_percent": 100,
+            "defence_percent": 100,
+            "accuracy_percent": 100,
+            "evasion_percent": 100,
+            "crit_chance_percent": 100,
+            "crit_damage_percent": 100,
+            "armour_penetration_percent": 100,
+            "damage_reduction_percent": 100,
+            "block_chance_percent": 100
+        }
+        
+            # Update defaults with template stats
+            base_percentages = default_percentages.copy()
+            base_percentages.update(template["stats"])
             
             # First roll for whether this should be a variant at all (10% chance)
             final_name = template['name']
@@ -56,15 +71,15 @@ class Enemy(Character):
             
             # Calculate actual stats
             hp = int(player.max_hp * base_percentages["hp_percent"] / 100)
-            defence = int((player.base_attack + player.level_modifiers["attack"] + player.equipment_modifiers["attack"]) * base_percentages["attack_percent"] / 100)
-            attack = int((player.base_defence + player.level_modifiers["defence"] + player.equipment_modifiers["defence"]) * base_percentages["defence_percent"] / 100)
-            accuracy = int((player.base_accuracy + player.level_modifiers["accuracy"] + player.equipment_modifiers["accuracy"]) * base_percentages["accuracy_percent"] / 100)
-            evasion = int((player.base_evasion + player.level_modifiers["evasion"] + player.equipment_modifiers["evasion"]) * base_percentages["evasion_percent"] / 100)
-            crit_chance = int((player.base_crit_chance + player.level_modifiers["crit_chance"] + player.equipment_modifiers["crit_chance"]) * base_percentages["crit_chance_percent"] / 100)
-            crit_damage = int((player.base_crit_damage + player.level_modifiers["crit_damage"] + player.equipment_modifiers["crit_damage"]) * base_percentages["crit_damage_percent"] / 100)
-            armour_penetration = int((player.base_armour_penetration + player.level_modifiers["armour_penetration"] + player.equipment_modifiers["armour_penetration"]) * base_percentages["armour_penetration_percent"] / 100)
-            damage_reduction = int((player.base_damage_reduction + player.level_modifiers["damage_reduction"] + player.equipment_modifiers["damage_reduction"]) * base_percentages["damage_reduction_percent"] / 100)
-            block_chance = int((player.base_block_chance + player.level_modifiers["block_chance"] + player.equipment_modifiers["block_chance"]) * base_percentages["block_chance_percent"] / 100)
+            attack = int((player.base_attack + player.level_modifiers.get("attack") + player.equipment_modifiers.get("attack") * (base_percentages["attack_percent"] * max(1, level + 2 / player.level)) / 100))
+            defence = int((player.base_defence + player.level_modifiers.get("defence") + player.equipment_modifiers.get("defence") * (base_percentages["defence_percent"] * max(1, level + 2 / player.level)) / 100))
+            accuracy = int((player.base_accuracy + player.level_modifiers.get("accuracy", 0) + player.equipment_modifiers.get("accuracy", 0)) * base_percentages["accuracy_percent"] / 100)
+            evasion = int((player.base_evasion + player.level_modifiers.get("evasion", 0) + player.equipment_modifiers.get("evasion", 0)) * base_percentages["evasion_percent"] / 100)
+            crit_chance = int((player.base_crit_chance + player.level_modifiers.get("crit_chance", 0) + player.equipment_modifiers.get("crit_chance", 0)) * base_percentages["crit_chance_percent"] / 100)
+            crit_damage = int((player.base_crit_damage + player.level_modifiers.get("crit_damage", 0) + player.equipment_modifiers.get("crit_damage", 0)) * base_percentages["crit_damage_percent"] / 100)
+            armour_penetration = int((player.base_armour_penetration + player.level_modifiers.get("armour_penetration", 0) + player.equipment_modifiers.get("armour_penetration", 0)) * base_percentages["armour_penetration_percent"] / 100)
+            damage_reduction = int((player.base_damage_reduction + player.level_modifiers.get("damage_reduction", 0) + player.equipment_modifiers.get("damage_reduction", 0)) * base_percentages["damage_reduction_percent"] / 100)
+            block_chance = int((player.base_block_chance + player.level_modifiers.get("block_chance", 0) + player.equipment_modifiers.get("block_chance", 0)) * base_percentages["block_chance_percent"] / 100)
             
             # Ensure minimum values
             hp = max(1, hp)
@@ -407,7 +422,7 @@ ENEMY_TEMPLATES = {
         "name": "Leprechaun",
         "stats": {
             "hp_percent": random.randint(70, 90),
-            "attack_percent": random.randint(80, 85),
+            "attack_percent": random.randint(85, 95),
             "defence_percent": random.randint(50, 70),
             "accuracy_percent": random.randint(90, 110),
             "evasion_percent": random.randint(100, 120),
@@ -2116,8 +2131,8 @@ ENEMY_ATTACK_TYPES = {
     "freeze": {"name": "Frozen Strike", "damage_modifier": 0.9, "effect": "freeze"},
     "burn": {"name": "Burning Strike", "damage_modifier": 0.9, "effect": "burn"},
     "damage_reflect": {"name": "Reflective Shield", "damage_modifier": 0.5, "effect": "damage_reflect"},
-    "defence_break": {"name": "Defence Shatter", "damage_modifier": 0.7, "effect": "defence_break"},
-    "attack_weaken": {"name": "Attack Weaken", "damage_modifier": 0.7, "effect": "attack_weaken"}
+    "defence_break": {"name": "Defence Shatter", "damage_modifier": 1.0, "effect": "defence_break"},
+    "attack_weaken": {"name": "Attack Weaken", "damage_modifier": 1.0, "effect": "attack_weaken"}
 }
 
 # Monster variant modifiers with stat changes and spawn chances
