@@ -242,7 +242,7 @@ class Character:
         else:
             self.status_effects.append(new_effect)
             apply_result = new_effect.apply(self)
-            if apply_result:
+            if apply_result and new_effect.remaining_duration > 1:
                 if new_effect.stackable:
                     print(f"{self.name} is affected by {new_effect.name} with {new_effect.strength} stack(s) for {new_effect.remaining_duration} turns!")
                 else:
@@ -258,7 +258,6 @@ class Character:
                     if remove_message:
                         print(remove_message)
                     self.remove_status_effect(effect.name)
-                    print(f"{effect.name} has worn off from {character.name}.")
             else:
                 self.remove_status_effect(effect.name)
    
@@ -526,7 +525,7 @@ class Player(Character):
     
     def cleanup_after_battle(self):
         for effect in self.status_effects[:]:
-            effect.remove(self)
+            effect.on_remove(self)
             self.remove_status_effect(effect.name)
         
         self.remove_combat_buffs()

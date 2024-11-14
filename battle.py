@@ -113,7 +113,7 @@ class Battle:
                         reflected_damage, _ = reflected_damage
                         if reflected_damage > 0:
                             self.player.take_damage(reflected_damage)
-                            print(f"{self.player.name} takes {reflected_damage} reflected damage!\n")
+                            print(f"{self.player.name} takes {reflected_damage} reflected damage!")
 
         # Handle stance effects
         if attack_type == "defensive":
@@ -179,7 +179,7 @@ class Battle:
             enemy.take_damage(reflected_damage)
             print(f"{enemy.name} takes {reflected_damage} reflected damage!")
         
-        if attack_hit == True and effect_type:
+        if attack_hit and effect_type:
             self.apply_attack_effect(effect_type, self.player, enemy, total_damage)
 
         if not self.player.is_alive():
@@ -191,7 +191,7 @@ class Battle:
         #print(f"Applying {effect_type} effect from {attacker.name} to {target.name}")  # Debug output
         effect_strength = max(1, attacker.level // 5)
         if effect_type == "poison":
-            effect_strength = max(1, attacker.level // 2)
+            effect_strength = max(1, attacker.level // 3)
             poison_effect = POISON(3, effect_strength)
             target.apply_status_effect(poison_effect)
         elif effect_type == "burn":
@@ -216,10 +216,10 @@ class Battle:
             heal_effect = VAMPIRIC(damage)
             attacker.apply_status_effect(heal_effect)
         elif effect_type == "defence_break":
-            defence_break_effect = DEFENCE_BREAK(3, effect_strength)
+            defence_break_effect = DEFENCE_BREAK(3, effect_strength, damage)
             target.apply_status_effect(defence_break_effect)
         elif effect_type == "attack_weaken":
-            attack_weaken_effect = ATTACK_WEAKEN(3, effect_strength)
+            attack_weaken_effect = ATTACK_WEAKEN(3, effect_strength, damage)
             target.apply_status_effect(attack_weaken_effect)
         # Add other effects as needed
     
