@@ -1,4 +1,5 @@
 import random
+from display import pause
 from player import Player
 from enemies import Enemy, ENEMY_ATTACK_TYPES, MONSTER_VARIANTS
 from status_effects import *
@@ -54,10 +55,11 @@ class Battle:
         if confusion_effect:
             if random.random() < 0.5:
                 print("You're confused and attack yourself!")
-                damage, hit_type, _ = self.player.calculate_damage(self.player, self.player, "normal")
+                damage, hit_type, _, _ = self.player.calculate_damage(self.player, self.player, "normal")
                 self.player.take_damage(damage)
                 print(f"You dealt {damage} damage to yourself!")
                 print("Your attack on yourself snaps you out of your confusion!")
+                pause()
                 self.player.remove_status_effect("Confusion")
                 return True
             else:
@@ -70,6 +72,7 @@ class Battle:
             if random.random() < 0.5:
                 print("You're frozen and cannot attack!")
                 self.enemy_attack(enemy)
+                pause()
                 return True
             else:
                 print(f"{self.player.name} thaws out from the ice and attacks!")
@@ -116,6 +119,10 @@ class Battle:
                             print(f"{self.player.name} takes {reflected_damage} reflected damage!")
 
         # Handle stance effects
+        if attack_hit and attack_type == "stunning":
+            stun_effect = STUN(1, 1)
+            enemy.apply_status_effect(stun_effect)
+        
         if attack_type == "defensive":
             stance_message = self.player.apply_defensive_stance()
             if stance_message:
@@ -192,10 +199,10 @@ class Battle:
         effect_strength = max(1, attacker.level // 5)
         if effect_type == "poison":
             effect_strength = max(1, attacker.level // 3)
-            poison_effect = POISON(3, effect_strength)
+            poison_effect = POISON(4, effect_strength)
             target.apply_status_effect(poison_effect)
         elif effect_type == "burn":
-            burn_effect = BURN(3, effect_strength)
+            burn_effect = BURN(4, effect_strength)
             target.apply_status_effect(burn_effect)
         elif effect_type == "freeze":
             freeze_effect = FREEZE(2, effect_strength)
@@ -210,16 +217,16 @@ class Battle:
             stamina_drain_effect = STAMINA_DRAIN(damage)
             target.apply_status_effect(stamina_drain_effect)
         elif effect_type == "damage_reflect":
-            damage_reflect_effect = DAMAGE_REFLECT(3, effect_strength)
+            damage_reflect_effect = DAMAGE_REFLECT(4, effect_strength)
             attacker.apply_status_effect(damage_reflect_effect)
         elif effect_type == "lifesteal":
             heal_effect = VAMPIRIC(damage)
             attacker.apply_status_effect(heal_effect)
         elif effect_type == "defence_break":
-            defence_break_effect = DEFENCE_BREAK(3, effect_strength, damage)
+            defence_break_effect = DEFENCE_BREAK(4, effect_strength, damage)
             target.apply_status_effect(defence_break_effect)
         elif effect_type == "attack_weaken":
-            attack_weaken_effect = ATTACK_WEAKEN(3, effect_strength, damage)
+            attack_weaken_effect = ATTACK_WEAKEN(4, effect_strength, damage)
             target.apply_status_effect(attack_weaken_effect)
         # Add other effects as needed
     
@@ -330,7 +337,7 @@ class Battle:
                         drops.append(self.create_item_drop(random.choice(tier_items)))
                 else:
                     # Get items of the guaranteed type (like "consumable")
-                    type_items = [item for item in self.items.values() if item.type == guaranteed_type]
+                    type_items = [item for item in self.items.values() if item.type == guaranteed_type and self._is_tier_appropriate(item.tier, self.player_level)]
                     if type_items:
                         drops.append(self.create_item_drop(random.choice(type_items)))
                         
@@ -428,6 +435,19 @@ class Battle:
         else:
             return item
     
+    def _is_tier_appropriate(self, tier, player_level):
+        """Check if an item is appropriate for the player level"""
+        tier_requirements = {
+            "common": 1,
+            "uncommon": 3,
+            "rare": 6,
+            "epic": 10,
+            "masterwork": 15,
+            "legendary": 20,
+            "mythical": 25
+        }
+        return player_level >= tier_requirements.get(tier, 1)
+    
     def display_loot(self, drops):
         """Display dropped loot with stack information"""
         print("\nLoot dropped:")
@@ -505,8 +525,23 @@ class Battle:
             "boss": ["legendary", "mythical"]
         }
         
-        # Add chance for better loot
+        # Define the maximum possible tier upgrade based on base tier
+        max_tier_upgrade = {
+            "low": "rare",
+            "medium": "epic",
+            "medium-hard": "epic",
+            "hard": "legendary",
+            "very-hard": "legendary",
+            "extreme": "mythical",
+            "boss": "mythical"
+        }
+        
+        # Get base tiers for the enemy's tier
         tiers = basic_tiers.get(enemy_tier, ["common"])
+        max_allowed_tier = max_tier_upgrade.get(enemy_tier, "rare")
+        
+        # tier_order defines the progression of tiers
+        tier_order = ["common", "uncommon", "rare", "epic", "masterwork", "legendary", "mythical"]
         
         # Check for variant in enemy name and apply tier boost if applicable
         enemy_name = self.enemy.name if hasattr(self, 'enemy') else ""
@@ -514,19 +549,17 @@ class Battle:
             if variant in enemy_name:
                 variant_data = MONSTER_VARIANTS[variant]["loot_modifiers"]
                 if random.random() < variant_data.get("quality_boost", 0):
-                    # Add next tier up if possible
-                    next_tier_map = {
-                        "common": "uncommon",
-                        "uncommon": "rare",
-                        "rare": "epic",
-                        "epic": "masterwork",
-                        "masterwork": "legendary",
-                        "legendary": "mythical"
-                    }
-                    if tiers[0] in next_tier_map:
-                        tiers.append(next_tier_map[tiers[0]])
-                break
-                
+                    # Get current highest tier
+                    current_highest = tiers[-1]
+                    current_idx = tier_order.index(current_highest)
+                    max_allowed_idx = tier_order.index(max_allowed_tier)
+                    
+                    # Only upgrade if we haven't reached the maximum allowed tier
+                    if current_idx < max_allowed_idx:
+                        next_tier = tier_order[current_idx + 1]
+                        tiers.append(next_tier)
+                    break
+                    
         return tiers
     
     def run_away(self, enemy):

@@ -31,6 +31,9 @@ class Enemy(Character):
             
             # First roll for whether this should be a variant at all (10% chance)
             final_name = template['name']
+            # Create a copy of the template's attack types
+            base_attack_types = template["attack_types"].copy()
+            
             if random.random() < 0.1:  # 10% chance for any variant
                 # Create a list of variants with their relative weights
                 available_variants = [(name, var_data["chance"]) 
@@ -61,7 +64,7 @@ class Enemy(Character):
                         
                         # Handle additional attacks if specified
                         if "additional_attacks" in variant:
-                            template["attack_types"].extend(variant["additional_attacks"])
+                            base_attack_types.extend(variant["additional_attacks"])
                         
                         break
                 else:
@@ -129,7 +132,7 @@ class Enemy(Character):
         
         # Initialise attack types
         if attack_types:
-            self.attack_types = {attack_type: ENEMY_ATTACK_TYPES[attack_type] for attack_type in attack_types}
+            self.attack_types = {attack_type: ENEMY_ATTACK_TYPES[attack_type] for attack_type in base_attack_types}
         else:
             self.attack_types = {"normal": ENEMY_ATTACK_TYPES["normal"]}
 
@@ -2114,6 +2117,24 @@ ENEMY_TEMPLATES = {
         },
         "tier": "medium",
         "attack_types": ["normal", "double", "vampiric", "draining", "attack_weaken"]
+    },
+    
+    "Test Monster": {
+        "name": "Test Monster",
+        "stats": {
+            "hp_percent": 150,
+            "attack_percent": 350,
+            "defence_percent": 50,
+            "accuracy_percent": 350,
+            "evasion_percent": 1,
+            "crit_chance_percent": 1,
+            "crit_damage_percent": 1,
+            "armour_penetration_percent": 1,
+            "damage_reduction_percent": 1,
+            "block_chance_percent": 1
+        },
+        "tier": "medium",
+        "attack_types": ["poison"]
     }
 }
 
@@ -2131,8 +2152,8 @@ ENEMY_ATTACK_TYPES = {
     "freeze": {"name": "Frozen Strike", "damage_modifier": 0.9, "effect": "freeze"},
     "burn": {"name": "Burning Strike", "damage_modifier": 0.9, "effect": "burn"},
     "damage_reflect": {"name": "Reflective Shield", "damage_modifier": 0.5, "effect": "damage_reflect"},
-    "defence_break": {"name": "Defence Shatter", "damage_modifier": 1.0, "effect": "defence_break"},
-    "attack_weaken": {"name": "Attack Weaken", "damage_modifier": 1.0, "effect": "attack_weaken"}
+    "defence_break": {"name": "Defence Shatter", "damage_modifier": 1, "effect": "defence_break"},
+    "attack_weaken": {"name": "Attack Weaken", "damage_modifier": 1, "effect": "attack_weaken"}
 }
 
 # Monster variant modifiers with stat changes and spawn chances
