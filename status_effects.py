@@ -107,30 +107,49 @@ class ControlEffect(StatusEffect):
         setattr(character, self.control_type, False)
 
 class StanceEffect(StatusEffect):
-    def __init__(self, name, duration, buffs, debuffs):
+    def __init__(self, name, duration, buff_percents, debuff_percents):
         super().__init__(name, duration)
-        self.buffs = buffs
-        self.debuffs = debuffs
+        self.buff_percents = buff_percents
+        self.debuff_percents = debuff_percents
+        self.applied_buffs = {}
+        self.applied_debuffs = {}
+
+    def calculate_stat_change(self, character, stat, percent):
+        base = getattr(character, f"base_{stat}", 0)
+        level_mod = character.level_modifiers.get(stat, 0)
+        equip_mod = character.equipment_modifiers.get(stat, 0)
+        weapon_mod = character.weapon_buff_modifiers.get(stat, 0)
+        
+        total_stat = base + level_mod + equip_mod + weapon_mod
+        return int(total_stat * percent / 100)
 
     def on_apply(self, character):
-        for stat, value in self.buffs.items():
+        # Calculate and apply buffs
+        for stat, percent in self.buff_percents.items():
+            value = self.calculate_stat_change(character, stat, percent)
             current = character.combat_buff_modifiers.get(stat, 0)
             character.combat_buff_modifiers[stat] = current + value
+            self.applied_buffs[stat] = value
             
-        for stat, value in self.debuffs.items():
+        # Calculate and apply debuffs
+        for stat, percent in self.debuff_percents.items():
+            value = self.calculate_stat_change(character, stat, percent)
             current = character.combat_buff_modifiers.get(stat, 0)
             character.combat_buff_modifiers[stat] = current - value
+            self.applied_debuffs[stat] = value
             
         character.recalculate_stats()
         self._display_changes(character)
         return True
 
     def on_remove(self, character):
-        for stat, value in self.buffs.items():
+        # Remove buffs
+        for stat, value in self.applied_buffs.items():
             current = character.combat_buff_modifiers.get(stat, 0)
             character.combat_buff_modifiers[stat] = max(0, current - value)
             
-        for stat, value in self.debuffs.items():
+        # Remove debuffs
+        for stat, value in self.applied_debuffs.items():
             current = character.combat_buff_modifiers.get(stat, 0)
             character.combat_buff_modifiers[stat] = max(0, current + value)
             
@@ -138,14 +157,16 @@ class StanceEffect(StatusEffect):
 
     def _display_changes(self, character):
         print(f"\n{character.name} enters {self.name}!")
-        if self.buffs:
+        if self.applied_buffs:
             print("Increased stats:")
-            for stat, value in self.buffs.items():
-                print(f"- {stat.replace('_', ' ').title()}: +{value}")
-        if self.debuffs:
+            for stat, value in self.applied_buffs.items():
+                if value > 0:
+                    print(f"- {stat.replace('_', ' ').title()}: +{value} ({self.buff_percents[stat]}%)")
+        if self.applied_debuffs:
             print("Decreased stats:")
-            for stat, value in self.debuffs.items():
-                print(f"- {stat.replace('_', ' ').title()}: -{value}")
+            for stat, value in self.applied_debuffs.items():
+                if value > 0:
+                    print(f"- {stat.replace('_', ' ').title()}: -{value} ({self.debuff_percents[stat]}%)")
 
 # Specific Effect Implementations
 class Burn(DotEffect):
@@ -194,71 +215,71 @@ class Confusion(ControlEffect):
 
 class DefensiveStance(StanceEffect):
     def __init__(self, duration, strength=33):
-        buffs = {
-            "defence": strength // 2,
-            "block_chance": strength // 3,
-            "damage_reduction": strength // 3
+        buff_percents = {
+            "defence": strength,
+            "block_chance": strength,
+            "damage_reduction": strength
         }
-        debuffs = {
-            "attack": strength // 3,
-            "crit_chance": strength // 3
+        debuff_percents = {
+            "attack": strength // 2,
+            "crit_chance": strength // 2
         }
-        super().__init__("Defensive Stance", duration, buffs, debuffs)
+        super().__init__("Defensive Stance", duration, buff_percents, debuff_percents)
 
 class PowerStance(StanceEffect):
     def __init__(self, duration, strength=33):
-        buffs = {
-            "attack": strength // 2,
-            "armour_penetration": strength // 3,
+        buff_percents = {
+            "attack": strength,
+            "armour_penetration": strength,
             "crit_damage": strength
         }
-        debuffs = {
+        debuff_percents = {
             "defence": strength // 2,
-            "evasion": strength // 3
+            "evasion": strength // 2
         }
-        super().__init__("Power Stance", duration, buffs, debuffs)
+        super().__init__("Power Stance", duration, buff_percents, debuff_percents)
 
 class BerserkerStance(StanceEffect):
-    def __init__(self, duration, strength=33):
-        buffs = {
-            "attack": strength,
-            "armour_penetration": strength // 2,
-            "crit_chance": strength // 2,
-            "crit_damage": strength
+    def __init__(self, duration, strength=50):
+        buff_percents = {
+            "attack": strength * 2,
+            "armour_penetration": strength,
+            "crit_chance": strength,
+            "crit_damage": strength * 2
         }
-        debuffs = {
+        debuff_percents = {
             "defence": strength,
-            "evasion": strength // 2,
-            "block_chance": strength // 2,
-            "damage_reduction": strength // 2
+            "evasion": strength,
+            "block_chance": strength,
+            "damage_reduction": strength
         }
-        super().__init__("Berserker Stance", duration, buffs, debuffs)
+        super().__init__("Berserker Stance", duration, buff_percents, debuff_percents)
 
 class AccuracyStance(StanceEffect):
     def __init__(self, duration, strength=33):
-        buffs = {
+        buff_percents = {
             "accuracy": strength * 2,
-            "crit_chance": strength // 2
+            "crit_chance": strength
         }
-        debuffs = {
+        debuff_percents = {
             "block_chance": strength // 2,
             "evasion": strength // 2
         }
-        super().__init__("Accuracy Stance", duration, buffs, debuffs)
+        super().__init__("Accuracy Stance", duration, buff_percents, debuff_percents)
 
 class EvasionStance(StanceEffect):
     def __init__(self, duration, strength=33):
-        buffs = {
-            "evasion": strength,
-            "crit_chance": strength // 2,
+        buff_percents = {
+            "evasion": strength * 2,
+            "crit_chance": strength,
             "crit_damage": strength
         }
-        debuffs = {
-            "defence": strength // 2,
-            "block_chance": strength // 2,
-            "damage_reduction": strength // 2
+        debuff_percents = {
+            "defence": strength,
+            "block_chance": strength,
+            "damage_reduction": strength
         }
-        super().__init__("Evasion Stance", duration, buffs, debuffs)
+        super().__init__("Evasion Stance", duration, buff_percents, debuff_percents)
 
 # Special Effects
 class Vampiric(StatusEffect):
@@ -354,7 +375,7 @@ def DEFENCE_BREAK(duration, strength, damage_dealt=0): return DefenceBreak(durat
 def ATTACK_WEAKEN(duration, strength, damage_dealt=0): return AttackWeaken(duration, strength, damage_dealt)
 def DEFENSIVE_STANCE(duration, strength=33): return DefensiveStance(duration, strength)
 def POWER_STANCE(duration, strength=33): return PowerStance(duration, strength)
-def BERSERKER_STANCE(duration, strength=33): return BerserkerStance(duration, strength)
+def BERSERKER_STANCE(duration, strength=50): return BerserkerStance(duration, strength)
 def ACCURACY_STANCE(duration, strength=33): return AccuracyStance(duration, strength)
 def EVASION_STANCE(duration, strength=33): return EvasionStance(duration, strength)
 def SELF_DAMAGE(strength, attack_type="reckless"): return SelfDamage(strength, attack_type)
