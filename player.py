@@ -132,11 +132,12 @@ class Character:
         
         # Check if the attack hits
         if random.randint(1, 100) > hit_chance:
-            return 0, "miss", hit_chance  # Attack missed
+            return 0, "miss", hit_chance, False  # Attack missed
         
-        # Check if the attack is blocked
-        if random.randint(1, 100) <= defender.block_chance:
-            return 0, "blocked", hit_chance  # Attack blocked
+        # Check if the attack is blocked, can't block if frozen
+        is_frozen = any(effect.name == "Freeze" for effect in defender.status_effects)
+        if not is_frozen and random.randint(1, 100) <= defender.block_chance:
+            return 0, "blocked", hit_chance, False  # Attack blocked
 
         attack_info = attacker.attack_types[attack_type]
         base_damage = attacker.attack * attack_info["damage_modifier"]
@@ -148,18 +149,27 @@ class Character:
         # Calculate initial damage
         damage = max(0, random_damage - effective_defence)
         
-        # Check for critical hit
-        is_critical = random.randint(1, 100) <= attacker.crit_chance
+        # Check for critical hit with increased crit chance if target is frozen
+        base_crit_chance = attacker.crit_chance
+        if is_frozen:
+            base_crit_chance += 25 # 25% increased crit chance against frozen targets
+        
+        is_critical = random.randint(1, 100) <= base_crit_chance
+        shattered_freeze = False
+        
         if is_critical:
             damage = int(damage * (attacker.crit_damage / 100))
+            if is_frozen:
+                shattered_freeze = True
+                defender.remove_status_effect("Freeze")
         
         # Apply damage reduction
-        damage = int(damage * (1 - defender.damage_reduction / 100))
+        damage = int(damage * (1 - (defender.damage_reduction / 100)))
         
         # Ensure minimum damage of 1 if the attack hits
         damage = max(1, damage)
         
-        return damage, "critical" if is_critical else "normal", hit_chance
+        return damage, "critical" if is_critical else "normal", hit_chance, shattered_freeze
 
     def perform_attack(self, target, attack_type):
         attack_info = self.attack_types[attack_type]
@@ -167,9 +177,11 @@ class Character:
         total_damage = 0
         hits = 1 + attack_info.get("extra_attacks", 0)
         attack_hit = False
+        shattered_freeze = False
 
         for i in range(hits):
-            damage, hit_type, hit_chance = self.calculate_damage(self, target, attack_type)
+            damage, hit_type, hit_chance, freeze_shatter = self.calculate_damage(self, target, attack_type)
+            shattered_freeze = shattered_freeze or freeze_shatter
             
             if hit_type == "miss":
                 message += f"\n{self.name}'s attack missed {target.name}!"
@@ -186,6 +198,8 @@ class Character:
                 
                 if hit_type == "critical":
                     message += " Critical hit!"
+                    if shattered_freeze:
+                        message += "\nThe frozen state shatters with the critical hit!"
                     
         if total_damage > 0 and hits > 1:
             message += f"\nTotal damage dealt: {total_damage}"
@@ -200,10 +214,6 @@ class Character:
             message += f"\n{self.name} takes {self_damage} self-damage from the {attack_type} attack!"
         
         print(message.rstrip())
-        
-        if attack_type == "stunning" and attack_hit:
-                    stun_effect = STUN(1, 1)
-                    target.apply_status_effect(stun_effect)
         
         self.remove_status_effect("Freeze")
 
@@ -238,15 +248,19 @@ class Character:
                 existing_effect.remaining_duration = max(existing_effect.remaining_duration, new_effect.initial_duration)
                 existing_effect.strength = max(existing_effect.strength, new_effect.strength)
                 existing_effect.is_active = True
+                if new_effect.name != "Stun" and new_effect.initial_duration > 1:
+                    print(f"{self.name}'s {existing_effect.name} is refreshed for {existing_effect.remaining_duration} turns!")
                 #print(f"{self.name}'s {existing_effect.name} is refreshed to strength {existing_effect.strength} for {existing_effect.remaining_duration} turns!")
         else:
             self.status_effects.append(new_effect)
-            apply_result = new_effect.apply(self)
+            apply_result = new_effect.on_apply(self)
             if apply_result and new_effect.remaining_duration > 1:
                 if new_effect.stackable:
-                    print(f"{self.name} is affected by {new_effect.name} with {new_effect.strength} stack(s) for {new_effect.remaining_duration} turns!")
-                else:
-                    print(f"{self.name} is affected by {new_effect.name} for {new_effect.remaining_duration} turns!")
+                    #print(f"{self.name} is affected by {new_effect.name} with {new_effect.strength} stack(s) for {new_effect.remaining_duration} turns!")
+                    pass
+                elif new_effect.name != "Stun":
+                    if new_effect.initial_duration > 1:
+                        print(f"{self.name} is affected by {new_effect.name} for {new_effect.remaining_duration} turns!")
             else:
                 self.status_effects.remove(new_effect)
 
