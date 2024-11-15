@@ -674,7 +674,6 @@ class Player(Character):
     
     def apply_debuff(self, stat, value):
         self.debuff_modifiers[stat] += value
-        print(f"Your {stat} has been reduced by {value} until end of next combat.")
         self.recalculate_stats()
 
     def remove_debuff(self, stat, value):

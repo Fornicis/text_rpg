@@ -293,7 +293,7 @@ class RandomEventSystem:
                 ("Back away carefully", self._outcome_void_retreat)
             ],
             {
-                "min_level": 4,
+                "min_level": 12,
                 "location_type": ["Heavens", "Death Valley", "Temple", "Ancient Ruins", "Death Caves", "Shadowed Valley", "Cave"]
             }
         ))

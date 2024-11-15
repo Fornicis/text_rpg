@@ -2119,6 +2119,64 @@ ENEMY_TEMPLATES = {
         "attack_types": ["normal", "double", "vampiric", "draining", "attack_weaken"]
     },
     
+    "Crystal Guardian": {
+        "name": "Crystal Guardian",
+        "stats": {
+            "hp_percent": random.randint(100, 125),
+            "attack_percent": random.randint(80, 100),
+            "defence_percent": random.randint(100, 120),
+            "accuracy_percent": random.randint(60, 90),
+            "evasion_percent": random.randint(30, 50),
+            "crit_chance_percent": random.randint(120, 140),
+            "crit_damage_percent": random.randint(120, 130),
+            "armour_penetration_percent": random.randint(40, 60),
+            "damage_reduction_percent": random.randint(140, 150),
+            "block_chance_percent": random.randint(70, 80)
+        },
+        "tier": "medium-hard",
+        "attack_types": ["power", "reckless", "attack_weaken", "defence_break", "damage_reflect"]
+    },
+    
+    "Void Walker": {
+        "name": "Void Walker",
+        "stats": {
+            # High evasion/accuracy to match void theme
+            "hp_percent": random.randint(85, 115),      # Ethereal form - moderate HP
+            "attack_percent": random.randint(110, 135),  # Void-enhanced strikes
+            "defence_percent": random.randint(70, 95),   # Insubstantial - lower defense
+            "accuracy_percent": random.randint(130, 155), # Highly precise void attacks
+            "evasion_percent": random.randint(140, 165), # Phase shifting makes it hard to hit
+            "crit_chance_percent": random.randint(110, 135), # Finds weaknesses in reality
+            "crit_damage_percent": random.randint(120, 145), # Devastating void strikes
+            "armour_penetration_percent": random.randint(120, 145), # Void pierces armor
+            "damage_reduction_percent": random.randint(60, 85),    # Not physically tough
+            "block_chance_percent": random.randint(50, 75)        # Dodges rather than blocks
+        },
+        "tier": "hard",  # Makes it a significant threat
+        "attack_types": ["normal", "double", "triple", "vampiric", "void_drain", "reality_rend"]
+    },
+
+    "Empowered Void Walker": {
+        "name": "Empowered Void Walker",
+        "stats": {
+            # Enhanced version of regular Void Walker
+            "hp_percent": random.randint(100, 130),      # More substantial form
+            "attack_percent": random.randint(125, 150),  # Stronger void energies
+            "defence_percent": random.randint(85, 110),  # Better control of form
+            "accuracy_percent": random.randint(140, 165), # Master of void precision
+            "evasion_percent": random.randint(150, 175), # Superior phase shifting
+            "crit_chance_percent": random.randint(120, 145), # Expert at finding weaknesses
+            "crit_damage_percent": random.randint(130, 155), # Devastating void mastery
+            "armour_penetration_percent": random.randint(130, 155), # Enhanced void penetration
+            "damage_reduction_percent": random.randint(70, 95),     # Better void protection
+            "block_chance_percent": random.randint(60, 85)         # Still prefers dodging
+        },
+        "tier": "very-hard",
+        "attack_types": ["normal", "double", "triple", "reckless", "damage_reflect", "vampiric", "void_drain", "reality_rend"]
+    },
+    
+    # Test monster (used for testing purposes only)
+    
     "Test Monster": {
         "name": "Test Monster",
         "stats": {
@@ -2134,26 +2192,98 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": 1
         },
         "tier": "medium",
-        "attack_types": ["poison"]
+        "attack_types": ["confusion"]
     }
 }
 
 ENEMY_ATTACK_TYPES = {
-    "normal": {"name": "Normal Attack", "damage_modifier": 1, "effect": None},
-    "power": {"name": "Power Attack", "damage_modifier": 1.5, "effect": None},
-    "double": {"name": "Double Strike", "damage_modifier": 0.9, "effect": None, "extra_attacks": 1},
-    "triple": {"name": "Triple Strike", "damage_modifier": 0.9, "extra_attacks": 2},
-    "vampiric": {"name": "Vampiric Strike", "damage_modifier": 0.9, "effect": "lifesteal"},
-    "reckless": {"name": "Reckless Assault", "damage_modifier": 2},
-    "draining": {"name": "Draining Touch", "damage_modifier": 0.9, "effect": "stamina_drain"},
-    "stunning": {"name": "Stunning Blow", "damage_modifier": 0.8, "effect": "stun"},
-    "confusion": {"name": "Confounding Blow", "damage_modifier": 0.8, "effect": "confusion"},
-    "poison": {"name": "Poison Strike", "damage_modifier": 0.9, "effect": "poison"},
-    "freeze": {"name": "Frozen Strike", "damage_modifier": 0.9, "effect": "freeze"},
-    "burn": {"name": "Burning Strike", "damage_modifier": 0.9, "effect": "burn"},
-    "damage_reflect": {"name": "Reflective Shield", "damage_modifier": 0.5, "effect": "damage_reflect"},
-    "defence_break": {"name": "Defence Shatter", "damage_modifier": 1, "effect": "defence_break"},
-    "attack_weaken": {"name": "Attack Weaken", "damage_modifier": 1, "effect": "attack_weaken"}
+    "normal": {
+        "name": "Normal Attack",
+        "damage_modifier": 1,
+        "effect": None
+    },
+    "power": {
+        "name": "Power Attack",
+        "damage_modifier": 1.5,
+        "effect": None
+    },
+    "double": {
+        "name": "Double Strike",
+        "damage_modifier": 0.9,
+        "effect": None,
+        "extra_attacks": 1
+    },
+    "triple": {
+        "name": "Triple Strike",
+        "damage_modifier": 0.9,
+        "extra_attacks": 2
+    },
+    "vampiric": {
+        "name": "Vampiric Strike",
+        "damage_modifier": 0.9,
+        "effect": "lifesteal"
+    },
+    "reckless": {
+        "name": "Reckless Assault",
+        "damage_modifier": 2
+    },
+    "draining": {
+        "name": "Draining Touch",
+        "damage_modifier": 0.9,
+        "effect": "stamina_drain"
+    },
+    "stunning": {
+        "name": "Stunning Blow",
+        "damage_modifier": 0.8,
+        "effect": "stun"
+    },
+    "confusion": {
+        "name": "Confounding Blow",
+        "damage_modifier": 0.8,
+        "effect": "confusion"
+    },
+    "poison": {
+        "name": "Poison Strike",
+        "damage_modifier": 0.9,
+        "effect": "poison",
+    },
+    "freeze": {
+        "name": "Frozen Strike",
+        "damage_modifier": 0.9,
+        "effect": "freeze"
+    },
+    "burn": {
+        "name": "Burning Strike",
+        "damage_modifier": 0.9,
+        "effect": "burn"
+    },
+    "damage_reflect": {
+        "name": "Reflective Shield",
+        "damage_modifier": 0.5,
+        "effect": "damage_reflect"
+    },
+    "defence_break": {
+        "name": "Defence Shatter",
+        "damage_modifier": 1,
+        "effect": "defence_break"
+    },
+    "attack_weaken": {
+        "name": "Attack Weaken",
+        "damage_modifier": 1,
+        "effect": "attack_weaken"
+    },
+    "reality_rend": {
+        "name": "Reality Rend",
+        "damage_modifier": 1.2,
+        "effect": "defence_break",
+        "extra_effects": ["confusion"]
+    },
+    "void_drain": {
+        "name": "Void Drain",
+        "damage_modifier": 1,
+        "effect": "stamina_drain",
+        "extra_effects": ["attack_weaken"]
+    }
 }
 
 # Monster variant modifiers with stat changes and spawn chances
@@ -2311,6 +2441,25 @@ MONSTER_VARIANTS = {
             "quality_boost": random.randint(15, 40) / 100,
             "gold_modifier": random.randint(120, 160) / 100,
             "guaranteed_drops": ["epic"]
+        }
+    },
+    "Void-Touched": {
+        "chance": 0.08,  # 8% chance to spawn
+        "stats": {
+            "attack_percent": 130,
+            "accuracy_percent": 140,
+            "evasion_percent": 140,
+            "crit_chance_percent": 120,
+            "hp_percent": 85,
+            "defence_percent": 75
+        },
+        "lore": "This being has been altered by void energy, gaining supernatural precision but becoming more unstable!",
+        "additional_attacks": ["reality_rend", "void_drain"],
+        "loot_modifiers": {
+            "quantity_bonus": 1,
+            "quality_boost": 0.25,  # 25% chance to upgrade item tier
+            "gold_multiplier": 1.4,
+            "guaranteed_drops": ["rare", "epic"]  # Always drops at least rare/epic item
         }
     }
 }
