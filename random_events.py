@@ -282,6 +282,22 @@ class RandomEventSystem:
             }
         ))
         
+        events.append(RandomEvent(
+            "Void Tear",
+            "A tear in reality floats before you, whispering promises of power. The air around it warps and twists unnaturally...",
+            EventType.DANGEROUS,
+            [
+                ("Sacrifice essence to the void", self._outcome_void_sacrifice),
+                ("Reach through the tear", self._outcome_void_reach),
+                ("Try to seal the tear", self._outcome_void_seal),
+                ("Back away carefully", self._outcome_void_retreat)
+            ],
+            {
+                "min_level": 4,
+                "location_type": ["Heavens", "Death Valley", "Temple", "Ancient Ruins", "Death Caves", "Shadowed Valley", "Cave"]
+            }
+        ))
+        
         return events
 
     def trigger_random_event(self, player, game):
@@ -506,9 +522,11 @@ class RandomEventSystem:
             
     def _outcome_shrine_pray(self, player, game):
         """Pray at the shrine"""
+        print("A golden beam shines down and revitalises you!")
         outcomes = [
-            (0.5, lambda: self._heal_player(player, 0.15)),
-            (0.5, lambda: self._restore_stamina(player, 0.15))
+            (0.4, lambda: self._heal_player(player, 0.15)),
+            (0.4, lambda: self._restore_stamina(player, 0.15)),
+            (0.2, lambda: self._restore_and_heal(player, 0.15))
         ]
         self._resolve_weighted_outcome(outcomes, player)
         
@@ -588,7 +606,7 @@ class RandomEventSystem:
                 (0.5, lambda: (print("You hear distant dangers and prepare accordingly!"), self._give_random_buff_specific(player, 5, 10, 8, 12, ["evasion", "defence", "block_chance"]))),
                 (0.3, lambda: self._give_tier_equipment(player, game, player.level)),
                 (0.1, lambda: self._gain_exp(player, 15, 25, "You hear some knowledgeable words come back to you!")),
-                (0.1, lambda: (print("The confusing echoes disorient you! Accuracy -10 until end of next combat!"), player.apply_debuff("accuracy", 10)))
+                (0.1, lambda: (print("The confusing echoes disorient you! Acc -10 until end of next combat!"), player.apply_debuff("accuracy", 10)))
             ]
             self._resolve_weighted_outcome(outcomes, player)
         
@@ -758,7 +776,7 @@ class RandomEventSystem:
                     (0.2, lambda: (print("Gold starts falling all around...it's molten!"), self._take_damage(player, 5, 7, "Some gold lands on you, burning your flesh!"), self._give_gold(player, 100, 150))),
                     # Mixed chaos
                     (0.2, lambda: (print("The flames empower you!"), self._give_multiple_random_buffs(player, 5, 10, 5, 10, random.randint(1, 3), ["attack", "accuracy", "armour_penetration"]))),
-                    (0.2, lambda: (print("The flames devour you!"), player.apply_debuff("defence", 10), player.apply_debuff("attack", 10), self._take_damage(player, 10, 20, "The flames eat away at your body and soul! "))),
+                    (0.2, lambda: (print("The flames devour you! Att and Def -10 until end of next combat!"), player.apply_debuff("defence", 10), player.apply_debuff("attack", 10), self._take_damage(player, 10, 20, "The flames eat away at your body and soul! "))),
                     # Negative chaos
                     (0.2, lambda: (print("The flames start scorching you severely!"), self._take_damage(player, 30, 50, "You're severely burned by the flames! "), self._drain_stamina(player, 0.33))),
                     (0.2, lambda: (print("The flames drain something from you!"), self._permanent_stat_decrease(player), self._drain_stamina(player, 0.25)))
@@ -925,7 +943,7 @@ class RandomEventSystem:
             # Multiple negative effects
             self._take_damage(player, 30, 50, "Dark energy tears through you! ")
             outcomes = [
-                (0.5, lambda: (print("The shrine's curse weakens you!"),
+                (0.5, lambda: (print("The shrine's curse weakens you! Att and Def -10 until end of next combat!"),
                                player.apply_debuff("attack", 10),
                                player.apply_debuff("defence", 10))),
                 (0.3, lambda: (print("The shrine drains your vitality!"),
@@ -968,6 +986,7 @@ class RandomEventSystem:
                           self._take_damage(player, 5, 15, "The transformation is painful! "))),
             (0.2, lambda: (print("The crystal's energy violently rejects you!"),
                            self._take_damage(player, 25, 40, "Crystal energy tears through your body! "),
+                           print("Def -10 until end of next combat!"),
                            player.apply_debuff("defence", 10)))
         ]
         self._resolve_weighted_outcome(outcomes, player)
@@ -989,6 +1008,7 @@ class RandomEventSystem:
         else:
             print("As you attempt to pull the crystal free, you slip and lose your grip!")
             self._take_damage(player, 10, 25, "You slice your hands on the sharp crystal! ")
+            print("Acc -10 until end of next combat!")
             player.apply_debuff("accuracy", 20)
             
     def _outcome_crystal_shatter(self, player, game):
@@ -1025,7 +1045,135 @@ class RandomEventSystem:
             print("You successfully make it away!")
         else:
             print("As you think you're safely away...")
-            self._take_damage(player, 10, 20, "A wave of energy strikes you! ")            
+            self._take_damage(player, 10, 20, "A wave of energy strikes you! ")
+            
+    def _outcome_void_sacrifice(self, player, game):
+        """Sacrfice HP to the void for unique rewards"""
+        print("The void's whispers grow stronger as you approach...")
+        
+        if player.hp <= 30:
+            print("You're too weak to safely offer your essence to the void!")
+            self._take_damage(player, 15, 20, "The void rips away some of your vitality anyway... ")
+            return
+        
+        # Use health trading with higher percentages
+        success = self._trade_hp_for_reward(player, game, min_percent=20, max_percent=80)
+        
+        if not success:
+            # The void doesn't take kindly to hesitation, severe punishment
+            if random.random() < 0.7:
+                print("The void does not tolerate hesitation!")
+                outcomes = [
+                    (0.4, lambda: self._take_damage(player, 15, 25, "Void energy tears at your very essence! ")),
+                    (0.3, lambda: (print("The void marks you as unworthy! Acc and Eva -15 until end of next combat!"),
+                                   player.apply_debuff("accuracy", 15),
+                                   player.apply_debuff("evasion", 15))),
+                    (0.3, lambda: (print("The void starts to swell...something appears to be emerging!"),
+                                   self._trigger_scaled_encounter(player, game, ["Void Walker"])))
+                ]
+                self._resolve_weighted_outcome(outcomes, player)
+            else:
+                print("The void swells to massive sizes! You can vaguely make out a shape moving...")
+                self._trigger_scaled_encounter(player, game, ["Empowered Void Walker"])
+                
+    def _outcome_void_reach(self, player, game):
+        """Reach through the void tear"""
+        print("You reach into the swirling void...")
+        
+        def reach_out():
+            outcomes = [
+                (0.5, lambda: self._trigger_scaled_encounter(player, game, ["Void Walker"])),
+                (0.5, lambda: self._trigger_scaled_encounter(player, game, ["Empowered Void Walker"]))
+            ]
+            self._resolve_weighted_outcome(outcomes, player)
+        
+        outcomes = [
+            (0.25, lambda: (print("Your hand grasps something from beyond..."),
+                            self._give_tier_equipment(player, game, player.level + 3),
+                            self._give_random_buff_specific(player, 8, 12, 10, 15,
+                                ["accuracy", "evasion", "crit_chance"]),
+                            self._take_damage(player, 20, 30, "The void doesn't just give... "))),
+            (0.25, lambda: (print("The void grants you insight into its nature!"),
+                            self._gain_exp(player, 40, 60, "The knowledge is astounding... You gain alot of experience!"),
+                            self._permanent_stat_increase_specific(player, 2,
+                                ["accuracy", "evasion", "crit_chance"]),
+                            self._take_damage(player, 15, 45, "The information you gain drives you slightly mad... You come too with wounds all over you! "))),
+            (0.25, lambda: (print("The voids touch empowers you..."),
+                            self._give_major_buff(player, 8, 12, 20, 25),
+                            self._take_damage(player, 15, 25, "The voids touch burns at you! "))),
+            (0.25, lambda: (print("The void reaches back!"),
+                            self._take_damage(player, 20, 30, "The voids tendrils wrap around you arm! "),
+                            print("You see something start to force it's way out!"), reach_out()))
+        ]
+        self._resolve_weighted_outcome(outcomes, player)
+        
+    def _outcome_void_seal(self, player, game):
+        """Attempt to seal the void tear"""
+        print("You attempt to close the tear in reality...")
+        
+        # Check if player has enough stamina
+        if player.stamina < (player.max_stamina * 0.6):
+            print("You're too exhausted to focus on sealing the void!")
+            self._take_damage(player, 15, 25, "Void energy lashes out at your weakness! ")
+            return
+        
+        # Drain stamina for the attempt
+        self._drain_stamina(player, 0.6)
+        
+        # Success chance based on level
+        success_chance = min(0.7, 0.3 + (player.level - 6) * 0.05) # Caps at 70%
+        
+        if random.random() < success_chance:
+            # Successful sealing
+            outcomes = [
+                (0.4, lambda: (print("You successfully seal the void tear!"),
+                               self._give_major_buff(player, 10, 15, 15, 20),
+                               self._gain_exp(player, 50, 75, "The knowledge of sealing the void strengthens you!"))),
+                (0.3, lambda: (print("The void acknowledges your power!"),
+                               self._give_gold(player, 200, 400),
+                               self._give_multiple_consumables_random(player, game, 3))),
+                (0.3, lambda: (print("As the tear closes, its power infuses you!"),
+                               self._permanent_stat_increase_specific(player, 3, 
+                                ["accuracy", "evasion", "crit_chance", "crit_damage"])))
+            ]
+            self._resolve_weighted_outcome(outcomes, player)
+        
+        else:
+            # Failed sealing attempt
+            print("Your attempt to seal the void tear fails catastrophically!")
+            
+            outcomes = [
+                (0.4, lambda: (print("The void tears at your mind! Acc and Eva -20 until end of next combat!"),
+                               self._take_damage(player, 35, 50, "Reality warps around you! "),
+                               player.apply_debuff("accuracy", 20),
+                               player.apply_debuff("evasion", 20))),
+                (0.3, lambda: (print("The tear widens dangerously!"),
+                               self._take_damage(player, 15, 30, "As the tear widens, it seems to rip at your mind too! "),
+                               self._trigger_scaled_encounter(player, game, ["Void Walker"]))),
+                (0.3, lambda: (print("The void marks you for your failure"),
+                               self._permanent_stat_decrease_specific(player, "max_hp", 10),
+                               self._take_damage(player, 20, 30, "Void energy consumes your vitality! ")))
+            ]
+            self._resolve_weighted_outcome(outcomes, player)
+            
+    def _outcome_void_retreat(self, player, game):
+        """Try to back away from the void tear"""
+        
+        if random.random() < 0.6: # 60% escape chance
+            print("You manage to safely retreat from the void tear...")
+            return
+        else:
+            print("The void will not let you leave so easily...")
+            if random.random() < 0.5: # 50% chance for each back outcome
+                self._take_damage(player, 15, 25, "Void tendrils lash out at you! ")
+                print("Eva -10 until end of next combat!")
+                player.apply_debuff("evasion", 10)
+            else:
+                print("A void entity follows you through the tear!")
+                if random.random() < 0.8:
+                    self._trigger_scaled_encounter(player, game, ["Void Walker"])
+                else:
+                    self._trigger_scaled_encounter(player, game, ["Empowered Void Walker"])
        
     def _outcome_ignore(self, player, game):
         """Ignore the event"""
