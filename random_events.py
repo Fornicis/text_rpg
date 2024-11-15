@@ -266,6 +266,22 @@ class RandomEventSystem:
             }
         ))
         
+        events.append(RandomEvent(
+            "Unstable Crystal",
+            "A large crystal pulses with chaotic energy. The air around it crackles and warps...",
+            EventType.DANGEROUS,
+            [
+                ("Try to harness it's power", self._outcome_crystal_harness),
+                ("Carefully extract it", self._outcome_crystal_extract),
+                ("Shatter it", self._outcome_crystal_shatter),
+                ("Back away", self._outcome_crystal_retreat)
+            ],
+            {
+                "min_level": 8,
+                "location_type": ["Cave", "Ruins", "Ancient Ruins", "Temple", "Mountain", "Mountain Peaks", "Death Caves", "Dragons Lair"]
+            }
+        ))
+        
         return events
 
     def trigger_random_event(self, player, game):
@@ -921,13 +937,95 @@ class RandomEventSystem:
             self._resolve_weighted_outcome(outcomes, player)
     
     def _outcome_shrine_ignore(self, player, game):
-        # Attempt to ignore the shrine
+        """Attempt to ignore the shrine"""
         if random.random() < 0.5:
             print("The shrine won't allow you to go that easily!")
             self._take_damage(player, 10, 20, "The shrine rips some health away from you before you escape! ")
         else:
             print("You hear something behind you as you attempt to leave, you turn around...")
             self._trigger_scaled_encounter(player, game, ["Shrine Guardian"])
+            
+    def _outcome_crystal_harness(self, player, game):
+        """Attempt to harness the crystal's unstable power"""
+        stamina_cost = player.max_stamina // 4
+        if player.stamina < stamina_cost:
+            print("You're too exhausted to focus on the crystal's energy!")
+            return
+        
+        print("You reach out to channel the crystal's power...")
+        self._drain_stamina(player, 0.25)
+        
+        outcomes = [
+            (0.3, lambda: (print("The crystal's energy surges through you!"),
+                           self._give_major_buff(player, 10, 15, 12, 18),
+                           self._take_damage(player, 10, 20, "The power overwhelms you briefly! "))),
+            (0.3, lambda: (print("You successfully harness the crystal's essence"),
+                          self._give_random_buff_specific(player, 8, 12, 15, 20,
+                               ["attack", "defence", "accuracy", "crit_chance"]),
+                          self._restore_stamina(player, 0.5))),
+            (0.2, lambda: (print("The crystal's power permanently alters you!"),
+                          self._permanent_stat_increase(player),
+                          self._take_damage(player, 5, 15, "The transformation is painful! "))),
+            (0.2, lambda: (print("The crystal's energy violently rejects you!"),
+                           self._take_damage(player, 25, 40, "Crystal energy tears through your body! "),
+                           player.apply_debuff("defence", 10)))
+        ]
+        self._resolve_weighted_outcome(outcomes, player)
+        
+    def _outcome_crystal_extract(self, player, game):
+        """Attempt to extract the crystal"""
+        print("You carefully attempt to extract the crystal...")
+        
+        if random.random() < 0.6: # 60% chance of success
+            outcomes = [
+                (0.4, lambda: (print("You successfully extract a shard of the crystal! It morphs in your hands becoming a piece of equipment!"),
+                               self._give_tier_equipment(player, game, player.level + 2))),
+                (0.3, lambda: (print("The crystal fractures, releasing stored energy!"),
+                               self._give_multiple_consumables_random(player, game, 3))),
+                (0.3, lambda: (print("You extract the crystal and gain its knowledge!"),
+                               self._gain_exp(player, 40, 60)))
+            ]
+            self._resolve_weighted_outcome(outcomes, player)
+        else:
+            print("As you attempt to pull the crystal free, you slip and lose your grip!")
+            self._take_damage(player, 10, 25, "You slice your hands on the sharp crystal! ")
+            player.apply_debuff("accuracy", 20)
+            
+    def _outcome_crystal_shatter(self, player, game):
+        """Deliberately shatter the crystal"""
+        print("You strike the crystal with force")
+        
+        if player.attack < 50: # Require 50 attack to break
+            print("You're not strong enough to break the crystal... The crystal rings like a bell...")
+            self._take_damage(player, 5, 10, "The vibrations travel through your weapon and hurt you! ")
+            print("It turns out it didn't just sound like a bell, it acted as one!")
+            self._trigger_scaled_encounter(player, game, ["Crystal Guardian"])
+        else:
+            outcomes = [
+                (0.3, lambda: (print("The crystal explodes in a surge of power!"),
+                               self._give_multiple_random_buffs(player, 5, 10, 8, 12, 3,
+                               ["attack", "defence", "accuracy", "crit_chance", "crit_damage", "evasion"]),
+                               self._take_damage(player, 20, 35, "Crystal shards lacerate you! "))),
+                (0.3, lambda: (print("The crystals destruction releases trapped energy!"),
+                               self._give_gold(player, 100, 200, "The rampant energy turns some of the surrounding rock to gold!"),
+                               self._gain_exp(player, 30, 50, "The energy rushes into you, it increases your intellect!"))),
+                (0.2, lambda: (print("The crystals destruction summons its Guardian!"),
+                               self._trigger_scaled_encounter(player, game, ["Crystal Guardian"]))),
+                (0.2, lambda: (print("The crystal violently explodes!"),
+                               self._take_damage(player, 40, 60, "The explosion sends crystal shards through you! You are grievously wounded! "),
+                               self._drain_stamina(player, 0.5)))
+            ]
+            self._resolve_weighted_outcome(outcomes, player)
+            
+    def _outcome_crystal_retreat(self, player, game):
+        """Attempt to back away from the crystal"""
+        print("You attempt to back away from the crystal...")
+        
+        if random.random() < 0.8: # 80% chance of success
+            print("You successfully make it away!")
+        else:
+            print("As you think you're safely away...")
+            self._take_damage(player, 10, 20, "A wave of energy strikes you! ")            
        
     def _outcome_ignore(self, player, game):
         """Ignore the event"""
@@ -1289,7 +1387,7 @@ class RandomEventSystem:
             scaling = sacrifice / max_sacrifice # 0.0 to 1.0
             
             # Pay the health cost
-            self._take_damage(player, sacrifice, sacrifice, "The dark powers accept your sacrifice... ")
+            self._take_damage(player, sacrifice, sacrifice, "The powers that be accept your sacrifice... ")
             
             # Choose reward type based on sacrifice amount
             if random.random() < 0.2 + (scaling * 0.3): # 20-50% chance for special reward
@@ -1305,14 +1403,14 @@ class RandomEventSystem:
             if reward_type == 'special':
                 # Special rewards - rare/powerful items or significant permanent bonuses
                 if random.random() < 0.5:
-                    self._give_special_item(player, game, "The dark powers grant you an item of great power!")
+                    self._give_special_item(player, game, "The powers that be grant you an item of great power!")
                 else:
-                    print("Dark energy surges through you, permanently enhancing one of your stats!")
+                    print("Powerful energy surges through you, permanently enhancing one of your stats!")
                     self._permanent_stat_increase_specific(player, 5, ["attack", "defence", "evasion", "accuracy", "armour_penetration"])
             elif reward_type == 'major':
                 # Major rewards, significant temporary buffs or valuable items
                 if random.random() < 0.5:
-                    print("The dark energy surrounds you and empowers you!") 
+                    print("The nearby energy surrounds you and empowers you!") 
                     print("Gain a significant temporary bonus to all stats!")
                     print("And a small permanent increase to one stat!")
                     buff_amount = int(15 + (scaling * 10)) # 15-25 stat boost
@@ -1321,24 +1419,24 @@ class RandomEventSystem:
                     self._permanent_stat_increase(player)
                 else:
                     gold_amount = int(100 + (scaling * 400)) # 100-500 gold
-                    self._give_gold(player, gold_amount, gold_amount, "The dark energy provides a golden reward and a strong piece of equipment!")
+                    self._give_gold(player, gold_amount, gold_amount, "The powerful energy provides a golden reward and a strong piece of equipment!")
                     self._give_tier_equipment(player, game, player.level * 2)
             elif reward_type == 'minor':
                 # Minor rewards, small buffs or random consumables
                 if random.random() < 0.5:
-                    print("The dark energy provides a small temporary buff!")
+                    print("The swirling energy provides a small temporary buff!")
                     buff_amount = int(5 + (scaling * 10)) # 5-15 stat boost
                     duration = int(5 + (scaling * 5)) # 5-10 turns
                     self._give_random_buff_specific(player, duration, duration, buff_amount, buff_amount,
                                                     ["attack", "defence", "evasion", "accuracy"])
                 else:
                     gold_amount = int(50 + (scaling * 150)) # 50-200 gold
-                    self._give_gold(player, gold_amount, gold_amount, "The dark energy provides a small financial boon!")
+                    self._give_gold(player, gold_amount, gold_amount, "The energy provides a small financial boon!")
                     print("It also provides a couple of consumables!")
                     self._give_multiple_consumables_random(player, game, 2)
             else:
                 # Give a basic piece of equipment
-                print("The dark energy spits out a piece of equipment at you! Hawk Tuah!")
+                print("The energy seems to sneer at you and spits out a piece of equipment at you! Hawk Tuah!")
                 self._give_tier_equipment(player, game, player.level)
             return True
     
@@ -1354,6 +1452,7 @@ class RandomEventSystem:
         
         if enemy:
             print(f"A {enemy.name} materialises before you!")
+            self._pause()
             if game.battle is None:
                 game.initialise_battle()
             game.battle.battle(enemy)
@@ -1381,3 +1480,6 @@ class RandomEventSystem:
                 
         # Return true only if item is of the highest available tier
         return item.tier == highest_available_tier
+    
+    def _pause(self):
+        input("Press Enter to continue...")
