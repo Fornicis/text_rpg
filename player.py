@@ -339,7 +339,7 @@ class Player(Character):
             "stunning": {"name": "Stunning Blow", "stamina_modifier": 2, "damage_modifier": 0.8},
             "defensive": {"name": "Defensive Stance", "stamina_modifier": 2, "damage_modifier": 0, "defence_boost_percentage": 33, "duration": 5},
             "power_stance": {"name": "Power Stance", "stamina_modifier": 2, "damage_modifier": 0, "attack_boost_percentage": 33, "duration": 5},
-            "berserker_stance": {"name": "Berserker Stance", "stamina_modifier": 4, "damage_modifier": 0, "attack_boost_percentage": 33, "duration": 5},
+            "berserker_stance": {"name": "Berserker Stance", "stamina_modifier": 4, "damage_modifier": 0, "attack_boost_percentage": 50, "duration": 5},
             "accuracy_stance": {"name": "Accuracy Stance", "stamina_modifier": 2, "damage_modifier": 0, "accuracy_boost_percentage": 33, "duration": 5},
             "evasion_stance": {"name": "Evasion Stance", "stamina_modifier": 2, "damage_modifier": 0, "evasion_boost_percentage": 33, "duration": 5}
         }
@@ -631,7 +631,7 @@ class Player(Character):
         if stat == "all stats":
             self.apply_buff("attack", value, duration, combat_only)
             self.apply_buff("defence", value, duration, combat_only)
-            self.apply_buff("accuracy", value*5, duration, combat_only)
+            self.apply_buff("accuracy", value*3, duration, combat_only)
             self.apply_buff("evasion", value, duration, combat_only)
             return
 
@@ -674,6 +674,7 @@ class Player(Character):
     
     def apply_debuff(self, stat, value):
         self.debuff_modifiers[stat] += value
+        print(f"Your {stat} has been reduced by {value} until end of next combat.")
         self.recalculate_stats()
 
     def remove_debuff(self, stat, value):
