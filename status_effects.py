@@ -57,7 +57,7 @@ class DotEffect(StatusEffect):
         return self.base_damage * self.strength
 
     def on_apply(self, character):
-        print(f"{character.name} is afflicted with {self.name}! ({self.strength} stack(s), {self.strength * 2} damage per turn)")
+        print(f"{character.name} is afflicted with {self.name}! ({self.strength} stack(s))")
         return True
     
     def on_tick(self, character):
@@ -173,11 +173,19 @@ class Burn(DotEffect):
     def __init__(self, duration, strength=1):
         super().__init__("Burn", duration, 0.03, is_percent=True)
         self.strength = strength
+        
+    def on_apply(self, character):
+        print(f"{character.name} is afflicted with {self.name}! ({self.strength} stack(s), {int(self.strength * (character.max_hp * 0.03))} damage per turn)")
+        return True
 
 class Poison(DotEffect):
     def __init__(self, duration, strength=1):
         super().__init__("Poison", duration, 2, is_percent=False)
         self.strength = strength
+        
+    def on_apply(self, character):
+        print(f"{character.name} is afflicted with {self.name}! ({self.strength} stack(s), {self.strength * 2} damage per turn)")
+        return True
 
 class Stun(ControlEffect):
     def __init__(self, duration, strength=1):
