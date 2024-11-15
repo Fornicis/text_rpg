@@ -174,9 +174,19 @@ class Battle:
     def enemy_attack(self, enemy):
         attack_type = enemy.choose_attack()
         attack_info = ENEMY_ATTACK_TYPES[attack_type]
-        effect_type = attack_info.get("effect")
+        
         message, total_damage, self_damage_info, attack_hit = enemy.perform_attack(self.player, attack_type)
         
+        if attack_hit:
+            # Handle main effect
+            if 'effect' in attack_info:
+                self.apply_attack_effect(attack_info['effect'], self.player, enemy, total_damage)
+                
+            # Handle any extra effects
+            if 'extra_effects' in attack_info:
+                for extra_effect in attack_info['extra_effects']:
+                    self.apply_attack_effect(extra_effect, self.player, enemy, total_damage)
+            
         reflected_damage = 0
         for effect in self.player.status_effects:
             if effect.name == "Damage Reflect":
@@ -185,9 +195,6 @@ class Battle:
         if reflected_damage > 0:
             enemy.take_damage(reflected_damage)
             print(f"{enemy.name} takes {reflected_damage} reflected damage!")
-        
-        if attack_hit and effect_type:
-            self.apply_attack_effect(effect_type, self.player, enemy, total_damage)
 
         if not self.player.is_alive():
             self.end_battle("player_defeat")
