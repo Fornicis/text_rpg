@@ -344,7 +344,7 @@ class Battle:
                         drops.append(self.create_item_drop(random.choice(tier_items)))
                 else:
                     # Get items of the guaranteed type (like "consumable")
-                    type_items = [item for item in self.items.values() if item.type == guaranteed_type and self._is_tier_appropriate(item.tier, self.player_level)]
+                    type_items = [item for item in self.items.values() if item.type == guaranteed_type and self._is_tier_appropriate(item.tier, self.player.level)]
                     if type_items:
                         drops.append(self.create_item_drop(random.choice(type_items)))
                         
