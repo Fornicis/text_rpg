@@ -49,6 +49,8 @@ def save_game(player, current_location, filename):
             "active_hots": player.active_hots,
             "visited_locations": list(player.visited_locations),
             "kill_tracker": player.kill_tracker,
+            "variant_kill_tracker": player.variant_kill_tracker,
+            "boss_kill_tracker": player.boss_kill_tracker,
             "weapon_stamina_cost": player.weapon_stamina_cost,
             "level_modifiers": player.level_modifiers,
             "equipment_modifiers": player.equipment_modifiers,
@@ -97,6 +99,8 @@ def load_game(filename):
     player.active_hots = player_data["active_hots"]
     player.visited_locations = set(player_data["visited_locations"])
     player.kill_tracker = player_data["kill_tracker"]
+    player.variant_kill_tracker = player_data["variant_kill_tracker"]
+    player.boss_kill_tracker = player_data["boss_kill_tracker"]
     player.weapon_stamina_cost = player_data["weapon_stamina_cost"]
     
     # Load new modifier dictionaries
