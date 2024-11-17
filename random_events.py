@@ -298,6 +298,38 @@ class RandomEventSystem:
             }
         ))
         
+        events.append(RandomEvent(
+        "Storm Nexus",
+        "Lightning converges into a swirling vortex of pure energy. Each bolt that strikes the ground leaves crystallized power in its wake...",
+        EventType.DANGEROUS,
+        [
+            ("Channel the storm", self._outcome_storm_channel),
+            ("Collect storm crystals", self._outcome_storm_collect),
+            ("Embrace the lightning", self._outcome_storm_embrace),
+            ("Seek shelter", self._outcome_storm_shelter)
+        ],
+        {
+            "min_level": 10,
+            "location_type": ["Mountain Peaks", "Heavens", "Mountain", "Temple"]
+        }
+    ))
+        
+        events.append(RandomEvent(
+        "Soul Collector",
+        "A ghostly figure emerges from the shadows, surrounded by writhing souls. It gestures to your collection of defeated foes, offering power in exchange for their essence...",
+        EventType.DANGEROUS,
+        [
+            ("Trade monster souls", self._outcome_soul_trade),
+            ("Sacrifice boss souls", self._outcome_soul_boss),
+            ("Offer your own essence", self._outcome_soul_sacrifice),
+            ("Reject the offer", self._outcome_soul_reject)
+        ],
+        {
+            "min_level": 15,
+            "location_type": ["Death Valley", "Death Caves", "Temple", "Ancient Ruins", "Shadowed Valley"]
+        }
+    ))
+        
         return events
 
     def trigger_random_event(self, player, game):
@@ -1174,6 +1206,391 @@ class RandomEventSystem:
                     self._trigger_scaled_encounter(player, game, ["Void Walker"])
                 else:
                     self._trigger_scaled_encounter(player, game, ["Empowered Void Walker"])
+    
+    def _outcome_storm_channel(self, player, game):
+        """Channel the storm's power with increasing risk/reward"""
+        if player.stamina < (player.max_stamina * 0.3):
+            print("You're too exhausted to channel such power!")
+            return
+            
+        chain_count = 0
+        max_chains = random.randint(3, 5)
+        
+        while chain_count < max_chains:
+            # Increase risk and reward with each chain
+            stamina_cost = int(player.max_stamina * (0.15 + (chain_count * 0.1)))
+            damage_range = (15 + (chain_count * 10), 25 + (chain_count * 15))
+            buff_amount_min = 8 + (chain_count * 4)
+            buff_amount_max = 10 + (chain_count * 5)
+            buff_duration = random.randint(3 + (chain_count * 2), 5 + (chain_count * 3))
+            
+            print(f"\nChain {chain_count + 1}/{max_chains}")
+            print(f"Current chain power: {buff_amount_min}-{buff_amount_max} stat boost")
+            print(f"Stamina cost: {stamina_cost}")
+            print(f"Risk: {damage_range[0]}-{damage_range[1]} damage")
+            
+            if player.stamina < stamina_cost:
+                print("You don't have enough stamina to continue the chain!")
+                # Give buff equal to current chain
+                self._give_random_buff_specific(player, buff_duration, buff_duration, 
+                    buff_amount_min, buff_amount_max, ["attack", "accuracy", "crit_chance", "crit_damage"])
+                break
+                
+            choice = input("Continue channeling? (y/n): ").lower()
+            if choice != 'y':
+                # Give buff equal to current chain
+                print(f"You safely absorb the current power level, gaining a stat boost!")
+                self._give_random_buff_specific(player, buff_duration, buff_duration,
+                    buff_amount_min, buff_amount_max, ["attack", "accuracy", "crit_chance", "crit_damage"])
+                break
+                
+            self._use_stamina(player, stamina_cost)
+            
+            # Higher chain = lower success chance
+            success_chance = 0.7 - (chain_count * 0.1)
+            
+            if random.random() < success_chance:
+                print(f"You successfully channel the storm's power!")
+                # Give potion based on chain count
+                rarity_tiers = ["uncommon", "rare", "epic", "masterwork", "legendary"]
+                if chain_count < len(rarity_tiers):
+                    consumables = [item for item in game.items.values()
+                                    if item.type == "consumable" and item.tier == rarity_tiers[chain_count]]
+                    if consumables:
+                        item = random.choice(consumables)
+                        player.add_item(item)
+                        print(f"The storm's power crystallizes into a {item.name} ({item.tier.title()})!")
+                chain_count += 1
+            else:
+                print("The storm's power overwhelms you!")
+                self._take_damage(player, damage_range[0], damage_range[1], "Lightning tears through your body! ")
+                break
+                
+        if chain_count == max_chains:
+            print("\nYou've mastered the storm's power!")
+            # Give permanent attack increase equal to chain count
+            player.base_attack += chain_count
+            print(f"Your base attack permanently increases by {chain_count}!")
+
+    def _outcome_storm_collect(self, player, game):
+        """Collect crystallized lightning for temporary power"""
+        crystal_count = 0
+        max_crystals = random.randint(3, 5)
+        
+        while crystal_count < max_crystals:
+            print(f"\nCrystal {crystal_count + 1}/{max_crystals}")
+            
+            # Each crystal increases risk
+            base_damage = 10 + (crystal_count * 5)
+            if random.random() < (0.8 - (crystal_count * 0.1)):
+                print("You successfully collect a storm crystal!")
+                
+                outcomes = [
+                    (0.2, lambda: self._give_random_buff_specific(player, 6, 10, 8, 12,
+                        ["attack", "accuracy", "crit_chance"])),
+                    (0.15, lambda: self._restore_stamina(player, 0.25)),
+                    (0.15, lambda: self._give_random_consumable(player, game, player.level)),
+                    (0.15, lambda: self._give_tier_equipment(player, game, player.level)),
+                    (0.1, lambda: self._give_multiple_random_buffs(player, random.randint(8, 12), random.randint(14, 18), random.randint(10, 14), random.randint(18, 22), random.randint(1, 3),
+                         ["attack", "accuracy", "crit_chance", "crit_damage", "evasion", "armour_penetration"])),
+                    (0.1, lambda: self._give_multiple_consumables_random(player, game, random.randint(2, 5))),
+                    (0.1, lambda: self._give_major_buff(player, 8, 12, 15, 20)),
+                    (0.05, lambda: self._give_special_item(player, game, "The crystal suddenly bursts into a kaleidoscope of colours!"))
+                ]
+                self._resolve_weighted_outcome(outcomes, player)
+                crystal_count += 1
+                
+                if crystal_count < max_crystals:
+                    choice = input("Try to collect another crystal? (y/n): ").lower()
+                    if choice != 'y':
+                        break
+            else:
+                print("The crystal shatters violently!")
+                self._take_damage(player, base_damage, base_damage + 10,
+                    "Crystal shards tear through you! ")
+                break
+                
+        if crystal_count == max_crystals:
+            print("\nThe collected crystals resonate together!")
+            self._give_major_buff(player, 10, 15, 15, 20)
+
+    def _outcome_storm_embrace(self, player, game):
+        """Embrace the storm's power for permanent changes"""
+        print("You open yourself to the raw power of the storm...")
+        
+        if player.hp < (player.max_hp * 0.5):
+            print("You're too weak to survive such power!")
+            self._take_damage(player, 20, 30, "The storm's energy tears through you! ")
+            return
+            
+        outcomes = [
+            (0.3, lambda: (
+                print("The lightning infuses your very being!"),
+                self._permanent_stat_increase_specific(player, 2, ["accuracy", "crit_chance"]),
+                self._take_damage(player, 15, 25, "The transformation is painful! ")
+            )),
+            (0.3, lambda: (
+                print("The storm's power courses through you!"),
+                self._give_temporary_weapon_enchant(player, 15, 20, 20, 30),
+                self._drain_stamina(player, 0.5)
+            )),
+            (0.2, lambda: (
+                print("You become one with the storm!"),
+                self._permanent_stat_increase(player),
+                self._give_major_buff(player, 8, 12, 15, 20),
+                self._take_damage(player, 25, 35, "The merging process is excruciating! ")
+            )),
+            (0.2, lambda: (
+                print("The storm overwhelms you!"),
+                self._take_damage(player, 40, 50, "Lightning tears through your body! "),
+                print("The lightning tears your defences to shreds! Def -15 until end of next combat!"),
+                player.apply_debuff("defence", 15)
+            ))
+        ]
+        self._resolve_weighted_outcome(outcomes, player)
+
+    def _outcome_storm_shelter(self, player, game):
+        """Attempt to find shelter from the storm"""
+        if random.random() < 0.7:
+            print("You find safe shelter from the storm.")
+            
+            # Small chance for hidden benefit
+            if random.random() < 0.3:
+                print("While waiting, you notice something...")
+                self._give_random_consumable(player, game, player.level)
+        else:
+            print("You can't escape the storm's fury!")
+            self._take_damage(player, 15, 25, "Lightning strikes nearby! ")
+    
+    def use_boss_souls(self, player, total_souls):
+        """Helper function to handle boss soul trading"""
+        if not hasattr(player, 'boss_kill_tracker'):
+            return total_souls
+            
+        boss_souls = sum(player.boss_kill_tracker.values()) * 10
+        if boss_souls <= 0:
+            return total_souls
+            
+        choice = input(f"\nWould you like to use your {boss_souls} boss souls? (y/n): ").lower()
+        if choice == "y":
+            print("\nYou foolishly use your boss souls on these minor rewards...Muahahahahhaha!")
+            player.boss_kill_tracker.clear()
+            return total_souls + boss_souls
+        else:
+            return total_souls
+    
+    def _outcome_soul_trade(self, player, game):
+        """Trade accumulated monster souls for power"""
+        if not player.kill_tracker and not player.variant_kill_tracker and not player.boss_kill_tracker:
+            print("You have no souls to trade... The collector seems disappointed.")
+            return
+            
+        # Show player their accumulated standard souls
+        print("\nYour standard collected souls:")
+        standard_sorted_kills = sorted(player.kill_tracker.items(), key=lambda x: x[1], reverse=True)
+        for enemy, count in standard_sorted_kills:
+            print(f"{enemy}: {count} standard souls (worth 1 soul each)")
+            
+        # Show player their acumulated variant souls
+        print("\nYour variant collected souls:")
+        variant_sorted_kills = sorted(player.variant_kill_tracker.items(), key=lambda x: x[1], reverse=True)
+        for enemy, count in variant_sorted_kills:
+            print(f"{enemy}: {count} variant souls (worth 5 souls each)")
+            
+        # Calculate total souls and offer choices
+        standard_souls = sum(player.kill_tracker.values())
+        variant_souls = sum(player.variant_kill_tracker.values()) * 5
+        total_souls = standard_souls + variant_souls
+        
+        print(f"\nTotal souls: {total_souls}")
+        
+        choices = [
+            (1, "Convert souls to permanent stat increase (500 souls max recommended!)"),
+            (2, "Transform souls into equipment (500 souls max recommended!)"),
+            (3, "Exchange souls for consumable items (250 souls max recommended!)"),
+            (4, "Return souls for gold and experience")
+        ]
+        
+        print("\nAvailable trades:")
+        for num, desc in choices:
+            print(f"{num}. {desc}")
+            
+        while True:
+            try:
+                choice = int(input("\nChoose your trade (0 to cancel): "))
+                if choice == 0:
+                    return
+                if 1 <= choice <= 4:
+                    break
+                print("Invalid choice.")
+            except ValueError:
+                print("Please enter a number.")
+        
+        # Calculate reward scaling based on total souls
+        reward_scale = min(3, max(1, total_souls // 200))  # Cap at 3x
+        
+        if choice == 1:
+            total_souls = self.use_boss_souls(player, total_souls)
+            # Convert souls to permanent stats
+            if total_souls < 100:
+                print("You need at least 100 souls for a permanent enhancement.")
+                return    
+            stat_choices = ["attack", "crit_chance", "crit_damage", "defence", "accuracy", "evasion", "max_hp"]
+            increase_amount = min(5, max(1, total_souls // 100))  # 1-5 based on souls
+            
+            print("\nChoose stat to enhance:")
+            for i, stat in enumerate(stat_choices, 1):
+                print(f"{i}. {stat.replace('_', ' ').title()}")
+                
+            while True:
+                try:
+                    stat_choice = int(input("\nEnter choice: ")) - 1
+                    if 0 <= stat_choice < len(stat_choices):
+                        chosen_stat = stat_choices[stat_choice]
+                        self._permanent_stat_increase_specific(player, increase_amount, [chosen_stat])
+                        player.kill_tracker.clear()  # Clear kill tracker after use
+                        player.variant_kill_tracker.clear() # Clear variant kill tracker
+                        break
+                except ValueError:
+                    print("Please enter a valid number.")
+                    
+        elif choice == 2:
+            # Transform souls into equipment
+            total_souls = self.use_boss_souls(player, total_souls)
+            if total_souls < 75:
+                print("You need at least 75 souls to forge equipment.")
+                return
+                
+            equipment_tier = "rare"
+            if total_souls >= 500:
+                equipment_tier = "legendary"
+            elif total_souls >= 300:
+                equipment_tier = "masterwork"
+            elif total_souls >= 200:
+                equipment_tier = "epic"
+                
+            # Get equipment of appropriate tier
+            equipment = [item for item in game.items.values()
+                        if item.type in ["weapon", "helm", "chest", "legs", "boots", "gloves", "shield", "ring"]
+                        and item.tier == equipment_tier]
+                        
+            if equipment:
+                item = random.choice(equipment)
+                player.add_item(item)
+                print(f"\nThe souls coalesce into a {item.name} ({item.tier.title()})!")
+                player.kill_tracker.clear()  # Clear kill tracker after use
+                player.variant_kill_tracker.clear() # Clear variant kill tracker
+                
+        elif choice == 3:
+            # Exchange for consumables
+            total_souls = self.use_boss_souls(player, total_souls)
+            if total_souls < 50:
+                print("You need at least 50 souls to create consumables.")
+                return
+                
+            num_items = min(5, max(1, total_souls // 50))  # 1-5 items based on souls
+            print(f"\nCreating {num_items} consumable items...")
+            
+            for _ in range(num_items):
+                self._give_random_consumable(player, game, player.level + reward_scale)
+                
+            player.kill_tracker.clear()  # Clear kill tracker after use
+            player.variant_kill_tracker.clear() # Clear variant kill tracker
+            
+        else:  # choice == 4
+            # Return souls for gold and experience
+            total_souls = self.use_boss_souls(player, total_souls)
+            gold_reward = total_souls * 10 * reward_scale
+            exp_reward = total_souls * 5 * reward_scale
+            
+            player.gold += gold_reward
+            player.gain_exp(exp_reward, player.level)
+            print(f"\nYou receive {gold_reward} gold and {exp_reward} experience!")
+            player.kill_tracker.clear()  # Clear kill tracker after use
+            player.variant_kill_tracker.clear() # Clear variant kill tracker
+
+    def _outcome_soul_boss(self, player, game):
+        """Sacrifice specifically boss souls for greater rewards"""
+        # Count boss kills
+        boss_kills = sum(player.boss_kill_tracker.values())
+        
+        if boss_kills == 0:
+            print("You haven't defeated any worthy bosses yet...")
+            return
+            
+        print(f"\nYou have {boss_kills} boss souls available.")
+        
+        def special_item_give():
+            if boss_kills < 10:
+                self._give_special_item(player, game, "You receive 1 special item for you kills!")
+            elif boss_kills >= 10 and boss_kills < 20:
+                self._give_special_item(player, game, "You receive 2 special items for your kills!")
+                self._give_special_item(player, game)
+            elif boss_kills >= 20 and boss_kills < 30:
+                self._give_special_item(player, game, "You receive 3 special itmes for your kills!")
+                self._give_special_item(player, game)
+                self._give_special_item(player, game)
+            else:
+                self._give_special_item(player, game, "You receive 4 special items for your kills!")
+                self._give_special_item(player, game)
+                self._give_special_item(player, game)
+                self._give_special_item(player, game)
+                self._permanent_stat_increase_specific(player, boss_kills / 15, ["attack", "accuracy", "crit_chance", "crit_damage"])
+                self._permanent_stat_increase_specific(player, boss_kills / 15, ["defence", "evasion", "damage_reduction"])
+                self._gain_exp(player, boss_kills * 20, boss_kills * 30, "The Soul Collector grants you an immense amount of experience for your boss souls!")
+                self._give_gold(player, boss_kills * 20, boss_kills * 30, "He also showers you in Gold!")
+                self._take_damage(player, 10, 20, "It turns out that much Gold isn't good for your health when it all pours on you at once! ")
+        
+        outcomes = [
+            (0.3, lambda: (
+                print("The boss souls grant you immense power!"),
+                self._permanent_stat_increase_specific(player, boss_kills, 
+                    ["attack", "defence", "accuracy", "evasion"]),
+                self._give_major_buff(player, 10, 15, 15 + boss_kills, 25 + boss_kills)
+            )),
+            (0.3, lambda: (
+                print("The boss souls transform into legendary equipment!"),
+                special_item_give()
+            )),
+            (0.2, lambda: (
+                print("The boss souls imbue you with their knowledge!"),
+                self._gain_exp(player, 100 * boss_kills, 150 * boss_kills),
+                self._give_gold(player, 200 * boss_kills, 300 * boss_kills)
+            )),
+            (0.2, lambda: (
+                print("The souls overwhelm you with their power!"),
+                self._take_damage(player, 30, 50, "The souls tear at your essence! "),
+                self._permanent_stat_increase_specific(player, boss_kills,
+                    ["attack", "accuracy", "crit_chance", "crit_damage", "armour_penetration"]),
+                self._permanent_stat_increase_specific(player, boss_kills, ["defence", "evasion", "damage_reduction", "block_chance"]),
+                self._give_major_buff(player, 15, 20, 30, 40)
+            ))
+        ]
+        
+        self._resolve_weighted_outcome(outcomes, player)
+        
+        # Clear only boss kills tracker
+        player.boss_kill_tracker.clear()
+
+    def _outcome_soul_sacrifice(self, player, game):
+        """Offer your own essence for power"""
+        print("The collector eyes you hungrily...")
+        return self._trade_hp_for_reward(player, game, min_percent=20, max_percent=50)
+
+    def _outcome_soul_reject(self, player, game):
+        """Attempt to reject the soul collector's offer"""
+        if random.random() < 0.7:  # 70% chance to leave safely
+            print("The collector fades away, disappointed but accepting.")
+            return
+        else:
+            print("The collector doesn't take kindly to rejection!")
+            if random.random() < 0.5:
+                self._take_damage(player, 20, 30, "Soul energy tears at your essence! ")
+            else:
+                print("The collector attacks!")
+                enemy = create_enemy("Void Walker", player)  # Use void walker as collector's servant
+                if enemy:
+                    game.battle.battle(enemy)
        
     def _outcome_ignore(self, player, game):
         """Ignore the event"""
@@ -1207,7 +1624,7 @@ class RandomEventSystem:
         if consumables:
             item = random.choice(consumables)
             player.add_item(item)
-            print(f"You acquired a {item.name}!")
+            print(f"You acquired a {item.name} ({item.tier.title()})!")
             
     def _give_specific_consumable(self, player, game, level, type, effect_type):
         """Gives player a specific consumable type"""
@@ -1217,7 +1634,7 @@ class RandomEventSystem:
         if consumables:
             item = random.choice(consumables)
             player.add_item(item)
-            print(f"You acquired a {item.name}!")
+            print(f"You acquired a {item.name} ({item.tier.title()})!")
      
     def _give_multiple_consumables_random(self, player, game, count):
         """Give multiple random consumables"""
@@ -1246,8 +1663,9 @@ class RandomEventSystem:
         if special_items:
             item = random.choice(special_items)
             player.add_item(item)
-            print(*args)
-            print(f"You receive something special: {item.name}!")
+            if args:
+                print(*args)
+            print(f"You receive something special: {item.name} ({item.tier.title()})!")
             
     def _give_merchant_favour(self, player):
         """Give gold and exp for helping merchant"""
@@ -1261,7 +1679,8 @@ class RandomEventSystem:
         """Give player some gold"""
         amount = random.randint(min_amount, max_amount)
         player.gold += amount
-        print(*args)
+        if args:
+            print(*args)
         print(f"You found {amount} gold!")
         
     def _heal_player(self, player, percentage):
@@ -1290,6 +1709,11 @@ class RandomEventSystem:
         player.stamina = max(0, player.stamina - stamina_amount)
         print(f"Your stamina is drained by {stamina_amount}!")
         
+    def _use_stamina(self, player, amount):
+        """Lose a set amount of stamina"""
+        player.stamina = max(0, player.stamina - amount)
+        print(f"You use {amount} of stamina!")
+        
     def _restore_and_heal(self, player, percentage):
         """Restore player health and stamina"""
         heal_amount = int(player.max_hp * percentage)
@@ -1302,7 +1726,10 @@ class RandomEventSystem:
         """Deal damage to player"""
         damage = random.randint(min_damage, max_damage)
         player.take_damage(damage)
-        print(f"{message}You take {damage} damage!")
+        if message:
+            print(f"{message}You take {damage} damage!")
+        else:
+            print(f"You take {damage} damage!")
         
     def _hostile_response(self, player, game):
         """Trigger an immediate hostile encounter"""
@@ -1486,13 +1913,15 @@ class RandomEventSystem:
     def _permanent_stat_increase_specific(self, player, value, stat=[]):
         """Give a small increase to chosen stat"""
         stat = random.choice(stat)
-        setattr(player, stat, getattr(player, stat) + value)
-        print(f"You feel permanently strengthened! {stat.replace('_', ' ').title()} increased by {value}!")
+        if stat in ["accuracy", "crit_damage"]:
+            value = value * 3
+        setattr(player, stat, getattr(player, stat) + int(value))
+        print(f"You feel permanently strengthened! {stat.replace('_', ' ').title()} increased by {int(value)}!")
     
     def _permanent_stat_decrease_specific(self, player, stat, value):
         """Give a small decrease to chosen stat"""
-        setattr(player, stat, getattr(player, stat) - value)
-        print(f"You feel permanently weakened! {stat.replace('_', ' ').title()} decreased by {value}!")
+        setattr(player, stat, getattr(player, stat) - int(value))
+        print(f"You feel permanently weakened! {stat.replace('_', ' ').title()} decreased by {int(value)}!")
         
     def _discover_location(self, player, game, number):
         """Discover a number of unvisited locations"""
