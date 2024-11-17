@@ -424,32 +424,32 @@ def initialise_items():
 
         # Common Rings (4 points total)
         "Leather Armband of Might": Item("Leather Armband of Might", "ring", 20, "common", attack=2, defence=2),
-        "Copper Ring of Precision": Item("Copper Ring of Precision", "ring", 20, "common", crit_chance=2, crit_damage=2),
+        "Copper Ring of Precision": Item("Copper Ring of Precision", "ring", 20, "common", crit_chance=3, crit_damage=4),
         "Wooden Band of Resilience": Item("Wooden Band of Resilience", "ring", 20, "common", damage_reduction=2, evasion=2),
 
         # Uncommon Rings (6 points total)
         "Bronze Ring of Power": Item("Bronze Ring of Power", "ring", 60, "uncommon", attack=3, defence=3),
-        "Silver Band of the Hawk": Item("Silver Band of the Hawk", "ring", 60, "uncommon", crit_chance=3, crit_damage=3),
+        "Silver Band of the Hawk": Item("Silver Band of the Hawk", "ring", 60, "uncommon", crit_chance=4, crit_damage=6),
         "Iron Loop of Endurance": Item("Iron Loop of Endurance", "ring", 60, "uncommon", damage_reduction=3, evasion=3),
 
         # Rare Rings (8 points total)
         "Steel Signet of the Warrior": Item("Steel Signet of the Warrior", "ring", 155, "rare", attack=4, defence=4),
-        "Golden Ring of the Assassin": Item("Golden Ring of the Assassin", "ring", 155, "rare", crit_chance=4, crit_damage=4),
+        "Golden Ring of the Assassin": Item("Golden Ring of the Assassin", "ring", 155, "rare", crit_chance=5, crit_damage=8),
         "Reinforced Band of the Guardian": Item("Reinforced Band of the Guardian", "ring", 155, "rare", damage_reduction=4, evasion=4),
 
         # Epic Rings (10 points total)
         "Mithril Ring of Conquest": Item("Mithril Ring of Conquest", "ring", 350, "epic", attack=5, defence=5),
-        "Opal Band of Deadly Precision": Item("Opal Band of Deadly Precision", "ring", 350, "epic", crit_chance=5, crit_damage=5),
+        "Opal Band of Deadly Precision": Item("Opal Band of Deadly Precision", "ring", 350, "epic", crit_chance=7, crit_damage=10),
         "Enchanted Loop of Warding": Item("Enchanted Loop of Warding", "ring", 350, "epic", damage_reduction=5, evasion=5),
 
         # Masterwork Rings (12 points total)
         "Aluthril Signet of Dominance": Item("Aluthril Signet of Dominance", "ring", 410, "masterwork", attack=6, defence=6),
-        "Diamond Ring of Lethal Strikes": Item("Diamond Ring of Lethal Strikes", "ring", 410, "masterwork", crit_chance=6, crit_damage=6),
+        "Diamond Ring of Lethal Strikes": Item("Diamond Ring of Lethal Strikes", "ring", 410, "masterwork", crit_chance=9, crit_damage=12),
         "Runic Band of Invincibility": Item("Runic Band of Invincibility", "ring", 410, "masterwork", damage_reduction=6, evasion=6),
 
         # Legendary Rings (14 points total)
         "Adamantite Loop of Supreme Power": Item("Adamantite Loop of Supreme Power", "ring", 1550, "legendary", attack=7, defence=7),
-        "Infused Ring of Deadly Mastery": Item("Infused Ring of Deadly Mastery", "ring", 1550, "legendary", crit_chance=7, crit_damage=7),
+        "Infused Ring of Deadly Mastery": Item("Infused Ring of Deadly Mastery", "ring", 1550, "legendary", crit_chance=10, crit_damage=14),
         "Celestial Band of Divine Protection": Item("Celestial Band of Divine Protection", "ring", 1550, "legendary", damage_reduction=7, evasion=7),
 
         # Mythical Rings (16 points total)
