@@ -1,4 +1,5 @@
 from player import Character
+from game_config import MONSTER_TYPES
 import random
 
 class Enemy(Character):
@@ -129,13 +130,21 @@ class Enemy(Character):
         self.tier = tier
         self.level = level
         self.stunned = False
+        self.monster_type = self._determine_monster_type(name)
         
         # Initialise attack types
         if attack_types:
             self.attack_types = {attack_type: ENEMY_ATTACK_TYPES[attack_type] for attack_type in base_attack_types}
         else:
             self.attack_types = {"normal": ENEMY_ATTACK_TYPES["normal"]}
-
+    
+    def _determine_monster_type(self, name):
+        """Determine monster type based on name"""
+        for type_name, type_data in MONSTER_TYPES.items():
+            if name in type_data["members"]:
+                return type_name
+        return "unknown"
+    
     def choose_attack(self):
         if self.stunned:
             self.stunned = False
@@ -2175,15 +2184,34 @@ ENEMY_TEMPLATES = {
         "attack_types": ["normal", "double", "triple", "reckless", "damage_reflect", "vampiric", "void_drain", "reality_rend"]
     },
     
+    "Soul Forgemaster": {
+        "name": "Soul Forgemaster",
+        "stats": {
+            "hp_percent": random.randint(120, 150),
+            "attack_percent": random.randint(110, 140),
+            "defence_percent": random.randint(120, 150),
+            "accuracy_percent": random.randint(90, 120),
+            "evasion_percent": random.randint(80, 110),
+            "crit_chance_percent": random.randint(90, 120),
+            "crit_damage_percent": random.randint(120, 150),
+            "armour_penetration_percent": random.randint(100, 130),
+            "damage_reduction_percent": random.randint(110, 140),
+            "block_chance_percent": random.randint(100, 130)
+        },
+        "tier": "boss",
+        "attack_types": ["normal", "power", "stunning", "vampiric", "draining", "defence_break"]
+    },
+
+    
     # Test monster (used for testing purposes only)
     
     "Test Monster": {
         "name": "Test Monster",
         "stats": {
-            "hp_percent": 150,
-            "attack_percent": 350,
+            "hp_percent": 1,
+            "attack_percent": 3,
             "defence_percent": 50,
-            "accuracy_percent": 350,
+            "accuracy_percent": 3,
             "evasion_percent": 1,
             "crit_chance_percent": 1,
             "crit_damage_percent": 1,
@@ -2482,3 +2510,49 @@ def apply_variant_modifiers(template_stats, variant):
             modified_stats[stat] = int(modified_stats[stat] * multiplier)
             
     return modified_stats
+
+# Helper functions for type-based mechanics
+def get_type_stat_preferences(monster_type):
+    """Get preferred stats for a monster type"""
+    if monster_type in MONSTER_TYPES:
+        return MONSTER_TYPES[monster_type]["stat_preferences"]
+    return ["attack", "defence", "accuracy"]  # Default preferences
+
+def get_type_equipment_affinities(monster_type):
+    """Get equipment affinities for a monster type"""
+    if monster_type in MONSTER_TYPES:
+        return MONSTER_TYPES[monster_type]["equipment_affinities"]
+    return ["weapon", "chest", "shield"]  # Default affinities
+
+def get_monster_types_for_element(element):
+    """Get all monsters of a specific elemental type"""
+    if element in MONSTER_TYPES:
+        return MONSTER_TYPES[element]["members"]
+    return []
+
+def get_type_for_monster(monster_name):
+    """Get the type of a specific monster"""
+    for type_name, type_data in MONSTER_TYPES.items():
+        if monster_name in type_data["members"]:
+            return type_name
+    return "unknown"
+
+def are_monsters_same_type(monster1, monster2):
+    """Check if two monsters are the same type"""
+    type1 = get_type_for_monster(monster1)
+    type2 = get_type_for_monster(monster2)
+    return type1 == type2 and type1 != "unknown"
+
+def get_opposing_types():
+    """Define type matchups for resistances/weaknesses"""
+    return {
+        "fire": "ice",
+        "ice": "fire",
+        "spirit": "construct",
+        "construct": "corrupted",
+        "corrupted": "arcane",
+        "arcane": "void",
+        "void": "spirit",
+        "storm": "earth",
+        "earth": "storm"
+    }
