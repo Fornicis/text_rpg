@@ -186,9 +186,17 @@ class Game:
                         f"Block Chance: +{item.block_chance}%" if hasattr(item, 'block_chance') and item.block_chance > 0 else None,
                     ]
                     if slot == "weapon":
-                        stamina_cost = self.player.get_weapon_stamina_cost(item.weapon_type)
+                        stamina_cost = self.player.get_weapon_stamina_cost(item.weapon_type) if hasattr(item, 'weapon_type') and item.weapon_type else 0
                         stats.append(f"Stamina use: {stamina_cost}")
-                        stats.append(f"Weapon type: {item.weapon_type.title()}")
+                        if hasattr(item, 'weapon_type') and item.weapon_type:
+                            stats.append(f"Weapon type: {item.weapon_type.title()}")
+                    
+                    # Add soulbound info if applicable
+                    if hasattr(item, 'soulbound') and item.soulbound:
+                        stats.append("\nSOULBOUND")
+                        if hasattr(item, 'current_level'):
+                            stats.append(f"Level: {item.current_level}")
+                            
                     print("  " + ", ".join(filter(None, stats)))
                 else:
                     print(f"{slot.capitalize()}: None")
@@ -199,7 +207,7 @@ class Game:
                 stats = [
                     f"Attack: +{item.attack}" if item.attack > 0 else None,
                     f"Accuracy: +{item.accuracy}" if item.accuracy > 0 else None,
-                    f"Armour Penetration: +{item.armour_penetration}" if item.armour_penetration > 0 else None,
+                    f"Armour Penetration: +{item.armour_penetration}" if hasattr(item, 'armour_penetration') and item.armour_penetration > 0 else None,
                     f"Defence: +{item.defence}" if item.defence > 0 else None,
                     f"Damage Reduction: +{item.damage_reduction}" if hasattr(item, 'damage_reduction') and item.damage_reduction > 0 else None,
                     f"Evasion: +{item.evasion}" if hasattr(item, 'evasion') and item.evasion > 0 else None,
@@ -208,9 +216,19 @@ class Game:
                     f"Block Chance: +{item.block_chance}%" if hasattr(item, 'block_chance') and item.block_chance > 0 else None,
                 ]
                 if item.type == "weapon":
-                    stamina_cost = self.player.get_weapon_stamina_cost(item.weapon_type)
+                    stamina_cost = self.player.get_weapon_stamina_cost(item.weapon_type) if hasattr(item, 'weapon_type') and item.weapon_type else 0
                     stats.append(f"Stamina Cost: {stamina_cost}")
-                    stats.append(f"Weapon type: {item.weapon_type.title()}")
+                    if hasattr(item, 'weapon_type') and item.weapon_type:
+                        stats.append(f"Weapon type: {item.weapon_type.title()}")
+                
+                # Add soulbound info if applicable
+                if hasattr(item, 'soulbound') and item.soulbound:
+                    stats.append("\nSOULBOUND")
+                    if hasattr(item, 'current_level'):
+                        stats.append(f"Level: {item.current_level}")
+                    if hasattr(item, 'growth_stats'):
+                        stats.append(f"Growth: {', '.join(stat.replace('_', ' ').title() for stat in item.growth_stats)}")
+                        
                 print(f"{i}. {item.name} (Type: {item.type.capitalize()}) - " + ", ".join(filter(None, stats)))
 
             choice = input("\nEnter the number of the item you want to equip (or 'q' to quit): ")
