@@ -1,6 +1,7 @@
 import random, time
-from items import Item, initialise_items
+from items import Item, initialise_items, SoulCrystal
 from display import pause, title_screen
+from game_config import VARIANT_TYPES
 from status_effects import *
 
 class Character:
@@ -84,6 +85,11 @@ class Character:
             print("\nActive Healing Effects:")
             for hot_name, hot_info in self.active_hots.items():
                 print(f"  {hot_name}: {hot_info['tick_effect']} HP/turn ({hot_info['duration']} turns remaining)")
+                
+        # Add soul crystal effects display
+        if self.soul_crystal_effects:
+            print("\nSoul Crystal Effects:")
+            self.show_soul_crystal_effects()
 
     def _format_buff_string(self, stat, buff_info, is_combat_buff=False):
         """Helper method to format buff strings consistently"""
@@ -126,42 +132,74 @@ class Character:
         else:
             other_buffs.append(buff_str)
     
+    def apply_special_effects(self, attacker, defender):
+        """Apply any special combat modifiers based on the target"""
+        modifiers = {}
+        
+        # Check soul crystal effects for relevant effects
+        for effect_name, effect_data in attacker.soul_crystal_effects.items():
+            # Boss resonance
+            if effect_name == "boss_resonance" and defender.name == effect_data["target"]:
+                for stat, value in effect_data.items():
+                    if stat != "target":
+                        modifiers[stat] = modifiers.get(stat, 0) + value
+                        
+            # Variant affinity
+            elif effect_name == "variant_affinity" and hasattr(defender, 'variant') and defender.variant.get('type') == effect_data["target"]:
+                for stat, value in effect_data.items():
+                    if stat != "target":
+                        modifiers[stat] = modifiers.get(stat, 0) + value
+                        
+            # Soul echo
+            elif effect_name == "soul_echo" and defender.name == effect_data["target"]:
+                if "damage" in effect_data:
+                    modifiers["damage_multiplier"] = 1 + (effect_data["damage"] / 100)
+
+        return modifiers
+    
     def calculate_damage(self, attacker, defender, attack_type):
-        # Calculate hit chance
-        hit_chance = max(5, min(95, attacker.accuracy - defender.evasion))
+        # Get any special effects that apply to this combat
+        combat_modifiers = self.apply_special_effects(attacker, defender)
+        
+        # Calculate hit chance with modifiers
+        hit_chance = max(5, min(95, attacker.accuracy + combat_modifiers.get("accuracy", 0) - defender.evasion))
         
         # Check if the attack hits
         if random.randint(1, 100) > hit_chance:
             return 0, "miss", hit_chance, False  # Attack missed
         
-        # Check if the attack is blocked, can't block if frozen
-        is_frozen = any(effect.name == "Freeze" for effect in defender.status_effects)
-        if not is_frozen and random.randint(1, 100) <= defender.block_chance:
+        # Check for block
+        if not defender.stunned and random.randint(1, 100) <= defender.block_chance:
             return 0, "blocked", hit_chance, False  # Attack blocked
 
+        # Calculate base damage
         attack_info = attacker.attack_types[attack_type]
-        base_damage = attacker.attack * attack_info["damage_modifier"]
+        base_damage = (attacker.attack + combat_modifiers.get("attack", 0)) * attack_info["damage_modifier"]
         random_damage = random.randint(int(base_damage * 0.9), int(base_damage * 1.1))
         
-        # Apply armour penetration
+        # Apply armor penetration
         effective_defence = max(0, defender.defence - attacker.armour_penetration)
         
         # Calculate initial damage
         damage = max(0, random_damage - effective_defence)
         
-        # Check for critical hit with increased crit chance if target is frozen
-        base_crit_chance = attacker.crit_chance
-        if is_frozen:
-            base_crit_chance += 25 # 25% increased crit chance against frozen targets
-        
+        # Check for critical hit
+        base_crit_chance = attacker.crit_chance + combat_modifiers.get("crit_chance", 0)
+        if defender.stunned:
+            base_crit_chance += 25  # 25% increased crit chance against stunned targets
+            
         is_critical = random.randint(1, 100) <= base_crit_chance
-        shattered_freeze = False
+        shattered_stun = False
         
         if is_critical:
             damage = int(damage * (attacker.crit_damage / 100))
-            if is_frozen:
-                shattered_freeze = True
-                defender.remove_status_effect("Freeze")
+            if defender.stunned:
+                shattered_stun = True
+                defender.stunned = False
+        
+        # Apply damage multiplier from soul echo if present
+        if "damage_multiplier" in combat_modifiers:
+            damage = int(damage * combat_modifiers["damage_multiplier"])
         
         # Apply damage reduction
         damage = int(damage * (1 - (defender.damage_reduction / 100)))
@@ -169,7 +207,7 @@ class Character:
         # Ensure minimum damage of 1 if the attack hits
         damage = max(1, damage)
         
-        return damage, "critical" if is_critical else "normal", hit_chance, shattered_freeze
+        return damage, "critical" if is_critical else "normal", hit_chance, shattered_stun
 
     def perform_attack(self, target, attack_type):
         attack_info = self.attack_types[attack_type]
@@ -231,10 +269,6 @@ class Character:
         # Heal character, not exceeding max HP
         self.hp = min(self.max_hp, self.hp + int(amount))
     
-    def use_stamina(self, amount):
-        # Default implementation that does nothing
-        pass
-    
     def apply_status_effect(self, new_effect):
         existing_effect = next((e for e in self.status_effects if e.name == new_effect.name), None)
         
@@ -285,7 +319,11 @@ class Player(Character):
     def __init__(self, name):
         # Initialise player with default stats
         super().__init__(name, hp=100, attack=10, defence=5, accuracy=70, evasion=5, crit_chance=5, crit_damage=0, armour_penetration=0, damage_reduction=0, block_chance=5)
+        self.days = 1
         self.level = 1
+        self.inventory = []
+        self.max_stamina = 100
+        self.stamina = self.max_stamina
         self.exp = 0
         self.gold = 0
         self.base_attack = 10
@@ -297,6 +335,8 @@ class Player(Character):
         self.base_armour_penetration = 0
         self.base_damage_reduction = 5
         self.base_block_chance = 5
+        self.respawn_counter = 5
+        self.visited_locations = set(["Village"])
         self.level_modifiers = {"attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, "damage_reduction": 0, "block_chance": 0}
         self.equipment_modifiers = {"attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, "damage_reduction": 0, "block_chance": 0}
         self.buff_modifiers = {"temp_max_hp": 0, "temp_max_stamina": 0, "attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, "damage_reduction": 0, "block_chance": 0}
@@ -308,12 +348,14 @@ class Player(Character):
         self.active_hots = {}
         self.combat_buffs = {}
         self.weapon_buff = {'value': 0, 'duration': 0}
+        self.soul_crystal_effects = {}
         self.weapon_coating = None
-        self.max_stamina = 100
-        self.stamina = self.max_stamina
-        self.respawn_counter = 5
-        self.days = 1
-        self.inventory = []
+        self.kill_tracker = {}
+        self.variant_kill_tracker = {}
+        self.boss_kill_tracker = {}
+        self.used_kill_tracker = {}
+        self.used_variant_tracker = {}
+        self.used_boss_kill_tracker = {}
         # Initialise equipment slots
         self.equipped = {
             "weapon": None,
@@ -327,11 +369,6 @@ class Player(Character):
             "back": None,
             "ring": None,
         }
-        self.items = initialise_items()
-        self.give_starter_items()
-        self.visited_locations = set(["Village"])
-        self.kill_tracker = {}
-        self.weapon_stamina_cost = {"light": 2, "medium": 4, "heavy": 6}
         self.attack_types = {
             "normal": {"name": "Normal Attack", "stamina_modifier": 0, "damage_modifier": 1},
             "power": {"name": "Power Attack", "stamina_modifier": 3, "damage_modifier": 1.5},
@@ -343,7 +380,9 @@ class Player(Character):
             "accuracy_stance": {"name": "Accuracy Stance", "stamina_modifier": 2, "damage_modifier": 0, "accuracy_boost_percentage": 33, "duration": 5},
             "evasion_stance": {"name": "Evasion Stance", "stamina_modifier": 2, "damage_modifier": 0, "evasion_boost_percentage": 33, "duration": 5}
         }
-    
+        self.items = initialise_items()
+        self.give_starter_items()
+        
     def give_starter_items(self):
         #Gives starter items to the player
         starter_items = [
@@ -380,8 +419,8 @@ class Player(Character):
         elif level_difference <= -2:
             scaling_factor = 2.0 #100% extra exp for enemy two or more levels above
         else:
-            #Reduce exp by 30% for every level above enemy level, minimum 10%
-            scaling_factor = max(0.1, 1 - (level_difference * 0.1))
+            #Reduce exp by 20% for every level above enemy level, minimum 10%
+            scaling_factor = max(0.1, 1 - (level_difference * 0.2))
         #Applies scaling factor    
         scaled_exp = int(amount * scaling_factor)
         #Gain exp based on scaled exp
@@ -405,7 +444,8 @@ class Player(Character):
         self.max_stamina += 5
         stamina_restore = self.max_stamina // 4
         self.restore_stamina(stamina_restore)
-        self.exp = self.exp // 2
+        self.update_equipment_stats()
+        self.exp = self.exp // 4
         print(f"Congratulations! You reached level {self.level}!")
         print("Your stats have increased.")
     
@@ -488,6 +528,9 @@ class Player(Character):
             print("Top 5 most defeated enemies:")
             for enemy, count in sorted(self.kill_tracker.items(), key=lambda x: x[1], reverse=True)[:5]:
                 print(f"  {enemy}: {count}")
+            print("Top 5 most defeated variants:")
+            for enemy, count in sorted(self.variant_kill_tracker.items(), key=lambda x: x[1], reverse=True)[:5]:
+                print(f"   {enemy}: {count}")
     
     def recalculate_stats(self):
         # Initialize stats with base values
@@ -544,8 +587,33 @@ class Player(Character):
         
         self.remove_combat_buffs()
         self.combat_buff_modifiers = {"attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, "damage_reduction": 0, "block_chance": 0}
+        # Update soul crystal effects durations
+        for effect_name, effect_data in list(self.soul_crystal_effects.items()):
+            if "combats_remaining" in effect_data:
+                effect_data["combats_remaining"] -= 1
+                if effect_data["combats_remaining"] <= 0:
+                    del self.soul_crystal_effects[effect_name]
+                    print(f"The {effect_name} effect has worn off!")
         self.debuff_modifiers = {"attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, "damage_reduction": 0, "block_chance": 0}
         self.recalculate_stats()
+    
+    def show_soul_crystal_effects(self):
+        if not self.soul_crystal_effects:
+            print("No active soul crystal effects.")
+            return
+            
+        print("\nActive Soul Crystal Effects:")
+        for effect_name, effect_data in self.soul_crystal_effects.items():
+            effect_type = effect_name.replace("_", " ").title()
+            target = effect_data["target"]
+            combats = effect_data["combats_remaining"]
+            
+            if effect_name == "boss_resonance":
+                print(f"- {effect_type}: +20 Attack and Defence vs {target} ({combats} combats remaining)")
+            elif effect_name == "variant_affinity":
+                print(f"- {effect_type}: +15 Accuracy and +10 Crit Chance vs {target} variants ({combats} combats remaining)")
+            elif effect_name == "soul_echo":
+                print(f"- {effect_type}: +{effect_data['damage']}% damage vs {target} ({combats} combats remaining)")
     
     def equip_item(self, item):
     # Equip an item and apply its stats to the appropriate dictionary
@@ -585,6 +653,14 @@ class Player(Character):
         else:
             print("You can't equip that item.")
 
+    def update_equipment_stats(self):
+        """Update equipment stats and check for soulbound growth"""
+        for slot, item in self.equipped.items():
+            if item and hasattr(item, 'soulbound') and item.soulbound:
+                if item.grow_with_player(self.level):
+                    print(f"\nYour {item.name} grows stronger with you!")
+                    print(item.get_growth_info())
+    
     def unequip_item(self, slot):
         # Unequip an item and remove its stats from the appropriate dictionary
         item = self.equipped[slot]
@@ -901,12 +977,18 @@ class Player(Character):
         
     def use_item(self, item, game=None):
         """Use an item from inventory, handling stacks properly"""
+        if item.type == "soul_crystal":
+            success, message = item.use(self)
+            return success, message 
+            
         if item.name in self.cooldowns and self.cooldowns[item.name] > 0:
             print(f"You can't use {item.name} yet. Cooldown: {self.cooldowns[item.name]} turns.")
             return False, f"Couldn't use {item.name} due to cooldown!"
 
         if item.type in ["consumable", "food", "drink", "weapon coating"]:
             message = ""
+            success = True
+            
             if item.effect_type == "healing":
                 heal_amount = min(item.effect, self.max_hp - self.hp)
                 self.heal(heal_amount)
@@ -972,13 +1054,15 @@ class Player(Character):
                     return False, "You don't have a weapon equipped to apply the poison coating."
             
             # Handle stack removal for successful item use
-            if item.stack_size > 1:
-                item.stack_size -= 1
-            else:
-                self.inventory.remove(item)
-                
-            self.cooldowns[item.name] = item.cooldown
-            return True, message
+            if success:
+                if item.stack_size > 1:
+                    item.stack_size -= 1
+                else:
+                    self.inventory.remove(item)
+                    
+                self.cooldowns[item.name] = item.cooldown
+                return True, message
+            return False, message
         else:
             message = f"You can't use {item.name}."
             return False, message
@@ -1007,16 +1091,29 @@ class Player(Character):
                 print("Invalid input. Please enter a number or 'c' to cancel.")
 
     def show_usable_items(self):
-        #Shows a list of usable items if available, else prints that none are available
-        usable_items = [item for item in self.inventory if item.type in ["consumable", "food", "drink", "weapon coating"]]
+        """Shows a list of usable items if available, else prints that none are available"""
+        usable_items = [item for item in self.inventory 
+                        if item.type in ["consumable", "food", "drink", "weapon coating", "soul_crystal"]]
         if not usable_items:
             print("You have no usable items.")
             return None
         
         print("\nUsable Items:")
         for i, item in enumerate(usable_items, 1):
-            effect_description = self.get_effect_description(item)
-            print(f"{i}. {item.name}: {effect_description}")
+            if isinstance(item, SoulCrystal):
+                # Special handling for soul crystals with expanded details
+                if item.used:
+                    print(f"{i}. {item.name}: Depleted")
+                else:
+                    effect_desc = item.get_effect_description()
+                    # Print the item number and name first
+                    print(f"{i}. {item.name}:")
+                    # Then print the effect description indented for better readability
+                    for line in effect_desc.split('\n'):
+                        print(f"   {line}")
+            else:
+                effect_description = self.get_effect_description(item)
+                print(f"{i}. {item.name}: {effect_description}")
         return usable_items
 
     def show_cooldowns(self):
@@ -1060,7 +1157,13 @@ class Player(Character):
     def _display_item(self, idx, item):
         """Helper method to display a single item"""
         stats = []
-        effects = []
+        if isinstance(item, SoulCrystal):
+            # Special handling for soul crystals
+            effect_desc = item.get_effect_description()
+            print(f"{idx}. {item.name} [{effect_desc}] (Value: {item.value} gold)")
+            return
+
+        # Regular item display logic
         if item.attack > 0:
             stats.append(f"Attack: {item.attack}")
         if item.defence > 0:
@@ -1085,19 +1188,13 @@ class Player(Character):
             stats.append(f"Stamina: {stamina_cost}")
             stats.append(f"Type: {item.weapon_type.title()}")
             
-        # Consumable effects
-        if item.type in ["consumable", "food", "drink"]:
-            effect_desc = self.get_effect_description(item)
-            if effect_desc:
-                effects.append(effect_desc)
-            
         stats_str = ", ".join(stats)
         effect_desc = self.get_effect_description(item)
-    
+
         print(f"{idx}. {item.name} ", end="")
         if stats_str:
             print(f"({stats_str}) ", end="")
-        if effect_desc:
+        if effect_desc and effect_desc != "Unknown effect":
             print(f"[{effect_desc}] ", end="")
         print(f"(Value: {item.value} gold)")
             
@@ -1171,8 +1268,14 @@ class Player(Character):
         self.stamina = min(self.max_stamina, self.stamina + amount)
 
     def get_weapon_stamina_cost(self, weapon_type):
-        #Returns the stamina cost of the given weapon, based on its type
-        return self.weapon_stamina_cost.get(weapon_type, 0)
+        """Get stamina cost for weapon type"""
+        weapon_costs = {
+            "light": 3,
+            "medium": 5,
+            "heavy": 7,
+            "soulbound": 6  # Special cost for soulbound weapons
+        }
+        return weapon_costs.get(weapon_type, 5)  # Default to medium cost if type unknown
     
     def can_attack(self):
         #Checks to see if the player has enough stamina to attack
@@ -1244,23 +1347,146 @@ class Player(Character):
             print("\n(You can only use Normal Attack while in Defensive Stance)")
 
     def display_kill_stats(self):
-        #Displays all the enemies the player has killed
+        """
+        Displays kill statistics organized by type and includes used souls
+        """
         print("\n=== Enemy Kill Statistics ===")
-        if not self.kill_tracker:
-            print("You haven't defeated any enemies yet.")
-        else:
-            for enemy, count in sorted(self.kill_tracker.items(), key = lambda x: x[1], reverse=True):
-                print(f"{enemy}: {count}")
+        
+        # Current Kills
+        if self.kill_tracker or self.variant_kill_tracker or self.boss_kill_tracker:
+            print("\nCurrent Kills:")
+            if self.kill_tracker:
+                print("\nStandard Monster Kills:")
+                for enemy, count in sorted(self.kill_tracker.items(), key=lambda x: (-x[1], x[0])):
+                    print(f"{enemy}: {count}")
+                
+            if self.variant_kill_tracker:
+                print("\nVariant Type Kills:")
+                for variant, count in sorted(self.variant_kill_tracker.items(), key=lambda x: (-x[1], x[0])):
+                    print(f"{variant}: {count}")
+                    
+            if hasattr(self, 'boss_kill_tracker') and self.boss_kill_tracker:
+                print("\nBoss Monster Kills:")
+                for boss, count in sorted(self.boss_kill_tracker.items(), key=lambda x: (-x[1], x[0])):
+                    print(f"{boss}: {count}")
+        
+        # Used Kills
+        if hasattr(self, 'used_kill_tracker') and (self.used_kill_tracker or 
+            getattr(self, 'used_variant_tracker', {}) or 
+            getattr(self, 'used_boss_kill_tracker', {})):
+            print("\nUsed Kills (Traded to Soul Collector):")
+            if self.used_kill_tracker:
+                print("\nTraded Standard Monster Kills:")
+                for enemy, count in sorted(self.used_kill_tracker.items(), key=lambda x: (-x[1], x[0])):
+                    print(f"{enemy}: {count}")
+                
+            if hasattr(self, 'used_variant_tracker') and self.used_variant_tracker:
+                print("\nTraded Variant Type Kills:")
+                for variant, count in sorted(self.used_variant_tracker.items(), key=lambda x: (-x[1], x[0])):
+                    print(f"{variant}: {count}")
+                    
+            if hasattr(self, 'used_boss_kill_tracker') and self.used_boss_kill_tracker:
+                print("\nTraded Boss Monster Kills:")
+                for boss, count in sorted(self.used_boss_kill_tracker.items(), key=lambda x: (-x[1], x[0])):
+                    print(f"{boss}: {count}")
+        
+        # Calculate and display totals
+        current_standard_kills = sum(self.kill_tracker.values())
+        current_variant_kills = sum(self.variant_kill_tracker.values()) if self.variant_kill_tracker else 0
+        current_boss_kills = sum(self.boss_kill_tracker.values()) if hasattr(self, 'boss_kill_tracker') else 0
+        
+        used_standard_kills = sum(self.used_kill_tracker.values()) if hasattr(self, 'used_kill_tracker') else 0
+        used_variant_kills = sum(self.used_variant_tracker.values()) if hasattr(self, 'used_variant_tracker') else 0
+        used_boss_kills = sum(self.used_boss_kill_tracker.values()) if hasattr(self, 'used_boss_kill_tracker') else 0
+        
+        print(f"\nKill Totals:")
+        print(f"Current Standard Monsters: {current_standard_kills}")
+        print(f"Traded Standard Monsters: {used_standard_kills}")
+        
+        if current_variant_kills > 0 or used_variant_kills > 0:
+            print(f"Current Variant Monsters: {current_variant_kills}")
+            print(f"Traded Variant Monsters: {used_variant_kills}")
+            
+        if current_boss_kills > 0 or used_boss_kills > 0:
+            print(f"Current Boss Monsters: {current_boss_kills}")
+            print(f"Traded Boss Monsters: {used_boss_kills}")
+        
+        # Calculate current and used souls
+        current_souls = (current_standard_kills + 
+                        (current_variant_kills * 5) + 
+                        (current_boss_kills * 10))
+        
+        used_souls = (used_standard_kills + 
+                    (used_variant_kills * 5) + 
+                    (used_boss_kills * 10))
+        
+        print(f"\nSouls Available: {current_souls}")
+        print(f"Souls Traded: {used_souls}")
+        print(f"Total Souls Earned: {current_souls + used_souls}")
+        
+        print("\nNote: Standard kills = 1 soul, Variants = 5 souls, Bosses = 10 souls")
+        print("Souls can be traded with the Soul Collector random event for rewards!")
     
     def record_kill(self, enemy_name):
-        #Records a kill for a given enemy type
-        if enemy_name in self.kill_tracker:
-            self.kill_tracker[enemy_name] += 1
+        """
+        Records kills for monsters, variants, and bosses separately.
+        - Standard kills go to kill_tracker (1 soul)
+        - Variant kills go to variant_kill_tracker (5 souls)
+        - Boss kills (including variant bosses) go to boss_kill_tracker (10 souls)
+        Boss kills are not recorded in the standard kill tracker.
+        """
+        # Define boss monsters to track seperately
+        boss_types = {
+            "Echo Wraith", "Crystal Guardian", "Void Walker", "Empowered Void Walker", "Divine Architect",
+            "Ethereal Leviathan", "Astral Demiurge", "Celestial Arbiter", "Seraphim Guardian", "Celestial Titan",
+            "Nebula Colossus", "Galatic Leviathan", "Astral Behemoth", "Cosmic Devourer", "Cinder Archfiend",
+            "Inferno Wyrm", "Volcanic Titan", "Phoenix Overlord", "Magma Colossus"
+        }
+        
+        # Split the enemy name into parts to separate variant from base name
+        name_parts = enemy_name.split()
+        
+         # Check for variant first
+        if len(name_parts) > 1 and name_parts[0] in VARIANT_TYPES:
+            variant_type = name_parts[0]
+            base_monster = " ".join(name_parts[1:])
+            
+            # Record the variant kill
+            if variant_type not in self.variant_kill_tracker:
+                self.variant_kill_tracker[variant_type] = 1
+            else:
+                self.variant_kill_tracker[variant_type] += 1
+            
+            # Check if the base monster (without variant) is a boss
+            if base_monster in boss_types:
+                # Record the boss kill
+                if base_monster in self.boss_kill_tracker:
+                    self.boss_kill_tracker[base_monster] += 1
+                else:
+                    self.boss_kill_tracker[base_monster] = 1
+            else:
+                # Only record in kill_tracker if it's not a boss
+                if base_monster in self.kill_tracker:
+                    self.kill_tracker[base_monster] += 1
+                else:
+                    self.kill_tracker[base_monster] = 1
+                
         else:
-            self.kill_tracker[enemy_name] = 1
+            # Non-variant enemy, check if it's a boss
+            if enemy_name in boss_types:
+                if enemy_name in self.boss_kill_tracker:
+                    self.boss_kill_tracker[enemy_name] += 1
+                else:
+                    self.boss_kill_tracker[enemy_name] = 1
+            else:
+                # Only record in kill_tracker if it's not a boss
+                if enemy_name in self.kill_tracker:
+                    self.kill_tracker[enemy_name] += 1
+                else:
+                    self.kill_tracker[enemy_name] = 1
             
     def add_visited_location(self, location):
-        #Adds the current location to the visited_locations to help work with teleport scrolls
+        # Adds the current location to the visited_locations to help work with teleport scrolls
         self.visited_locations.add(location)
         
         
