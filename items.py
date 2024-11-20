@@ -750,3 +750,284 @@ def initialise_items():
         #Teleport Scroll
         "Scroll of Teleportation": Item("Scroll of Teleportation", "consumable", 500, "rare", effect_type="teleport", effect=0, cooldown=0),
     }
+    
+class SoulCrystal(Item):
+    def __init__(self, name, value, tier, stored_buffs=None, special_effects=None, soul_source=None):
+        """Initialize a soul crystal with stored buffs and special effects
+        
+        Args:
+            name: Name of the crystal
+            value: Gold value
+            tier: Rarity tier (lesser, greater, perfect)
+            stored_buffs: Dict of stat: (value, duration) pairs
+            special_effects: List of CrystalEffect objects
+            soul_source: Dict tracking which souls were used in creation
+        """
+        super().__init__(name, "soul_crystal", value, tier)
+        self.stored_buffs = stored_buffs or {}  # Dict of stat: (value, duration)
+        self.special_effects = special_effects or []  # List of special effects
+        self.soul_source = soul_source or {}  # Dict tracking soul sources
+        self.used = False
+        
+    def is_stackable(self):
+        """Soul crystals are unique and cannot stack"""
+        return False
+        
+    def can_use(self):
+        """Check if crystal can still be used"""
+        return not self.used
+        
+    def use(self, player):
+        """Activate the crystal's stored effects and remove from inventory"""
+        success = False
+        message = "\n"
+        
+        # Apply stored stat buffs
+        for stat, (value, duration) in self.stored_buffs.items():
+            player.apply_buff(stat, value, duration, combat_only=False)
+            success = True
+            message += f"Gained +{value} {stat.replace('_', ' ').title()} for {duration} turns!\n"
+                
+        # Apply special effects
+        for effect in self.special_effects:
+            effect_result = effect.apply(player)
+            if effect_result:
+                success = True
+                message += f"{effect_result}\n"
+                    
+        if success:
+            # Remove the crystal from inventory after successful use
+            if self in player.inventory:
+                player.inventory.remove(self)
+            message += "The soul crystal shatters after releasing its power!"
+                
+        return success, f"Soul Crystal activated!{message}"
+        
+    def get_description(self):
+        """Get detailed description of crystal's effects (for creation)"""
+        desc = []
+        
+        if self.used:
+            desc.append("A depleted soul crystal.")
+            return "\n".join(desc)
+                
+        # List stored stat buffs
+        desc.append("Stored Buffs:")
+        for stat, (value, duration) in sorted(self.stored_buffs.items()):
+            stat_name = stat.replace('_', ' ').title()
+            desc.append(f"- {stat_name}: +{value} for {duration} turns")
+                
+        # List special effects with full details
+        if self.special_effects:
+            desc.append("\nSpecial Effects:")
+            for effect in self.special_effects:
+                desc.append(f"- {effect.get_full_description()}")
+                    
+        # Show soul sources if any
+        if self.soul_source:
+            desc.append("\nCreated from:")
+            if "standard" in self.soul_source:
+                desc.append("Standard Souls:")
+                for monster, count in sorted(self.soul_source["standard"].items()):
+                    desc.append(f"- {count}x {monster}")
+                    
+            if "variant" in self.soul_source:
+                desc.append("Variant Souls:")
+                for variant, count in sorted(self.soul_source["variant"].items()):
+                    desc.append(f"- {count}x {variant}")
+                        
+            if "boss" in self.soul_source:
+                desc.append("Boss Souls:")
+                for boss, count in sorted(self.soul_source["boss"].items()):
+                    desc.append(f"- {count}x {boss}")
+                
+        return "\n".join(desc)
+
+    def get_effect_description(self):
+        """Get description of crystal effects for inventory and usable items display"""
+        if self.used:
+            return "Depleted"
+            
+        effect_parts = []
+        
+        # Add stat buffs
+        effect_parts.append("Stored Buffs:")
+        for stat, (value, duration) in sorted(self.stored_buffs.items()):
+            effect_parts.append(f"- {stat.replace('_', ' ').title()} +{value} for {duration} turns")
+        
+        # Add special effects with full details
+        if self.special_effects:
+            effect_parts.append("\nSpecial Effects:")
+            for effect in self.special_effects:
+                effect_parts.append(f"- {effect.get_full_description()}")
+            
+        if not effect_parts:
+            return "No effects"
+            
+        return "\n".join(effect_parts)
+
+# Crystal Effect Classes
+class CrystalEffect:
+    """Base class for special crystal effects"""
+    def __init__(self, description, effect_details):
+        self.description = description
+        self.effect_details = effect_details
+        
+    def apply(self, player):
+        pass
+    
+    def get_full_description(self):
+        return f"{self.description}\n    Effect: {self.effect_details}"
+
+class BossResonance(CrystalEffect):
+    """Grant bonus stats against specific boss type"""
+    def __init__(self, boss_type):
+        description = f"Resonates with the power of {boss_type}"
+        effect_details = f"Attack and Defence +20 when fighting {boss_type} (Lasts 5 combats)"
+        super().__init__(description, effect_details)
+        self.boss_type = boss_type
+        self.duration = 5
+        
+    def apply(self, player):
+        # Add significant stat boost when fighting this boss type
+        player.soul_crystal_effects["boss_resonance"] = {
+            "target": self.boss_type,
+            "attack": 20,
+            "defence": 20,
+            "combats_remaining": self.duration
+        }
+        return f"Crystal resonates against {self.boss_type}! Attack and Defence +20 when fighting them for {self.duration} combats!"
+
+class VariantAffinity(CrystalEffect):
+    """Grant bonus effects against variant types"""
+    def __init__(self, variant_type):
+        description = f"Attuned to {variant_type} energy"
+        effect_details = f"Accuracy +15 and Crit Chance +10 against {variant_type} variants (Lasts 5 combats)"
+        super().__init__(description, effect_details)
+        self.variant_type = variant_type
+        self.duration
+        
+    def apply(self, player):
+        # Add bonus effects against variant types
+        player.soul_crystal_effects["variant_affinity"] = {
+            "target": self.variant_type,
+            "accuracy": 15,
+            "crit_chance": 10,
+            "combats_remaining": self.duration
+        }
+        return f"Crystal attunes to {self.variant_type}! Accuracy +15 and Crit Chance +10 against them for {self.duration} combats!"
+
+class ElementalResonance(CrystalEffect):
+    """Grant elemental resistance and damage bonus"""
+    def __init__(self, element):
+        description = f"Resonates with {element} energy"
+        effect_details = f"{element} resistance +25% and {element} damage +15% (Lasts 5 combats)"
+        super().__init__(description, effect_details)
+        self.element = element
+        self.duration = 5
+        
+    def apply(self, player):
+        # Grant resistance and damage bonus for element
+        player.soul_crystal_effects["elemental_resonance"] = {
+            "element": self.element,
+            "resistance": 25,
+            "damage": 15,
+            "combats_remaining": self.duration
+        }
+        return f"Crystal resonates with {self.element}! {self.element} resistance +25% and damage +15% for {self.duration} combats!"
+
+class SoulEcho(CrystalEffect):
+    """Grant scaled bonus based on number of specific enemy souls used"""
+    def __init__(self, enemy_type, kill_count):
+        bonus = min(20, kill_count * 2)  # Cap at +20
+        description = f"Echoes with the essence of {kill_count} {enemy_type}s"
+        effect_details = f"+{bonus}% damage against {enemy_type}s (Lasts 5 combats)"
+        super().__init__(description, effect_details)
+        self.enemy_type = enemy_type
+        self.kill_count = kill_count
+        self.bonus = bonus
+        self.duration = 5
+        
+    def apply(self, player):
+        player.soul_crystal_effects["soul_echo"] = {
+            "target": self.enemy_type,
+            "damage": self.bonus,
+            "combats_remaining": self.duration
+        }
+        return f"Crystal echoes against {self.enemy_type}! +{self.bonus}% damage against them for {self.duration} combats!"
+    
+class SoulboundItem(Item):
+    def __init__(self, name, item_type, value, tier, growth_stats=None, soul_source=None, **kwargs):
+        super().__init__(name, item_type, value, tier, **kwargs)
+        self.soulbound = True
+        self.growth_stats = growth_stats or []  # Stats that will grow with player level
+        self.soul_source = soul_source or {}    # Track which souls were used to create item
+        self.birth_level = 1                    # Level item was created at
+        self.current_level = 1                  # Current growth level
+        self.growth_rate = 0.1                  # Base growth rate (10% per level)
+        
+    def grow_with_player(self, player_level):
+        """Update item stats based on player level"""
+        if player_level <= self.current_level:
+            return False  # No growth needed
+            
+        levels_gained = player_level - self.current_level
+        
+        # Calculate growth for each stat
+        for stat in self.growth_stats:
+            base_value = getattr(self, stat, 0)
+            if base_value > 0:
+                # Different growth rates for different stats
+                if stat in ["accuracy", "crit_chance"]:
+                    growth = self.growth_rate * 2  # Double growth for percentage stats
+                elif stat in ["crit_damage"]:
+                    growth = self.growth_rate * 1.5  # 1.5x growth for crit damage
+                elif stat in ["armour_penetration", "damage_reduction"]:
+                    growth = self.growth_rate * 0.5  # Half growth for penetration/reduction
+                else:
+                    growth = self.growth_rate
+                
+                # Calculate stat increase
+                increase = int(base_value * growth * levels_gained)
+                if increase > 0:
+                    setattr(self, stat, base_value + increase)
+        
+        self.current_level = player_level
+        return True
+
+    def get_growth_info(self):
+        """Get information about the item's growth"""
+        info = []
+        info.append(f"Level: {self.current_level}")
+        info.append("Growing stats:")
+        
+        for stat in self.growth_stats:
+            current_value = getattr(self, stat, 0)
+            if current_value > 0:
+                # Calculate next level's value
+                next_growth = current_value * self.growth_rate
+                info.append(f"- {stat.replace('_', ' ').title()}: {current_value} (+{next_growth:.2f} next level)")
+            
+        return "\n".join(info)
+
+def create_soulbound_item(base_item, growth_stats, soul_source):
+    """Create a soulbound version of an existing item"""
+    # Create new soulbound item with same base stats
+    soulbound = SoulboundItem(
+        f"Soulbound {base_item.name}",
+        base_item.type,
+        base_item.value * 2,  # Double the value
+        base_item.tier,
+        growth_stats=growth_stats,
+        soul_source=soul_source,
+        attack=base_item.attack,
+        defence=base_item.defence,
+        accuracy=base_item.accuracy,
+        evasion=base_item.evasion,
+        crit_chance=base_item.crit_chance,
+        crit_damage=base_item.crit_damage,
+        armour_penetration=base_item.armour_penetration,
+        damage_reduction=base_item.damage_reduction,
+        block_chance=base_item.block_chance
+    )
+    return soulbound
