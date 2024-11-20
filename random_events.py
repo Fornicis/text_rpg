@@ -1,4 +1,7 @@
-from enemies import Enemy, create_enemy
+from enemies import Enemy, create_enemy, get_type_for_monster
+from game_config import MONSTER_TYPES
+from items import create_soulbound_item, SoulCrystal, BossResonance, VariantAffinity, SoulEcho, ElementalResonance
+from display import clear_screen
 from enum import Enum
 import random
 
@@ -222,6 +225,38 @@ class RandomEventSystem:
             }
         ))
         
+        events.append(RandomEvent(
+            "Soul Collector",
+            "A ghostly figure emerges from the shadows, surrounded by writhing souls. It gestures to your collection of defeated foes, offering power in exchange for their essence...",
+            EventType.NEUTRAL,
+            [
+                ("Trade monster souls", self._outcome_soul_trade),
+                ("Sacrifice boss souls", self._outcome_soul_boss),
+                ("Offer your own essence", self._outcome_soul_sacrifice),
+                ("Reject the offer", self._outcome_soul_reject)
+            ],
+            {
+                "min_level": 4,
+                "location_type": ["Cave", "Death Valley", "Death Caves", "Temple", "Ancient Ruins", "Shadowed Valley"]
+            }
+        ))
+        
+        events.append(RandomEvent(
+                "Soul Forge",
+                "You discover an ancient forge burning with ethereal flames. The souls of your defeated enemies seem drawn to its power...",
+                EventType.NEUTRAL,
+                [
+                    ("Forge equipment", self._outcome_forge_equipment),
+                    ("Create soul crystal", self._outcome_forge_crystal),
+                    ("Enhance abilities", self._outcome_forge_enhance),
+                    ("Challenge the forge", self._outcome_forge_challenge)
+                ],
+                {
+                    "min_level": 15,
+                    "location_type": ["Ancient Ruins", "Death Valley", "Death Caves", "Temple", "Heavens"]
+                }
+            )) 
+       
         # Dangerous events
         
         events.append(RandomEvent(
@@ -314,22 +349,6 @@ class RandomEventSystem:
         }
     ))
         
-        events.append(RandomEvent(
-        "Soul Collector",
-        "A ghostly figure emerges from the shadows, surrounded by writhing souls. It gestures to your collection of defeated foes, offering power in exchange for their essence...",
-        EventType.DANGEROUS,
-        [
-            ("Trade monster souls", self._outcome_soul_trade),
-            ("Sacrifice boss souls", self._outcome_soul_boss),
-            ("Offer your own essence", self._outcome_soul_sacrifice),
-            ("Reject the offer", self._outcome_soul_reject)
-        ],
-        {
-            "min_level": 15,
-            "location_type": ["Death Valley", "Death Caves", "Temple", "Ancient Ruins", "Shadowed Valley"]
-        }
-    ))
-        
         return events
 
     def trigger_random_event(self, player, game):
@@ -374,6 +393,8 @@ class RandomEventSystem:
     # Event Outcomes
     # Beneficial
     
+    # Hidden Cache Outcomes
+    
     def _outcome_hidden_cache_careful(self, player, game):
         """Carefully investigate the hidden cache"""
         message = "Inside the cache you find"
@@ -394,6 +415,8 @@ class RandomEventSystem:
             (0.4, lambda: self._take_damage(player, 5, 15, "You trigger a nasty trap!"))
         ]
         self._resolve_weighted_outcome(outcomes, player)
+    
+    # Mysterious Traveler Outcomes
         
     def _outcome_traveller_accept(self, player, game):
         """Accept the travellers offer"""
@@ -404,6 +427,8 @@ class RandomEventSystem:
         """Have a chat with the traveller"""
         print("The traveller enjoys having a conversation with you. He generously gives you some gold as a gift!")
         self._give_gold(player, 10 * player.level, 20 * player.level)
+    
+    # Wandering Merchant Outcomes
         
     def _outcome_merchant_trade(self, player, game):
         """Trade gold for potentially valuable items"""
@@ -465,6 +490,8 @@ class RandomEventSystem:
                 (0.1, lambda: (print(f"{message} a special item!"), self._give_tier_equipment(player, game, random.randint(player.level + 1, player.level + 3))))
             ]
             self._resolve_weighted_outcome(outcomes, player)
+    
+    # Ancient Training Grounds Outcomes
         
     def _outcome_training_combat(self, player, game):
         """Practice combat at the ancient training grounds"""
@@ -501,6 +528,8 @@ class RandomEventSystem:
         """Rest at the training grounds"""
         print("You rest at the ancient training grounds.")
         self._restore_and_heal(player, 0.5)
+    
+    # Magical Spring Outcomes
         
     def _outcome_spring_drink(self, player, game):
         """Drink from the magical spring"""
@@ -538,6 +567,8 @@ class RandomEventSystem:
         
     # Neutral Events
     
+    # Ancient Shrine Outcomes
+    
     def _outcome_shrine_offer(self, player, game):
         """Make an offering to the shrine"""
         if player.gold >= 10:
@@ -571,6 +602,8 @@ class RandomEventSystem:
             (0.1, lambda: print("Nothing happens, but you do feel guilty."))
         ]
         self._resolve_weighted_outcome(outcomes, player)
+    
+    # Lost Adventurer Outcomes
         
     def _outcome_help_adventurer(self, player, game):
         """Help the lost adventurer"""
@@ -584,6 +617,8 @@ class RandomEventSystem:
         """Ask the adventurer for information"""
         self._discover_location(player, game, 1)
         print("The adventurer marks an interesting location on your map!")
+    
+    # Weather-Worn Statue Outcomes
     
     def _outcome_statue_clean(self, player, game):
         """Clean the old weathered statue"""
@@ -615,6 +650,8 @@ class RandomEventSystem:
             (0.1, lambda: self._give_special_item(player, game, "The spirit of this statue approves of your gall! It provides an impressive piece of equipment!"))
         ]
         self._resolve_weighted_outcome(outcomes, player)
+    
+    # Echo Chamber Outcomes
         
     def _outcome_echo_call(self, player, game):
         """Call out into the echo chamber"""
@@ -670,6 +707,8 @@ class RandomEventSystem:
         ]
         self._resolve_weighted_outcome(outcomes, player)
     
+    # Abandoned Caravan Outcomes
+    
     def _outcome_caravan_search(self, player, game):
         """Thoroughly search the abandoned caravan"""
         # Costs stamina for a thorough search
@@ -705,6 +744,8 @@ class RandomEventSystem:
             (0.3, lambda: (print("You find clues as to what caused this."), self._discover_location(player, game, 1)))
         ]
         self._resolve_weighted_outcome(outcomes, player)
+    
+    # Ancient Ritual Site Outcomes
         
     def _outcome_ritual_channel(self, player, game):
         """Attempt to channel the ritual site's energy"""
@@ -744,6 +785,8 @@ class RandomEventSystem:
             (0.3, lambda: (print("You fail to cleanse the ritual but gain insights!"), self._gain_exp(player, 25, 40, "You feel knowledgable from your failure...paradoxically!"), self._restore_stamina(player, 0.5)))
         ]
         self._resolve_weighted_outcome(outcomes, player)
+    
+    # Mysterious Campfire Outcomes
     
     def _outcome_campfire_rest(self, player, game):
         def strange_effect():
@@ -832,7 +875,1111 @@ class RandomEventSystem:
             ]
             self._resolve_weighted_outcome(outcomes, player)
     
+    # Soul Collector Outcomes and Helper methods
+    
+    def use_boss_souls(self, player, total_souls):
+        """Helper function to handle boss soul trading"""
+        if not hasattr(player, 'boss_kill_tracker'):
+            return total_souls, False
+                
+        boss_souls = sum(player.boss_kill_tracker.values()) * 10
+        if boss_souls <= 0:
+            return total_souls, False
+                
+        while True:
+            choice = input(f"\nWould you like to use your {boss_souls} boss souls? (y/n): ").lower()
+            if choice == "y":
+                print("You foolishly use your boss souls on these minor rewards...Muahahahahhaha!")
+                return total_souls + boss_souls, True
+            elif choice == "n":
+                return total_souls, False
+            else:
+                print("Invalid choice! Please enter 'y' for yes or 'n' for no.")
+                
+            while True:
+                choice = input(f"\nWould you like to use your {boss_souls} boss souls? (y/n): ").lower()
+                if choice == "y":
+                    print("You foolishly use your boss souls on these minor rewards...Muahahahahhaha!")
+                    player.used_boss_kill_tracker = player.boss_kill_tracker.copy()
+                    player.boss_kill_tracker.clear()
+                    return total_souls + boss_souls
+                elif choice == "n":
+                    return total_souls
+                else:
+                    print("Invalid choice! Please enter 'y' for yes or 'n' for no.")
+    
+    def _outcome_soul_trade(self, player, game):
+        """Trade accumulated monster souls for power"""
+        # Helper function to update used trackers
+        def update_used_trackers():
+            # For normal kills
+            if not hasattr(player, 'used_kill_tracker'):
+                player.used_kill_tracker = {}
+            for enemy, count in player.kill_tracker.items():
+                if enemy in player.used_kill_tracker:
+                    player.used_kill_tracker[enemy] += count
+                else:
+                    player.used_kill_tracker[enemy] = count
+                    
+            # For variant kills
+            if not hasattr(player, 'used_variant_tracker'):
+                player.used_variant_tracker = {}
+            for variant, count in player.variant_kill_tracker.items():
+                if variant in player.used_variant_tracker:
+                    player.used_variant_tracker[variant] += count
+                else:
+                    player.used_variant_tracker[variant] = count
+            
+            # For boss kills if used
+            if used_boss_souls:
+                if not hasattr(player, 'used_boss_kill_tracker'):
+                    player.used_boss_kill_tracker = {}
+                for boss, count in player.boss_kill_tracker.items():
+                    if boss in player.used_boss_kill_tracker:
+                        player.used_boss_kill_tracker[boss] += count
+                    else:
+                        player.used_boss_kill_tracker[boss] = count
+        
+        if not player.kill_tracker and not player.variant_kill_tracker and not player.boss_kill_tracker:
+            print("You have no souls to trade... The collector seems disappointed.")
+            return
+            
+        # Show player their accumulated standard souls
+        print("\nYour standard collected souls:")
+        standard_sorted_kills = sorted(player.kill_tracker.items(), key=lambda x: x[1], reverse=True)
+        for enemy, count in standard_sorted_kills:
+            print(f"{enemy}: {count} standard souls (worth 1 soul each)")
+            
+        # Show player their acumulated variant souls
+        print("\nYour variant collected souls:")
+        variant_sorted_kills = sorted(player.variant_kill_tracker.items(), key=lambda x: x[1], reverse=True)
+        for enemy, count in variant_sorted_kills:
+            print(f"{enemy}: {count} variant souls (worth 5 souls each)")
+            
+        # Calculate total souls and offer choices
+        standard_souls = sum(player.kill_tracker.values())
+        variant_souls = sum(player.variant_kill_tracker.values()) * 5
+        total_souls = standard_souls + variant_souls
+        
+        print(f"\nTotal souls: {total_souls}")
+        
+        choices = [
+            (1, "Convert souls to permanent stat increase (500 souls max recommended!)"),
+            (2, "Transform souls into equipment (500 souls max recommended!)"),
+            (3, "Exchange souls for consumable items (250 souls max recommended!)"),
+            (4, "Return souls for gold and experience")
+        ]
+        
+        print("\nAvailable trades:")
+        for num, desc in choices:
+            print(f"{num}. {desc}")
+            
+        while True:
+            try:
+                choice = int(input("\nChoose your trade (0 to cancel): "))
+                if choice == 0:
+                    return
+                if 1 <= choice <= 4:
+                    break
+                print("Invalid choice.")
+            except ValueError:
+                print("Please enter a number.")
+        
+        # Calculate reward scaling based on total souls
+        reward_scale = min(3, max(1, total_souls // 200))  # Cap at 3x
+        
+        if choice == 1:
+            total_souls, used_boss_souls = self.use_boss_souls(player, total_souls)
+            # Convert souls to permanent stats
+            if total_souls < 100:
+                print("You need at least 100 souls for a permanent enhancement.")
+                return    
+            stat_choices = ["attack", "crit_chance", "crit_damage", "defence", "accuracy", "evasion", "max_hp"]
+            increase_amount = min(5, max(1, total_souls // 100))  # 1-5 based on souls
+            
+            print("\nChoose stat to enhance:")
+            for i, stat in enumerate(stat_choices, 1):
+                print(f"{i}. {stat.replace('_', ' ').title()}")
+                
+            while True:
+                try:
+                    stat_choice = int(input("\nEnter choice: ")) - 1
+                    if 0 <= stat_choice < len(stat_choices):
+                        chosen_stat = stat_choices[stat_choice]
+                        self._permanent_stat_increase_specific(player, increase_amount, [chosen_stat])
+                        update_used_trackers()  # Update used trackers before clearing current ones
+                        player.kill_tracker.clear()
+                        player.variant_kill_tracker.clear()
+                        if used_boss_souls:
+                            player.boss_kill_tracker.clear()
+                        break
+                except ValueError:
+                    print("Please enter a valid number.")
+                    
+        elif choice == 2:
+            # Transform souls into equipment
+            total_souls, used_boss_souls = self.use_boss_souls(player, total_souls)
+            if total_souls < 75:
+                print("You need at least 75 souls to forge equipment.")
+                return
+                
+            equipment_tier = "rare"
+            if total_souls >= 500:
+                equipment_tier = "legendary"
+            elif total_souls >= 300:
+                equipment_tier = "masterwork"
+            elif total_souls >= 200:
+                equipment_tier = "epic"
+                
+            # Get equipment of appropriate tier
+            equipment = [item for item in game.items.values()
+                        if item.type in ["weapon", "helm", "chest", "legs", "boots", "gloves", "shield", "ring"]
+                        and item.tier == equipment_tier]
+                        
+            if equipment:
+                item = random.choice(equipment)
+                player.add_item(item)
+                print(f"\nThe souls coalesce into a {item.name} ({item.tier.title()})!")
+                update_used_trackers()
+                player.kill_tracker.clear()
+                player.variant_kill_tracker.clear()
+                if used_boss_souls:
+                    player.boss_kill_tracker.clear()
+                
+        elif choice == 3:
+            # Exchange for consumables
+            total_souls, used_boss_souls = self.use_boss_souls(player, total_souls)
+            if total_souls < 50:
+                print("You need at least 50 souls to create consumables.")
+                return
+                
+            num_items = min(5, max(1, total_souls // 50))  # 1-5 items based on souls
+            print(f"\nCreating {num_items} consumable items...")
+            
+            for _ in range(num_items):
+                self._give_random_consumable(player, game, player.level + reward_scale)
+            update_used_trackers()
+            player.kill_tracker.clear()
+            player.variant_kill_tracker.clear()
+            if used_boss_souls:
+                player.boss_kill_tracker.clear()
+            
+        else:  # choice == 4
+            # Return souls for gold and experience
+            total_souls, used_boss_souls = self.use_boss_souls(player, total_souls)
+            gold_reward = total_souls * 10 * reward_scale
+            exp_reward = total_souls * 5 * reward_scale
+            player.gold += gold_reward
+            player.gain_exp(exp_reward, player.level)
+            print(f"\nYou receive {gold_reward} gold and {exp_reward} experience!")
+            update_used_trackers()
+            player.kill_tracker.clear()
+            player.variant_kill_tracker.clear()
+            if used_boss_souls:
+                player.boss_kill_tracker.clear()
+
+    def _outcome_soul_boss(self, player, game):
+        """Sacrifice specifically boss souls for greater rewards"""
+        # Count boss kills
+        boss_kills = sum(player.boss_kill_tracker.values())
+        
+        if boss_kills == 0:
+            print("You haven't defeated any worthy bosses yet...")
+            return
+            
+        print(f"\nYou have {boss_kills} boss souls available.")
+        
+        def special_item_give():
+            if boss_kills < 10:
+                self._give_special_item(player, game, "You receive 1 special item for you kills!")
+            elif boss_kills >= 10 and boss_kills < 20:
+                self._give_special_item(player, game, "You receive 2 special items for your kills!")
+                self._give_special_item(player, game)
+            elif boss_kills >= 20 and boss_kills < 30:
+                self._give_special_item(player, game, "You receive 3 special itmes for your kills!")
+                self._give_special_item(player, game)
+                self._give_special_item(player, game)
+            else:
+                self._give_special_item(player, game, "You receive 4 special items for your kills!")
+                self._give_special_item(player, game)
+                self._give_special_item(player, game)
+                self._give_special_item(player, game)
+                self._permanent_stat_increase_specific(player, boss_kills / 15, ["attack", "accuracy", "crit_chance", "crit_damage"])
+                self._permanent_stat_increase_specific(player, boss_kills / 15, ["defence", "evasion", "damage_reduction"])
+                self._gain_exp(player, boss_kills * 20, boss_kills * 30, "The Soul Collector grants you an immense amount of experience for your boss souls!")
+                self._give_gold(player, boss_kills * 20, boss_kills * 30, "He also showers you in Gold!")
+                self._take_damage(player, 10, 20, "It turns out that much Gold isn't good for your health when it all pours on you at once! ")
+        
+        outcomes = [
+            (0.3, lambda: (
+                print("The boss souls grant you immense power!"),
+                self._permanent_stat_increase_specific(player, boss_kills, 
+                    ["attack", "defence", "accuracy", "evasion"]),
+                self._give_major_buff(player, 10, 15, 15 + boss_kills, 25 + boss_kills)
+            )),
+            (0.3, lambda: (
+                print("The boss souls transform into legendary equipment!"),
+                special_item_give()
+            )),
+            (0.2, lambda: (
+                print("The boss souls imbue you with their knowledge!"),
+                self._gain_exp(player, 100 * boss_kills, 150 * boss_kills),
+                self._give_gold(player, 200 * boss_kills, 300 * boss_kills)
+            )),
+            (0.2, lambda: (
+                print("The souls overwhelm you with their power!"),
+                self._take_damage(player, 30, 50, "The souls tear at your essence! "),
+                self._permanent_stat_increase_specific(player, boss_kills,
+                    ["attack", "accuracy", "crit_chance", "crit_damage", "armour_penetration"]),
+                self._permanent_stat_increase_specific(player, boss_kills, ["defence", "evasion", "damage_reduction", "block_chance"]),
+                self._give_major_buff(player, 15, 20, 30, 40)
+            ))
+        ]
+        
+        self._resolve_weighted_outcome(outcomes, player)
+        
+        # Clear only boss kills tracker
+        player.used_boss_kill_tracker = player.boss_kill_tracker.copy()
+        player.boss_kill_tracker.clear()
+
+    def _outcome_soul_sacrifice(self, player, game):
+        """Offer your own essence for power"""
+        print("The collector eyes you hungrily...")
+        return self._trade_hp_for_reward(player, game, min_percent=20, max_percent=50)
+
+    def _outcome_soul_reject(self, player, game):
+        """Attempt to reject the soul collector's offer"""
+        if random.random() < 0.7:  # 70% chance to leave safely
+            print("The collector fades away, disappointed but accepting.")
+            return
+        else:
+            print("The collector doesn't take kindly to rejection!")
+            if random.random() < 0.5:
+                self._take_damage(player, 20, 30, "Soul energy tears at your essence! ")
+            else:
+                print("The collector attacks!")
+                enemy = create_enemy("Void Walker", player)  # Use void walker as collector's servant
+                if enemy:
+                    game.battle.battle(enemy)
+    
+    # Soul Forge Outcomes and Helper Methods
+    
+    def _outcome_forge_equipment(self, player, game):
+        """Forge new equipment using accumulated souls"""
+        standard_souls = sum(player.kill_tracker.values())
+        variant_souls = sum(player.variant_kill_tracker.values()) * 5
+        boss_souls = sum(player.boss_kill_tracker.values()) * 10
+        total_souls = standard_souls + variant_souls + boss_souls
+        
+        print(f"\nTotal Available Souls: {total_souls}")
+        print("\nForging Options:")
+        print("1. Basic Forge (100 souls) - Regular equipment piece")
+        print("2. Greater Forge (300 souls) - Enhanced equipment piece")
+        print("3. Soul-Bound Forge (500 souls) - Equipment that grows with you")
+        print("4. Cancel")
+        
+        choice = input("\nChoose forging method: ")
+        
+        if choice == "1" and total_souls >= 100:
+            self._forge_equipment_with_souls(player, game, "basic", 100)
+        elif choice == "2" and total_souls >= 300:
+            self._forge_equipment_with_souls(player, game, "greater", 300)
+        elif choice == "3" and total_souls >= 500:
+            self._forge_equipment_with_souls(player, game, "soulbound", 500)
+        elif choice == "4":
+            return
+        else:
+            print("Invalid choice or insufficient souls!")
+
+    def _outcome_forge_crystal(self, player, game):
+        """Create a soul crystal to store power"""
+        standard_souls = sum(player.kill_tracker.values())
+        variant_souls = sum(player.variant_kill_tracker.values()) * 5
+        total_souls = standard_souls + variant_souls
+        
+        print(f"\nAvailable Souls: {total_souls}")
+        print("\nCrystal Types:")
+        print("1. Lesser Crystal (50 souls) - Small buff storage")
+        print("2. Greater Crystal (150 souls) - Large buff storage")
+        print("3. Perfect Crystal (250 souls) - Multiple buff storage")
+        print("4. Cancel")
+        
+        choice = input("\nChoose crystal type: ")
+        
+        if choice == "1" and total_souls >= 50:
+            selected_souls = self._select_souls(player, 50)
+            if selected_souls:
+                self._create_soul_crystal(player, game, "lesser", selected_souls)
+        elif choice == "2" and total_souls >= 150:
+            selected_souls = self._select_souls(player, 150)
+            if selected_souls:
+                self._create_soul_crystal(player, game, "greater", selected_souls)
+        elif choice == "3" and total_souls >= 250:
+            selected_souls = self._select_souls(player, 250)
+            if selected_souls:
+                self._create_soul_crystal(player, game, "perfect", selected_souls)
+        elif choice == "4":
+            return
+        else:
+            print("Invalid choice or insufficient souls!")
+
+    def _outcome_forge_enhance(self, player, game):
+        """Use the forge to enhance abilities"""
+        standard_souls = sum(player.kill_tracker.values())
+        variant_souls = sum(player.variant_kill_tracker.values()) * 5
+        total_souls = standard_souls + variant_souls
+        
+        print(f"\nAvailable Souls: {total_souls}")
+        print("\nEnhancement Options:")
+        print("1. Combat Training (25 souls) - Combat stat bonuses")
+        print("2. Soul Attunement (75 souls) - Permanent improvements")
+        print("3. Spirit Bond (150 souls) - Major enhancements")
+        print("4. Cancel")
+        
+        choice = input("\nChoose enhancement: ")
+        
+        if choice == "1" and total_souls >= 25:
+            selected_souls = self._select_souls(player, 25)
+            if selected_souls:
+                self._enhance_with_souls(player, game, "combat", selected_souls)
+        elif choice == "2" and total_souls >= 75:
+            selected_souls = self._select_souls(player, 75)
+            if selected_souls:
+                self._enhance_with_souls(player, game, "attunement", selected_souls)
+        elif choice == "3" and total_souls >= 150:
+            selected_souls = self._select_souls(player, 150)
+            if selected_souls:
+                self._enhance_with_souls(player, game, "spirit", selected_souls)
+        elif choice == "4":
+            return
+        else:
+            print("Invalid choice or insufficient souls!")
+
+    def _outcome_forge_challenge(self, player, game):
+        """Challenge the forge's guardian for greater rewards"""
+        print("\nA mighty presence materializes from the forge...")
+        print("The Soul Forgemaster appears, offering to test your worth!")
+        
+        if player.stamina < (player.max_stamina * 0.5):
+            print("You're too exhausted to face this challenge!")
+            return
+            
+        choice = input("\nDo you accept the challenge? (y/n): ").lower()
+        if choice != 'y':
+            return
+            
+        # Create and fight the Soul Forgemaster
+        enemy = self._trigger_scaled_encounter(player, game, ["Soul Forgemaster"])
+        
+        if enemy and enemy.hp <= 0:
+            print("\nThe forge acknowledges your victory!")
+            
+            def grant_power():
+                print("The forge's power is yours to command!")
+                self._give_special_item(player, game, "You receive a mighty reward!")
+                self._permanent_stat_increase_specific(player, 3, 
+                    ["attack", "defence", "accuracy", "crit_chance"])
+                    
+            def grant_essence():
+                print("The forge's essence infuses your being!")
+                self._give_major_buff(player, 15, 20, 20, 25)
+                self._give_multiple_consumables_random(player, game, 4)
+                    
+            def grant_mastery():
+                print("You gain mastery over soul energy!")
+                self._restore_and_heal(player, 1.0)
+                souls = self._select_souls(player, 300)  # Bonus forging attempt
+                if souls:
+                    self._forge_equipment_with_souls(player, game, "greater", souls)
+                    
+            def grant_secrets():
+                print("The forge grants you its secrets!")
+                souls = self._select_souls(player, 250)  # Bonus crystal creation
+                if souls:
+                    self._create_soul_crystal(player, game, "perfect", souls)
+                    
+            outcomes = [
+                (0.3, grant_power),
+                (0.3, grant_essence),
+                (0.2, grant_mastery),
+                (0.2, grant_secrets)
+            ]
+            
+            self._resolve_weighted_outcome(outcomes, player)
+        else:
+            print("\nThe Soul Forgemaster was too powerful...")
+            print("Perhaps you should return when you're stronger.")
+            
+    def _display_available_souls(self, player):
+        """Display all available soul types and counts"""
+        print("\nAvailable Souls:")
+        
+        # Standard souls
+        if player.kill_tracker:
+            print("\nStandard Monster Souls:")
+            for enemy, count in sorted(player.kill_tracker.items()):
+                monster_type = get_type_for_monster(enemy)
+                type_str = f" ({monster_type.title()})" if monster_type != "unknown" else ""
+                print(f"{count:3d}x {enemy}{type_str} (1 soul each)")
+                
+        # Variant souls
+        if player.variant_kill_tracker:
+            print("\nVariant Souls:")
+            for variant, count in sorted(player.variant_kill_tracker.items()):
+                print(f"{count:3d}x {variant} (5 souls each)")
+                
+        # Boss souls
+        if player.boss_kill_tracker:
+            print("\nBoss Souls:")
+            for boss, count in sorted(player.boss_kill_tracker.items()):
+                monster_type = get_type_for_monster(boss)
+                type_str = f" ({monster_type.title()})" if monster_type != "unknown" else ""
+                print(f"{count:3d}x {boss}{type_str} (10 souls each)")
+
+    def _select_souls(self, player, required_souls):
+        """Allow player to select which souls to use"""
+        selected_souls = {
+            "standard": {},    # enemy_name: count
+            "variant": {},     # variant_name: count
+            "boss": {},        # boss_name: count
+            "total_value": 0
+        }
+        
+        while selected_souls["total_value"] < required_souls:
+            clear_screen()
+            remaining = required_souls - selected_souls["total_value"]
+            print(f"\nSoul Selection ({selected_souls['total_value']}/{required_souls} souls selected)")
+            print(f"Remaining souls needed: {remaining}")
+            
+            # Show current selections
+            if selected_souls["standard"]:
+                print("\nSelected Standard Souls:")
+                for enemy, count in selected_souls["standard"].items():
+                    monster_type = get_type_for_monster(enemy)
+                    type_str = f" ({monster_type.title()})" if monster_type != "unknown" else ""
+                    print(f"{count}x {enemy}{type_str}")
+                    
+            if selected_souls["variant"]:
+                print("\nSelected Variant Souls:")
+                for variant, count in selected_souls["variant"].items():
+                    print(f"{count}x {variant}")
+                    
+            if selected_souls["boss"]:
+                print("\nSelected Boss Souls:")
+                for boss, count in selected_souls["boss"].items():
+                    monster_type = get_type_for_monster(boss)
+                    type_str = f" ({monster_type.title()})" if monster_type != "unknown" else ""
+                    print(f"{count}x {boss}{type_str}")
+            
+            print("\nSelect soul type to add:")
+            print("1. Standard Monster Soul (1 soul each)")
+            print("2. Variant Soul (5 souls each)")
+            print("3. Boss Soul (10 souls each)")
+            print("4. Clear selections")
+            print("5. Finish selection")
+            
+            choice = input("\nEnter choice (or 'c' to cancel): ").lower()
+            
+            if choice == 'c':
+                return None
+            elif choice == '4':
+                selected_souls = {"standard": {}, "variant": {}, "boss": {}, "total_value": 0}
+                continue
+            elif choice == '5':
+                if selected_souls["total_value"] >= required_souls:
+                    return selected_souls
+                else:
+                    print(f"\nNot enough souls selected! Need {remaining} more.")
+                    input("\nPress Enter to continue...")
+                    continue
+            
+            try:
+                choice = int(choice)
+                if choice == 1:
+                    if not player.kill_tracker:
+                        print("\nNo standard souls available!")
+                        input("\nPress Enter to continue...")
+                        continue
+                        
+                    print("\nAvailable Standard Souls:")
+                    for i, (enemy, count) in enumerate(sorted(player.kill_tracker.items()), 1):
+                        available = count - selected_souls["standard"].get(enemy, 0)
+                        if available > 0:
+                            monster_type = get_type_for_monster(enemy)
+                            type_str = f" ({monster_type.title()})" if monster_type != "unknown" else ""
+                            print(f"{i}. {enemy}{type_str} ({available} available)")
+                            
+                    enemy_choice = input("\nSelect enemy number: ")
+                    if enemy_choice.isdigit():
+                        idx = int(enemy_choice) - 1
+                        enemies = sorted(player.kill_tracker.items())
+                        if 0 <= idx < len(enemies):
+                            enemy, available = enemies[idx]
+                            available -= selected_souls["standard"].get(enemy, 0)
+                            
+                            amount = input(f"\nHow many {enemy} souls? (max {available}): ")
+                            if amount.isdigit():
+                                amount = min(int(amount), available)
+                                selected_souls["standard"][enemy] = selected_souls["standard"].get(enemy, 0) + amount
+                                selected_souls["total_value"] += amount
+                                
+                elif choice == 2:
+                    if not player.variant_kill_tracker:
+                        print("\nNo variant souls available!")
+                        input("\nPress Enter to continue...")
+                        continue
+                        
+                    print("\nAvailable Variant Souls:")
+                    for i, (variant, count) in enumerate(sorted(player.variant_kill_tracker.items()), 1):
+                        available = count - selected_souls["variant"].get(variant, 0)
+                        if available > 0:
+                            print(f"{i}. {variant} ({available} available)")
+                            
+                    variant_choice = input("\nSelect variant number: ")
+                    if variant_choice.isdigit():
+                        idx = int(variant_choice) - 1
+                        variants = sorted(player.variant_kill_tracker.items())
+                        if 0 <= idx < len(variants):
+                            variant, available = variants[idx]
+                            available -= selected_souls["variant"].get(variant, 0)
+                            
+                            amount = input(f"\nHow many {variant} souls? (max {available}): ")
+                            if amount.isdigit():
+                                amount = min(int(amount), available)
+                                selected_souls["variant"][variant] = selected_souls["variant"].get(variant, 0) + amount
+                                selected_souls["total_value"] += amount * 5
+                                
+                elif choice == 3:
+                    if not player.boss_kill_tracker:
+                        print("\nNo boss souls available!")
+                        input("\nPress Enter to continue...")
+                        continue
+                        
+                    print("\nAvailable Boss Souls:")
+                    for i, (boss, count) in enumerate(sorted(player.boss_kill_tracker.items()), 1):
+                        available = count - selected_souls["boss"].get(boss, 0)
+                        if available > 0:
+                            monster_type = get_type_for_monster(boss)
+                            type_str = f" ({monster_type.title()})" if monster_type != "unknown" else ""
+                            print(f"{i}. {boss}{type_str} ({available} available)")
+                            
+                    boss_choice = input("\nSelect boss number: ")
+                    if boss_choice.isdigit():
+                        idx = int(boss_choice) - 1
+                        bosses = sorted(player.boss_kill_tracker.items())
+                        if 0 <= idx < len(bosses):
+                            boss, available = bosses[idx]
+                            available -= selected_souls["boss"].get(boss, 0)
+                            
+                            amount = input(f"\nHow many {boss} souls? (max {available}): ")
+                            if amount.isdigit():
+                                amount = min(int(amount), available)
+                                selected_souls["boss"][boss] = selected_souls["boss"].get(boss, 0) + amount
+                                selected_souls["total_value"] += amount * 10
+                                
+            except ValueError:
+                print("Invalid input!")
+            
+            input("\nPress Enter to continue...")
+        
+        return selected_souls
+
+    def _consume_selected_souls(self, player, selected_souls):
+        """Consume only the selected souls and track them"""
+        # Consume standard souls
+        for enemy, count in selected_souls["standard"].items():
+            if enemy in player.kill_tracker:
+                if not hasattr(player, 'used_kill_tracker'):
+                    player.used_kill_tracker = {}
+                player.used_kill_tracker[enemy] = player.used_kill_tracker.get(enemy, 0) + count
+                player.kill_tracker[enemy] -= count
+                if player.kill_tracker[enemy] <= 0:
+                    del player.kill_tracker[enemy]
+                    
+        # Consume variant souls
+        for variant, count in selected_souls["variant"].items():
+            if variant in player.variant_kill_tracker:
+                if not hasattr(player, 'used_variant_tracker'):
+                    player.used_variant_tracker = {}
+                player.used_variant_tracker[variant] = player.used_variant_tracker.get(variant, 0) + count
+                player.variant_kill_tracker[variant] -= count
+                if player.variant_kill_tracker[variant] <= 0:
+                    del player.variant_kill_tracker[variant]
+                    
+        # Consume boss souls
+        for boss, count in selected_souls["boss"].items():
+            if boss in player.boss_kill_tracker:
+                if not hasattr(player, 'used_boss_kill_tracker'):
+                    player.used_boss_kill_tracker = {}
+                player.used_boss_kill_tracker[boss] = player.used_boss_kill_tracker.get(boss, 0) + count
+                player.boss_kill_tracker[boss] -= count
+                if player.boss_kill_tracker[boss] <= 0:
+                    del player.boss_kill_tracker[boss]
+                    
+    def _forge_equipment_with_souls(self, player, game, forge_type, required_souls):
+        """Create equipment based on selected souls"""
+        selected_souls = self._select_souls(player, required_souls)
+        if not selected_souls:
+            return
+            
+        self._consume_selected_souls(player, selected_souls)
+        
+        # Determine equipment preferences based on souls
+        equipment_affinities = self._get_equipment_affinities(selected_souls)
+        preferred_stats = self._get_stat_preferences(selected_souls)
+        
+        if forge_type == "basic":
+            def create_basic():
+                print("The forge accepts your offering...")
+                self._create_themed_equipment(player, game, "basic", selected_souls,
+                    equipment_affinities, preferred_stats)
+                    
+            def create_enhanced():
+                print("The souls enhance your crafting!")
+                self._create_themed_equipment(player, game, "enhanced", selected_souls,
+                    equipment_affinities, preferred_stats)
+                    
+            def forge_fail():
+                print("The forging process goes wrong!")
+                self._take_damage(player, 10, 20, "Soul energy burns you! ")
+                self._give_random_consumable(player, game, player.level)
+                
+            outcomes = [
+                (0.4, create_basic),
+                (0.3, create_enhanced),
+                (0.3, forge_fail)
+            ]
+            
+        elif forge_type == "greater":
+            def create_greater():
+                print("The souls create something powerful!")
+                self._create_themed_equipment(player, game, "greater", selected_souls,
+                    equipment_affinities, preferred_stats)
+                    
+            def create_blessed():
+                print("The forge blesses your creation!")
+                self._create_themed_equipment(player, game, "blessed", selected_souls,
+                    equipment_affinities, preferred_stats)
+                self._permanent_stat_increase(player)
+                    
+            def forge_rebel():
+                print("The souls rebel against your crafting!")
+                self._take_damage(player, 20, 30, "Wild soul energy tears at you! ")
+                self._create_themed_equipment(player, game, "basic", selected_souls,
+                    equipment_affinities, preferred_stats)
+                
+            outcomes = [
+                (0.4, create_greater),
+                (0.3, create_blessed),
+                (0.3, forge_rebel)
+            ]
+            
+        else:  # soulbound
+            if random.random() < 0.7:
+                print("The forge resonates with your soul...")
+                self._create_themed_equipment(player, game, "soulbound", selected_souls,
+                    equipment_affinities, preferred_stats)
+            else:
+                print("The soulbinding process fails catastrophically!")
+                self._take_damage(player, 30, 50, "The souls tear at your essence! ")
+                self._create_themed_equipment(player, game, "greater", selected_souls,
+                    equipment_affinities, preferred_stats)
+                
+        if forge_type != "soulbound":
+            self._resolve_weighted_outcome(outcomes, player)
+
+    def _create_themed_equipment(self, player, game, quality, souls_used, 
+                            equipment_affinities, preferred_stats):
+        """Create equipment with theme based on souls used"""
+        # Select equipment type from affinities
+        equipment_type = random.choice(equipment_affinities) if equipment_affinities else \
+            random.choice(["weapon", "shield", "helm", "chest", "boots", "gloves", "ring"])
+        
+        # Map quality to item tier
+        tier_mapping = {
+            "basic": "rare",
+            "enhanced": "rare",
+            "greater": "epic",
+            "blessed": "epic",
+            "soulbound": "legendary"
+        }
+        target_tier = tier_mapping.get(quality, "rare")
+        
+        # Find valid base items
+        valid_items = [item for item in game.items.values()
+                    if item.type == equipment_type
+                    and item.tier == target_tier]
+        
+        if not valid_items:
+            print("No suitable equipment found!")
+            return
+            
+        # Select and modify base item
+        base_item = random.choice(valid_items)
+        modified_item = self._modify_equipment_with_souls(base_item, souls_used, 
+            quality, preferred_stats)
+        
+        player.add_item(modified_item)
+        
+        # Display item creation details
+        print(f"\nCreated: {modified_item.name} ({modified_item.type})")
+        print("Stats:")
+        stats_to_display = [
+            ("Attack", modified_item.attack),
+            ("Defence", modified_item.defence),
+            ("Accuracy", modified_item.accuracy),
+            ("Evasion", modified_item.evasion),
+            ("Crit Chance", modified_item.crit_chance),
+            ("Crit Damage", modified_item.crit_damage),
+            ("Armour Penetration", modified_item.armour_penetration),
+            ("Damage Reduction", modified_item.damage_reduction),
+            ("Block Chance", modified_item.block_chance)
+        ]
+        
+        for stat_name, value in stats_to_display:
+            if value > 0:
+                print(f"- {stat_name}: {value}")
+        
+        if quality == "soulbound":
+            print("\nSoulbound Properties:")
+            print("- Grows with player level")
+            print("- Preferred growth stats:", ", ".join(preferred_stats).replace('_', ' ').title())
+            
+            # Collect all used souls
+            soul_sources = []
+            if souls_used.get("standard"):
+                soul_sources.extend(souls_used["standard"].keys())
+            if souls_used.get("variant"):
+                soul_sources.extend(f"{variant} Variant" for variant in souls_used["variant"].keys())
+            if souls_used.get("boss"):
+                soul_sources.extend(f"{boss} Boss" for boss in souls_used["boss"].keys())
+                
+            if soul_sources:
+                print("\nForged using souls of:", ", ".join(soul_sources))
+            else:
+                print("\nForged using mysterious energies...")
+
+    def _modify_equipment_with_souls(self, base_item, souls_used, quality, preferred_stats):
+        """Apply soul-based modifications to equipment"""
+        # Generate themed name
+        new_name = self._generate_themed_name(base_item, souls_used)
+        
+        # Create modified item
+        if quality == "soulbound":
+            modified_item = create_soulbound_item(
+                base_item,
+                growth_stats=preferred_stats,
+                soul_source=souls_used
+            )
+            modified_item.name = new_name  # Apply themed name
+        else:
+            modified_item = type(base_item)(
+                new_name,
+                base_item.type,
+                base_item.value * 2,  # Double base value
+                base_item.tier
+            )
+        
+        # For weapons, set special weapon type
+        if modified_item.type == "weapon":
+            modified_item.weapon_type = "soulbound"
+        
+        # Quality multipliers for stats
+        quality_multipliers = {
+            "basic": 1.2,
+            "enhanced": 1.4,
+            "greater": 1.6,
+            "blessed": 1.8,
+            "soulbound": 2.0
+        }
+        multiplier = quality_multipliers.get(quality, 1.0)
+        
+        # Apply stat bonuses
+        stats_to_modify = [
+            "attack", "defence", "accuracy", "evasion", "crit_chance",
+            "crit_damage", "armour_penetration", "damage_reduction", "block_chance"
+        ]
+        
+        for stat in stats_to_modify:
+            base_value = getattr(base_item, stat, 0)
+            if base_value > 0:
+                # Extra bonus for preferred stats
+                bonus_multiplier = 1.2 if stat in preferred_stats else 1.0
+                new_value = int(base_value * multiplier * bonus_multiplier)
+                setattr(modified_item, stat, new_value)
+        
+        return modified_item
+
+    def _generate_themed_name(self, base_item, souls_used):
+        """Generate a themed name based on souls used"""
+        # Get most common monster type from souls
+        monster_counts = {}
+        for monster in souls_used.get("standard", {}):
+            monster_type = get_type_for_monster(monster)
+            monster_counts[monster_type] = monster_counts.get(monster_type, 0) + 1
+            
+        primary_type = max(monster_counts.items(), key=lambda x: x[1])[0] \
+            if monster_counts else "unknown"
+        
+        prefixes = {
+            "beast": ["Feral", "Bestial", "Savage", "Wild"],
+            "dragon": ["Draconic", "Wyrm", "Dragon-Forged", "Scaled"],
+            "undead": ["Deathbound", "Grave-Touched", "Ghostly", "Spectral"],
+            "spirit": ["Ethereal", "Phantom", "Spirit-Touched", "Wraithbound"],
+            "fire": ["Blazing", "Infernal", "Flame-Forged", "Molten"],
+            "ice": ["Frozen", "Frost-Touched", "Glacial", "Rimefrost"],
+            "storm": ["Thunder", "Lightning", "Storm-Forged", "Tempest"],
+            "arcane": ["Mystic", "Spellbound", "Arcane", "Enchanted"],
+            "void": ["Void-Touched", "Null", "Cosmic", "Astral"],
+            "warrior": ["Battle", "War-Forged", "Champion's", "Warrior"],
+            "construct": ["Golem", "Stone-Forged", "Artificial", "Construct"],
+            "corrupted": ["Corrupt", "Tainted", "Defiled", "Blighted"]
+        }
+        
+        suffixes = {
+            "weapon": ["Slayer", "Blade", "Reaver", "Edge"],
+            "shield": ["Bulwark", "Aegis", "Guard", "Ward"],
+            "helm": ["Crown", "Helm", "Visage", "Gaze"],
+            "chest": ["Plate", "Armour", "Mail", "Guard"],
+            "boots": ["Striders", "Treads", "Greaves", "Steps"],
+            "gloves": ["Grips", "Touch", "Grasp", "Hold"],
+            "ring": ["Circle", "Loop", "Band", "Seal"],
+            "back": ["Cloak", "Mantle", "Shroud", "Cape"]
+        }
+        
+        prefix = random.choice(prefixes.get(primary_type, ["Mysterious"]))
+        suffix = random.choice(suffixes.get(base_item.type, ["Artifact"]))
+        
+        return f"{prefix} {suffix}"
+
+    def _get_stat_preferences(self, souls_used):
+        """Determine preferred stats based on souls used"""
+        stat_votes = {}
+        
+        # Process standard souls and their types
+        for monster, count in souls_used.get("standard", {}).items():
+            monster_type = get_type_for_monster(monster)
+            if monster_type in MONSTER_TYPES:
+                for stat in MONSTER_TYPES[monster_type]["stat_preferences"]:
+                    stat_votes[stat] = stat_votes.get(stat, 0) + count
+                    
+        # Process variant souls - add their preferences with higher weight
+        if souls_used.get("variant"):
+            variant_stats = ["accuracy", "crit_chance", "crit_damage", "armour_penetration"]
+            for stat in variant_stats:
+                stat_votes[stat] = stat_votes.get(stat, 0) + sum(souls_used["variant"].values()) * 2
+                
+        # Process boss souls - add all high-tier stats
+        if souls_used.get("boss"):
+            boss_stats = [
+                "attack", "defence", "accuracy", "crit_chance", "crit_damage",
+                "armour_penetration", "damage_reduction", "block_chance"
+            ]
+            for stat in boss_stats:
+                stat_votes[stat] = stat_votes.get(stat, 0) + sum(souls_used["boss"].values()) * 3
+                
+        # Return top stats
+        sorted_stats = sorted(stat_votes.items(), key=lambda x: x[1], reverse=True)
+        return [stat for stat, _ in sorted_stats[:4]]  # Return top 4 stats
+
+    def _get_equipment_affinities(self, souls_used):
+        """Determine equipment affinities based on souls used"""
+        affinities = {}
+        
+        # Process standard souls
+        for monster, count in souls_used.get("standard", {}).items():
+            monster_type = get_type_for_monster(monster)
+            if monster_type in MONSTER_TYPES:
+                for equip_type in MONSTER_TYPES[monster_type]["equipment_affinities"]:
+                    affinities[equip_type] = affinities.get(equip_type, 0) + count
+                    
+        # Return top equipment types
+        sorted_affinities = sorted(affinities.items(), key=lambda x: x[1], reverse=True)
+        return [equip for equip, _ in sorted_affinities[:3]]  # Return top 3 equipment types
+    
+    def _create_soul_crystal(self, player, game, crystal_type, selected_souls):
+        """Create a soul crystal with the selected souls"""
+        # Define base parameters for crystal types
+        crystal_params = {
+            "lesser": {
+                "buff_count": random.randint(1, 2),
+                "min_value": 6,
+                "max_value": 10,
+                "min_duration": 5,
+                "max_duration": 8,
+                "tier": "uncommon"
+            },
+            "greater": {
+                "buff_count": random.randint(2, 3),
+                "min_value": 8,
+                "max_value": 12,
+                "min_duration": 8,
+                "max_duration": 12,
+                "tier": "rare"
+            },
+            "perfect": {
+                "buff_count": random.randint(3, 4),
+                "min_value": 10,
+                "max_value": 15,
+                "min_duration": 10,
+                "max_duration": 15,
+                "tier": "epic"
+            }
+        }
+        
+        params = crystal_params[crystal_type]
+        preferred_stats = self._get_stat_preferences(selected_souls)
+        
+        # Create stored buffs
+        stored_buffs = {}
+        for _ in range(params["buff_count"]):
+            if not preferred_stats:  # Guard against empty preferred_stats
+                break
+                
+            stat = random.choice(preferred_stats)
+            value = random.randint(params["min_value"], params["max_value"])
+            duration = random.randint(params["min_duration"], params["max_duration"])
+            
+            # Adjust values for certain stats
+            if stat in ["accuracy", "crit_chance"]:
+                value = value // 2
+            elif stat in ["crit_damage"]:
+                value *= 2
+                
+            stored_buffs[stat] = (value, duration)
+        
+        # Create special effects
+        special_effects = []
+        
+        # Add boss resonance if boss souls used
+        for boss, count in selected_souls.get("boss", {}).items():
+            special_effects.append(BossResonance(boss))
+            
+        # Add variant affinity if variant souls used
+        for variant, count in selected_souls.get("variant", {}).items():
+            special_effects.append(VariantAffinity(variant))
+            
+        # Add soul echo for most common standard soul
+        if selected_souls.get("standard"):
+            most_common = max(selected_souls["standard"].items(), key=lambda x: x[1])
+            special_effects.append(SoulEcho(most_common[0], most_common[1]))
+        
+        # Calculate crystal value based on buffs and effects
+        base_value = sum(value for value, _ in stored_buffs.values())
+        crystal_value = base_value * (len(special_effects) + 1)
+        
+        # Create crystal
+        crystal = SoulCrystal(
+            f"{crystal_type.capitalize()} Soul Crystal",
+            crystal_value,
+            params["tier"],
+            stored_buffs,
+            special_effects,
+            selected_souls
+        )
+        
+        self._consume_selected_souls(player, selected_souls)
+        player.add_item(crystal)
+        
+        print(f"\nCreated {crystal.name}!")
+        print(crystal.get_description())
+        
+        return crystal
+
+    def _enhance_with_souls(self, player, game, enhancement_type, selected_souls):
+        """Apply ability enhancements based on selected souls"""
+        self._consume_selected_souls(player, selected_souls)
+        preferred_stats = self._get_stat_preferences(selected_souls)
+        
+        if enhancement_type == "combat":
+            def enhance_combat():
+                print("The souls enhance your combat abilities!")
+                for stat in random.sample(preferred_stats, min(2, len(preferred_stats))):
+                    value = random.randint(8, 12)
+                    if stat in ["accuracy", "crit_chance"]:
+                        value = value // 2
+                    elif stat in ["crit_damage"]:
+                        value *= 2
+                    duration = random.randint(10, 15)
+                    player.apply_buff(stat, value, duration, combat_only=False)
+                    print(f"Gained +{value} {stat.replace('_', ' ').title()} for {duration} turns!")
+                
+            def absorb_experience():
+                print("You absorb the combat experience of your fallen foes!")
+                exp_gain = 30 * player.level
+                bonus = sum(count for count in selected_souls["standard"].values())
+                exp_gain += bonus * 5
+                player.gain_exp(exp_gain, player.level)
+                
+            def enhance_strain():
+                print("The enhancement strains your body!")
+                self._take_damage(player, 10, 20, "Soul energy burns you! ")
+                # But gives better buffs as compensation
+                for stat in random.sample(preferred_stats, min(3, len(preferred_stats))):
+                    value = random.randint(10, 15)
+                    if stat in ["accuracy", "crit_chance"]:
+                        value = value // 2
+                    elif stat in ["crit_damage"]:
+                        value *= 2
+                    duration = random.randint(12, 18)
+                    player.apply_buff(stat, value, duration, combat_only=False)
+                    print(f"Gained +{value} {stat.replace('_', ' ').title()} for {duration} turns!")
+                
+            outcomes = [
+                (0.4, enhance_combat),
+                (0.3, absorb_experience),
+                (0.3, enhance_strain)
+            ]
+            
+        elif enhancement_type == "attunement":
+            def attune_souls():
+                print("You attune with the collected souls!")
+                self._give_major_buff(player, 10, 15, 15, 20)
+                self._restore_and_heal(player, 0.5)
+                
+            def grant_power():
+                print("The attunement grants lasting power!")
+                self._permanent_stat_increase_specific(player, 2, random.sample(preferred_stats, 2))
+                
+            def painful_attunement():
+                print("The attunement process is painful!")
+                self._take_damage(player, 20, 30, "Soul energy tears at you! ")
+                self._permanent_stat_increase_specific(player, 3, random.sample(preferred_stats, 2))
+                
+            outcomes = [
+                (0.4, attune_souls),
+                (0.3, grant_power),
+                (0.3, painful_attunement)
+            ]
+            
+        else:  # spirit
+            if random.random() < 0.7:
+                print("You form a powerful spirit bond!")
+                # Multiple random buffs
+                self._give_multiple_random_buffs(player, 10, 15, 15, 20, 3, preferred_stats)
+                # And a permanent increase
+                self._permanent_stat_increase_specific(player, 2, 
+                    random.sample(preferred_stats, min(2, len(preferred_stats))))
+            else:
+                print("The spirit bond backfires!")
+                self._take_damage(player, 30, 40, "Spirit energy overwhelms you! ")
+                # But gives a powerful single buff as compensation
+                stat = random.choice(preferred_stats)
+                value = random.randint(12, 18)
+                if stat in ["accuracy", "crit_chance"]:
+                    value = value // 2
+                elif stat in ["crit_damage"]:
+                    value *= 2
+                duration = random.randint(15, 22)
+                player.apply_buff(stat, value, duration, combat_only=False)
+                print(f"Gained +{value} {stat.replace('_', ' ').title()} for {duration} turns!")
+        
+        if enhancement_type != "spirit":
+            self._resolve_weighted_outcome(outcomes, player)
+    
     # Dangerous Events
+    
+    # Unstable Ground Outcomes
         
     def _outcome_unstable_careful(self, player, game):
         """Carefully handle the unstable ground"""
@@ -865,6 +2012,8 @@ class RandomEventSystem:
         else:
             print("You waste a lot of time looking for a safer path, this is exhausting!")
             player.stamina = max(0, player.stamina - 20)
+    
+    # Strange Mushrooms Outcomes
             
     def _outcome_mushroom_pick(self, player, game):
         """Greedily pick the mushrooms"""
@@ -891,6 +2040,8 @@ class RandomEventSystem:
             (0.6, lambda: self._take_damage(player, 10, 20, "That was probably not a smart idea... "))
         ]
         self._resolve_weighted_outcome(outcomes, player)
+    
+    # Cursed Shrine Outcomes
     
     def _outcome_shrine_blood(self, player, game):
         """Make a blood sacrifice at the cursed shrine."""
@@ -994,6 +2145,8 @@ class RandomEventSystem:
         else:
             print("You hear something behind you as you attempt to leave, you turn around...")
             self._trigger_scaled_encounter(player, game, ["Shrine Guardian"])
+    
+    # Unstable Crystal Outcomes
             
     def _outcome_crystal_harness(self, player, game):
         """Attempt to harness the crystal's unstable power"""
@@ -1022,7 +2175,7 @@ class RandomEventSystem:
                            player.apply_debuff("defence", 10)))
         ]
         self._resolve_weighted_outcome(outcomes, player)
-        
+      
     def _outcome_crystal_extract(self, player, game):
         """Attempt to extract the crystal"""
         print("You carefully attempt to extract the crystal...")
@@ -1078,6 +2231,8 @@ class RandomEventSystem:
         else:
             print("As you think you're safely away...")
             self._take_damage(player, 10, 20, "A wave of energy strikes you! ")
+    
+    # Void Tear Outcomes
             
     def _outcome_void_sacrifice(self, player, game):
         """Sacrfice HP to the void for unique rewards"""
@@ -1206,6 +2361,8 @@ class RandomEventSystem:
                     self._trigger_scaled_encounter(player, game, ["Void Walker"])
                 else:
                     self._trigger_scaled_encounter(player, game, ["Empowered Void Walker"])
+    
+    # Storm Nexus Outcomes
     
     def _outcome_storm_channel(self, player, game):
         """Channel the storm's power with increasing risk/reward"""
@@ -1362,235 +2519,7 @@ class RandomEventSystem:
             print("You can't escape the storm's fury!")
             self._take_damage(player, 15, 25, "Lightning strikes nearby! ")
     
-    def use_boss_souls(self, player, total_souls):
-        """Helper function to handle boss soul trading"""
-        if not hasattr(player, 'boss_kill_tracker'):
-            return total_souls
-            
-        boss_souls = sum(player.boss_kill_tracker.values()) * 10
-        if boss_souls <= 0:
-            return total_souls
-            
-        choice = input(f"\nWould you like to use your {boss_souls} boss souls? (y/n): ").lower()
-        if choice == "y":
-            print("\nYou foolishly use your boss souls on these minor rewards...Muahahahahhaha!")
-            player.boss_kill_tracker.clear()
-            return total_souls + boss_souls
-        else:
-            return total_souls
     
-    def _outcome_soul_trade(self, player, game):
-        """Trade accumulated monster souls for power"""
-        if not player.kill_tracker and not player.variant_kill_tracker and not player.boss_kill_tracker:
-            print("You have no souls to trade... The collector seems disappointed.")
-            return
-            
-        # Show player their accumulated standard souls
-        print("\nYour standard collected souls:")
-        standard_sorted_kills = sorted(player.kill_tracker.items(), key=lambda x: x[1], reverse=True)
-        for enemy, count in standard_sorted_kills:
-            print(f"{enemy}: {count} standard souls (worth 1 soul each)")
-            
-        # Show player their acumulated variant souls
-        print("\nYour variant collected souls:")
-        variant_sorted_kills = sorted(player.variant_kill_tracker.items(), key=lambda x: x[1], reverse=True)
-        for enemy, count in variant_sorted_kills:
-            print(f"{enemy}: {count} variant souls (worth 5 souls each)")
-            
-        # Calculate total souls and offer choices
-        standard_souls = sum(player.kill_tracker.values())
-        variant_souls = sum(player.variant_kill_tracker.values()) * 5
-        total_souls = standard_souls + variant_souls
-        
-        print(f"\nTotal souls: {total_souls}")
-        
-        choices = [
-            (1, "Convert souls to permanent stat increase (500 souls max recommended!)"),
-            (2, "Transform souls into equipment (500 souls max recommended!)"),
-            (3, "Exchange souls for consumable items (250 souls max recommended!)"),
-            (4, "Return souls for gold and experience")
-        ]
-        
-        print("\nAvailable trades:")
-        for num, desc in choices:
-            print(f"{num}. {desc}")
-            
-        while True:
-            try:
-                choice = int(input("\nChoose your trade (0 to cancel): "))
-                if choice == 0:
-                    return
-                if 1 <= choice <= 4:
-                    break
-                print("Invalid choice.")
-            except ValueError:
-                print("Please enter a number.")
-        
-        # Calculate reward scaling based on total souls
-        reward_scale = min(3, max(1, total_souls // 200))  # Cap at 3x
-        
-        if choice == 1:
-            total_souls = self.use_boss_souls(player, total_souls)
-            # Convert souls to permanent stats
-            if total_souls < 100:
-                print("You need at least 100 souls for a permanent enhancement.")
-                return    
-            stat_choices = ["attack", "crit_chance", "crit_damage", "defence", "accuracy", "evasion", "max_hp"]
-            increase_amount = min(5, max(1, total_souls // 100))  # 1-5 based on souls
-            
-            print("\nChoose stat to enhance:")
-            for i, stat in enumerate(stat_choices, 1):
-                print(f"{i}. {stat.replace('_', ' ').title()}")
-                
-            while True:
-                try:
-                    stat_choice = int(input("\nEnter choice: ")) - 1
-                    if 0 <= stat_choice < len(stat_choices):
-                        chosen_stat = stat_choices[stat_choice]
-                        self._permanent_stat_increase_specific(player, increase_amount, [chosen_stat])
-                        player.kill_tracker.clear()  # Clear kill tracker after use
-                        player.variant_kill_tracker.clear() # Clear variant kill tracker
-                        break
-                except ValueError:
-                    print("Please enter a valid number.")
-                    
-        elif choice == 2:
-            # Transform souls into equipment
-            total_souls = self.use_boss_souls(player, total_souls)
-            if total_souls < 75:
-                print("You need at least 75 souls to forge equipment.")
-                return
-                
-            equipment_tier = "rare"
-            if total_souls >= 500:
-                equipment_tier = "legendary"
-            elif total_souls >= 300:
-                equipment_tier = "masterwork"
-            elif total_souls >= 200:
-                equipment_tier = "epic"
-                
-            # Get equipment of appropriate tier
-            equipment = [item for item in game.items.values()
-                        if item.type in ["weapon", "helm", "chest", "legs", "boots", "gloves", "shield", "ring"]
-                        and item.tier == equipment_tier]
-                        
-            if equipment:
-                item = random.choice(equipment)
-                player.add_item(item)
-                print(f"\nThe souls coalesce into a {item.name} ({item.tier.title()})!")
-                player.kill_tracker.clear()  # Clear kill tracker after use
-                player.variant_kill_tracker.clear() # Clear variant kill tracker
-                
-        elif choice == 3:
-            # Exchange for consumables
-            total_souls = self.use_boss_souls(player, total_souls)
-            if total_souls < 50:
-                print("You need at least 50 souls to create consumables.")
-                return
-                
-            num_items = min(5, max(1, total_souls // 50))  # 1-5 items based on souls
-            print(f"\nCreating {num_items} consumable items...")
-            
-            for _ in range(num_items):
-                self._give_random_consumable(player, game, player.level + reward_scale)
-                
-            player.kill_tracker.clear()  # Clear kill tracker after use
-            player.variant_kill_tracker.clear() # Clear variant kill tracker
-            
-        else:  # choice == 4
-            # Return souls for gold and experience
-            total_souls = self.use_boss_souls(player, total_souls)
-            gold_reward = total_souls * 10 * reward_scale
-            exp_reward = total_souls * 5 * reward_scale
-            
-            player.gold += gold_reward
-            player.gain_exp(exp_reward, player.level)
-            print(f"\nYou receive {gold_reward} gold and {exp_reward} experience!")
-            player.kill_tracker.clear()  # Clear kill tracker after use
-            player.variant_kill_tracker.clear() # Clear variant kill tracker
-
-    def _outcome_soul_boss(self, player, game):
-        """Sacrifice specifically boss souls for greater rewards"""
-        # Count boss kills
-        boss_kills = sum(player.boss_kill_tracker.values())
-        
-        if boss_kills == 0:
-            print("You haven't defeated any worthy bosses yet...")
-            return
-            
-        print(f"\nYou have {boss_kills} boss souls available.")
-        
-        def special_item_give():
-            if boss_kills < 10:
-                self._give_special_item(player, game, "You receive 1 special item for you kills!")
-            elif boss_kills >= 10 and boss_kills < 20:
-                self._give_special_item(player, game, "You receive 2 special items for your kills!")
-                self._give_special_item(player, game)
-            elif boss_kills >= 20 and boss_kills < 30:
-                self._give_special_item(player, game, "You receive 3 special itmes for your kills!")
-                self._give_special_item(player, game)
-                self._give_special_item(player, game)
-            else:
-                self._give_special_item(player, game, "You receive 4 special items for your kills!")
-                self._give_special_item(player, game)
-                self._give_special_item(player, game)
-                self._give_special_item(player, game)
-                self._permanent_stat_increase_specific(player, boss_kills / 15, ["attack", "accuracy", "crit_chance", "crit_damage"])
-                self._permanent_stat_increase_specific(player, boss_kills / 15, ["defence", "evasion", "damage_reduction"])
-                self._gain_exp(player, boss_kills * 20, boss_kills * 30, "The Soul Collector grants you an immense amount of experience for your boss souls!")
-                self._give_gold(player, boss_kills * 20, boss_kills * 30, "He also showers you in Gold!")
-                self._take_damage(player, 10, 20, "It turns out that much Gold isn't good for your health when it all pours on you at once! ")
-        
-        outcomes = [
-            (0.3, lambda: (
-                print("The boss souls grant you immense power!"),
-                self._permanent_stat_increase_specific(player, boss_kills, 
-                    ["attack", "defence", "accuracy", "evasion"]),
-                self._give_major_buff(player, 10, 15, 15 + boss_kills, 25 + boss_kills)
-            )),
-            (0.3, lambda: (
-                print("The boss souls transform into legendary equipment!"),
-                special_item_give()
-            )),
-            (0.2, lambda: (
-                print("The boss souls imbue you with their knowledge!"),
-                self._gain_exp(player, 100 * boss_kills, 150 * boss_kills),
-                self._give_gold(player, 200 * boss_kills, 300 * boss_kills)
-            )),
-            (0.2, lambda: (
-                print("The souls overwhelm you with their power!"),
-                self._take_damage(player, 30, 50, "The souls tear at your essence! "),
-                self._permanent_stat_increase_specific(player, boss_kills,
-                    ["attack", "accuracy", "crit_chance", "crit_damage", "armour_penetration"]),
-                self._permanent_stat_increase_specific(player, boss_kills, ["defence", "evasion", "damage_reduction", "block_chance"]),
-                self._give_major_buff(player, 15, 20, 30, 40)
-            ))
-        ]
-        
-        self._resolve_weighted_outcome(outcomes, player)
-        
-        # Clear only boss kills tracker
-        player.boss_kill_tracker.clear()
-
-    def _outcome_soul_sacrifice(self, player, game):
-        """Offer your own essence for power"""
-        print("The collector eyes you hungrily...")
-        return self._trade_hp_for_reward(player, game, min_percent=20, max_percent=50)
-
-    def _outcome_soul_reject(self, player, game):
-        """Attempt to reject the soul collector's offer"""
-        if random.random() < 0.7:  # 70% chance to leave safely
-            print("The collector fades away, disappointed but accepting.")
-            return
-        else:
-            print("The collector doesn't take kindly to rejection!")
-            if random.random() < 0.5:
-                self._take_damage(player, 20, 30, "Soul energy tears at your essence! ")
-            else:
-                print("The collector attacks!")
-                enemy = create_enemy("Void Walker", player)  # Use void walker as collector's servant
-                if enemy:
-                    game.battle.battle(enemy)
        
     def _outcome_ignore(self, player, game):
         """Ignore the event"""
