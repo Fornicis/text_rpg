@@ -145,6 +145,7 @@ def save_game(player, current_location, filename):
             "active_buffs": player.active_buffs,
             "combat_buffs": player.combat_buffs,
             "weapon_buff": player.weapon_buff,
+            "soul_crystal_effects": player.soul_crystal_effects,
             "weapon_coating": player.weapon_coating,
             "active_hots": player.active_hots,
             "visited_locations": list(player.visited_locations),
@@ -313,6 +314,7 @@ def load_game(filename):
     player.active_buffs = player_data["active_buffs"]
     player.combat_buffs = player_data["combat_buffs"]
     player.weapon_buff = player_data["weapon_buff"]
+    player.soul_crystal_effects = player_data["soul_crystal_effects"]
     player.weapon_coating = player_data["weapon_coating"]
     player.active_hots = player_data["active_hots"]
     player.visited_locations = set(player_data["visited_locations"])
