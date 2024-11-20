@@ -430,11 +430,11 @@ class Armourer(BaseShop):
 class Alchemist(BaseShop):
     # Child class of Shop called Alchemist, sells potions
     def __init__(self, all_items):
-        super().__init__({k: v for k, v in all_items.items() if v.type in ["consumable", "weapon coating"] and "Sharpening Stone" not in v.name})
+        super().__init__({k: v for k, v in all_items.items() if v.type in ["consumable", "weapon coating", "soul_crystal"] and "Sharpening Stone" not in v.name})
 
     def can_sell_item(self, item):
         # Allows player to sell consumables
-        return item.type in ["consumable", "weapon coating"] and "Sharpening Stone" not in item.name
+        return item.type in ["consumable", "weapon coating", "soul_crystal"] and "Sharpening Stone" not in item.name
 
 class Inn(BaseShop):
     # Shop class for inn selling food and drink and offering improved rest functions
