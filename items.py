@@ -1,3 +1,5 @@
+import random
+
 class Item:
     def __init__(self, name, item_type, value, tier,
                  attack=0, defence=0, accuracy=0, crit_chance=0, crit_damage=0, armour_penetration=0, damage_reduction=0, evasion=0, block_chance=0,
@@ -881,47 +883,74 @@ class CrystalEffect:
 
 class BossResonance(CrystalEffect):
     """Grant bonus stats against specific boss type"""
-    def __init__(self, boss_type):
-        description = f"Resonates with the power of {boss_type}"
-        effect_details = f"Attack and Defence +20 when fighting {boss_type} (Lasts 5 combats)"
-        super().__init__(description, effect_details)
+    def __init__(self, boss_type, kill_count, stored_bonus=None, stored_duration=None):
         self.boss_type = boss_type
-        self.duration = 5
+        self.kill_count = kill_count
+        
+        # Only calculate new values if they weren't provided
+        if stored_bonus is None or stored_duration is None:
+            base_bonus = int(kill_count * 1.5)
+            bonus_variation = base_bonus * 0.2
+            self.bonus = int(random.uniform(base_bonus - bonus_variation, base_bonus + bonus_variation))
+            
+            base_duration = int(kill_count // 2)
+            dur_variation = base_duration * 0.2
+            self.duration = int(random.uniform(base_duration - dur_variation, base_duration + dur_variation))
+        else:
+            self.bonus = stored_bonus
+            self.duration = stored_duration
+            
+        description = f"Resonates with the power of {kill_count} {boss_type.title()}"
+        effect_details = f"Attack and Defence +{self.bonus} when fighting Boss monsters (Lasts {self.duration} combats)"
+        super().__init__(description, effect_details)
         
     def apply(self, player):
-        # Add significant stat boost when fighting this boss type
         player.soul_crystal_effects["boss_resonance"] = {
             "target": self.boss_type,
-            "attack": 20,
-            "defence": 20,
+            "attack": self.bonus,
+            "defence": self.bonus,
             "combats_remaining": self.duration
         }
-        return f"Crystal resonates against {self.boss_type}! Attack and Defence +20 when fighting them for {self.duration} combats!"
+        return f"Crystal resonates against Boss monsters! Attack and Defence +{self.bonus} when fighting them for {self.duration} combats!"
 
 class VariantAffinity(CrystalEffect):
     """Grant bonus effects against variant types"""
-    def __init__(self, variant_type):
-        description = f"Attuned to {variant_type} energy"
-        effect_details = f"Accuracy +15 and Crit Chance +10 against {variant_type} variants (Lasts 5 combats)"
-        super().__init__(description, effect_details)
+    def __init__(self, variant_type, kill_count, stored_bonus=None, stored_duration=None):
         self.variant_type = variant_type
-        self.duration
+        self.kill_count = kill_count
         
+        # Only calculate new values if they weren't provided
+        if stored_bonus is None or stored_duration is None:
+            base_bonus = int(kill_count * 1.5)
+            bonus_variation = base_bonus * 0.2
+            self.bonus = int(random.uniform(base_bonus - bonus_variation, base_bonus + bonus_variation))
+            
+            base_duration = int(kill_count // 2)
+            dur_variation = base_duration * 0.2
+            self.duration = int(random.uniform(base_duration - dur_variation, base_duration + dur_variation))
+        else:
+            self.bonus = stored_bonus
+            self.duration = stored_duration
+            
+        description = f"Attuned to {variant_type.title()} energy"
+        effect_details = f"Accuracy +{self.bonus * 2} and Crit Chance +{self.bonus} against {variant_type.title()} variants (Lasts {self.duration} combats)"
+        super().__init__(description, effect_details)
+
     def apply(self, player):
         # Add bonus effects against variant types
         player.soul_crystal_effects["variant_affinity"] = {
             "target": self.variant_type,
-            "accuracy": 15,
-            "crit_chance": 10,
+            "accuracy": self.bonus * 2,
+            "crit_chance": self.bonus,
             "combats_remaining": self.duration
         }
-        return f"Crystal attunes to {self.variant_type}! Accuracy +15 and Crit Chance +10 against them for {self.duration} combats!"
+        return f"Crystal attunes to {self.variant_type.title()}! Accuracy +{self.bonus * 2} and Crit Chance +{self.bonus} against them for {self.duration} combats!"
 
 class ElementalResonance(CrystalEffect):
     """Grant elemental resistance and damage bonus"""
     def __init__(self, element):
         description = f"Resonates with {element} energy"
-        effect_details = f"{element} resistance +25% and {element} damage +15% (Lasts 5 combats)"
+        effect_details = f"{element} resistance +25% and {element.title()} damage +15% (Lasts 5 combats)"
         super().__init__(description, effect_details)
         self.element = element
         self.duration = 5
@@ -931,30 +960,39 @@ class ElementalResonance(CrystalEffect):
         player.soul_crystal_effects["elemental_resonance"] = {
             "element": self.element,
             "resistance": 25,
-            "damage": 15,
+            "damage_multiplier": 15,
             "combats_remaining": self.duration
         }
-        return f"Crystal resonates with {self.element}! {self.element} resistance +25% and damage +15% for {self.duration} combats!"
+        return f"Crystal resonates with {self.element.title()}! {self.element.title()} resistance +25% and damage +15% for {self.duration} combats!"
 
 class SoulEcho(CrystalEffect):
     """Grant scaled bonus based on number of specific enemy souls used"""
-    def __init__(self, enemy_type, kill_count):
-        bonus = min(20, kill_count * 2)  # Cap at +20
-        description = f"Echoes with the essence of {kill_count} {enemy_type}s"
-        effect_details = f"+{bonus}% damage against {enemy_type}s (Lasts 5 combats)"
-        super().__init__(description, effect_details)
-        self.enemy_type = enemy_type
+    def __init__(self, enemy_type, kill_count, stored_bonus=None, stored_duration=None):
         self.kill_count = kill_count
-        self.bonus = bonus
-        self.duration = 5
+        self.enemy_type = enemy_type
+        # Only calculate new values if they weren't provided
+        if stored_bonus is None or stored_duration is None:
+            base_bonus = int(kill_count * 0.08)
+            bonus_variation = base_bonus * 0.2
+            self.bonus = int(random.uniform(base_bonus - bonus_variation, base_bonus + bonus_variation))
+            
+            base_duration = int(kill_count // 12)
+            dur_variation = base_duration * 0.2
+            self.duration = int(random.uniform(base_duration - dur_variation, base_duration + dur_variation))
+        else:
+            self.bonus = stored_bonus
+            self.duration = stored_duration
+        description = f"Echoes with the essence of {kill_count} {enemy_type.title()} based enemies"
+        effect_details = f"+{self.bonus}% damage against {enemy_type.title()} based enemies (Lasts {self.duration} combats)"
+        super().__init__(description, effect_details)
         
     def apply(self, player):
         player.soul_crystal_effects["soul_echo"] = {
             "target": self.enemy_type,
-            "damage": self.bonus,
+            "damage_multiplier": self.bonus,
             "combats_remaining": self.duration
         }
-        return f"Crystal echoes against {self.enemy_type}! +{self.bonus}% damage against them for {self.duration} combats!"
+        return f"Crystal echoes against {self.enemy_type.title()} based enemies! +{self.bonus}% damage against them for {self.duration} combats!"
     
 class SoulboundItem(Item):
     def __init__(self, name, item_type, value, tier, growth_stats=None, soul_source=None, **kwargs):

@@ -173,7 +173,10 @@ def create_enemy(enemy_type, player=None):
     """Create a new enemy either from template + player scaling or from ENEMY_TEMPLATES directly"""
     if enemy_type in ENEMY_TEMPLATES:
         template = ENEMY_TEMPLATES[enemy_type]
-        return Enemy(template=template, player=player)
+        enemy = Enemy(template=template, player=player)
+        enemy.soultype = template.get("soultype", "standard")
+        enemy.monster_type = template.get("monster_type", "unknown")
+        return enemy
     return None
 
 ENEMY_TEMPLATES = {
@@ -193,7 +196,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(30, 50)
         },
         "tier": "low",
-        "attack_types": ["normal", "double", "poison", "attack_weaken"]
+        "attack_types": ["normal", "double", "poison", "attack_weaken"],
+        "soultype": "standard",
+        "monster_type": "grass"
     },
 
     "Boar": {
@@ -211,7 +216,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(50, 70)
         },
         "tier": "low",
-        "attack_types": ["normal", "power", "reckless", "stunning"]
+        "attack_types": ["normal", "power", "reckless", "stunning"],
+        "soultype": "standard",
+        "monster_type": "grass"
     },
 
     "Plains Hawk": {
@@ -229,7 +236,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(20, 40)
         },
         "tier": "low",
-        "attack_types": ["normal", "double", "triple", "attack_weaken"]
+        "attack_types": ["normal", "double", "triple", "attack_weaken"],
+        "soultype": "standard",
+        "monster_type": "wind"
     },
 
     "Strider": {
@@ -247,7 +256,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(40, 60)
         },
         "tier": "low",
-        "attack_types": ["normal", "double", "stunning", "defence_break"]
+        "attack_types": ["normal", "double", "stunning", "defence_break"],
+        "soultype": "standard",
+        "monster_type": "earth"
     },
 
     "Bull": {
@@ -265,7 +276,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(40, 60)
         },
         "tier": "low",
-        "attack_types": ["normal", "power", "reckless", "stunning"]
+        "attack_types": ["normal", "power", "reckless", "stunning"],
+        "soultype": "standard",
+        "monster_type": "grass"
     },
 
     "Bat": {
@@ -283,7 +296,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(20, 40)
         },
         "tier": "low",
-        "attack_types": ["normal", "double", "vampiric", "draining"]
+        "attack_types": ["normal", "double", "vampiric", "draining"],
+        "soultype": "standard",
+        "monster_type": "wind"
     },
 
     "Goblin": {
@@ -301,7 +316,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(30, 50)
         },
         "tier": "low",
-        "attack_types": ["normal", "double", "poison", "attack_weaken"]
+        "attack_types": ["normal", "double", "poison", "attack_weaken"],
+        "soultype": "standard",
+        "monster_type": "warrior"
     },
 
     "Spider": {
@@ -319,7 +336,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(20, 40)
         },
         "tier": "low",
-        "attack_types": ["normal", "double", "poison", "defence_break"]
+        "attack_types": ["normal", "double", "poison", "defence_break"],
+        "soultype": "standard",
+        "monster_type": "earth"
     },
 
     "Slime": {
@@ -337,7 +356,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(50, 70)
         },
         "tier": "low",
-        "attack_types": ["normal", "poison", "draining", "defence_break"]
+        "attack_types": ["normal", "poison", "draining", "defence_break"],
+        "soultype": "standard",
+        "monster_type": "water"
     },
 
     "Frog": {
@@ -355,7 +376,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(30, 50)
         },
         "tier": "low",
-        "attack_types": ["normal", "double", "poison", "stunning"]
+        "attack_types": ["normal", "double", "poison", "stunning"],
+        "soultype": "standard",
+        "monster_type": "water"
     },
 
     "Tree Sprite": {
@@ -373,7 +396,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(40, 60)
         },
         "tier": "low",
-        "attack_types": ["normal", "draining", "stunning", "attack_weaken"]
+        "attack_types": ["normal", "draining", "stunning", "attack_weaken"],
+        "soultype": "standard",
+        "monster_type": "spirit"
     },
 
     "Snake": {
@@ -391,7 +416,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(20, 40)
         },
         "tier": "low",
-        "attack_types": ["normal", "double", "poison", "defence_break"]
+        "attack_types": ["normal", "double", "poison", "defence_break"],
+        "soultype": "standard",
+        "monster_type": "earth"
     },
 
     "Forest Hawk": {
@@ -409,7 +436,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(20, 40)
         },
         "tier": "low",
-        "attack_types": ["normal", "double", "stunning", "triple"]
+        "attack_types": ["normal", "double", "stunning", "triple"],
+        "soultype": "standard",
+        "monster_type": "wind"
     },
 
     "Locust": {
@@ -427,7 +456,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(20, 40)
         },
         "tier": "low",
-        "attack_types": ["normal", "double", "poison", "triple"]
+        "attack_types": ["normal", "double", "poison", "triple"],
+        "soultype": "standard",
+        "monster_type": "wind"
     },
 
     "Leprechaun": {
@@ -445,7 +476,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(50, 70)
         },
         "tier": "low",
-        "attack_types": ["normal", "double", "stunning", "draining"]
+        "attack_types": ["normal", "double", "stunning", "draining"],
+        "soultype": "standard",
+        "monster_type": "warrior"
     },
     
     "Deep Bat": {
@@ -463,7 +496,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(20, 40)
         },
         "tier": "low",
-        "attack_types": ["normal", "double", "vampiric", "draining"]
+        "attack_types": ["normal", "double", "vampiric", "draining"],
+        "soultype": "standard",
+        "monster_type": "wind"
     },
 
     "Giant Firefly": {
@@ -481,7 +516,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(20, 40)
         },
         "tier": "low",
-        "attack_types": ["normal", "double", "burn", "poison"]
+        "attack_types": ["normal", "double", "burn", "poison"],
+        "soultype": "standard",
+        "monster_type": "wind"
     },
 
     "Deepwood Stalker": {
@@ -499,7 +536,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(30, 50)
         },
         "tier": "low",
-        "attack_types": ["normal", "double", "poison", "attack_weaken"]
+        "attack_types": ["normal", "double", "poison", "attack_weaken"],
+        "soultype": "standard",
+        "monster_type": "earth"
     },
 
     "Wood Spirit": {
@@ -517,7 +556,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(50, 70)
         },
         "tier": "low",
-        "attack_types": ["normal", "draining", "stunning", "defence_break"]
+        "attack_types": ["normal", "draining", "stunning", "defence_break"],
+        "soultype": "standard",
+        "monster_type": "spirit"
     },
 
     "Treant": {
@@ -535,7 +576,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(60, 80)
         },
         "tier": "low",
-        "attack_types": ["normal", "power", "stunning", "damage_reflect"]
+        "attack_types": ["normal", "power", "stunning", "damage_reflect"],
+        "soultype": "standard",
+        "monster_type": "spirit"
     },
     # Medium Enemies
     "Alligator": {
@@ -553,7 +596,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(75, 100)        # Tough hide
         },
         "tier": "medium",
-        "attack_types": ["normal", "power", "reckless", "stunning"]
+        "attack_types": ["normal", "power", "reckless", "stunning"],
+        "soultype": "standard",
+        "monster_type": "water"
     },
 
     "Poison Frog": {
@@ -571,7 +616,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(40, 65)        # Dodges instead
         },
         "tier": "medium",
-        "attack_types": ["normal", "double", "poison", "defence_break"]
+        "attack_types": ["normal", "double", "poison", "defence_break"],
+        "soultype": "standard",
+        "monster_type": "water"
     },
 
     "Swamp Troll": {
@@ -589,7 +636,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(80, 105)      # Uses size to block
         },
         "tier": "medium",
-        "attack_types": ["normal", "power", "poison", "damage_reflect"]
+        "attack_types": ["normal", "power", "poison", "damage_reflect"],
+        "soultype": "standard",
+        "monster_type": "water"
     },
 
     "Mosquito Swarm": {
@@ -607,7 +656,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(40, 65)        # Can't block
         },
         "tier": "medium",
-        "attack_types": ["normal", "triple", "poison", "draining"]
+        "attack_types": ["normal", "triple", "poison", "draining"],
+        "soultype": "standard",
+        "monster_type": "wind"
     },
 
     "Bog Witch": {
@@ -625,7 +676,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(70, 95)       # Magical barriers
         },
         "tier": "medium",
-        "attack_types": ["normal", "poison", "burn", "draining"]
+        "attack_types": ["normal", "poison", "burn", "draining"],
+        "soultype": "standard",
+        "monster_type": "water"
     },
 
     "Stone Golem": {
@@ -643,7 +696,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(90, 115)     # Good at blocking
         },
         "tier": "medium",
-        "attack_types": ["normal", "power", "stunning", "defence_break"]
+        "attack_types": ["normal", "power", "stunning", "defence_break"],
+        "soultype": "standard",
+        "monster_type": "earth"
     },
 
     "Cultist": {
@@ -661,7 +716,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(80, 105)       # Combat training
         },
         "tier": "medium",
-        "attack_types": ["normal", "burn", "poison", "attack_weaken"]
+        "attack_types": ["normal", "burn", "poison", "attack_weaken"],
+        "soultype": "standard",
+        "monster_type": "arcane"
     },
     
     "Mummy": {
@@ -679,7 +736,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(85, 110)      # Good at blocking
         },
         "tier": "medium",
-        "attack_types": ["normal", "draining", "stunning", "poison"]
+        "attack_types": ["normal", "draining", "stunning", "poison"],
+        "soultype": "standard",
+        "monster_type": "undead"
     },
 
     "Animated Statue": {
@@ -697,7 +756,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(95, 120)       # Excellent blocker
         },
         "tier": "medium",
-        "attack_types": ["normal", "power", "stunning", "damage_reflect"]
+        "attack_types": ["normal", "power", "stunning", "damage_reflect"],
+        "soultype": "standard",
+        "monster_type": "earth"
     },
 
     "Temple Guardian": {
@@ -715,7 +776,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(100, 125)     # Trained defender
         },
         "tier": "medium",
-        "attack_types": ["normal", "power", "stunning", "defence_break"]
+        "attack_types": ["normal", "power", "stunning", "defence_break"],
+        "soultype": "standard",
+        "monster_type": "earth"
     },
 
     "Mountain Lion": {
@@ -733,7 +796,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(50, 75)         # Prefers dodging
         },
         "tier": "medium",
-        "attack_types": ["normal", "double", "reckless", "power"]
+        "attack_types": ["normal", "double", "reckless", "power"],
+        "soultype": "standard",
+        "monster_type": "earth"
     },
 
     "Rock Elemental": {
@@ -751,7 +816,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(95, 120)       # Natural shield
         },
         "tier": "medium",
-        "attack_types": ["normal", "power", "stunning", "damage_reflect"]
+        "attack_types": ["normal", "power", "stunning", "damage_reflect"],
+        "soultype": "standard",
+        "monster_type": "earth"
     },
 
     "Harpy": {
@@ -769,7 +836,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(55, 70)        # Dodges instead
         },
         "tier": "medium",
-        "attack_types": ["normal", "double", "stunning", "triple"]
+        "attack_types": ["normal", "double", "stunning", "triple"],
+        "soultype": "standard",
+        "monster_type": "wind"
     },
 
     "Yeti": {
@@ -787,7 +856,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(75, 100)      # Uses size
         },
         "tier": "medium",
-        "attack_types": ["normal", "power", "reckless", "freeze"]
+        "attack_types": ["normal", "power", "reckless", "freeze"],
+        "soultype": "ice",
+        "monster_type": "earth"
     },
 
     "Orc": {
@@ -805,7 +876,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(75, 100)        # Combat trained
         },
         "tier": "medium",
-        "attack_types": ["normal", "power", "reckless", "stunning"]
+        "attack_types": ["normal", "power", "reckless", "stunning"],
+        "soultype": "standard",
+        "monster_type": "warrior"
     },
 
     "Sand Wurm": {
@@ -823,7 +896,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(80, 105)        # Scales help block
         },
         "tier": "medium",
-        "attack_types": ["normal", "power", "poison", "stunning"]
+        "attack_types": ["normal", "power", "poison", "stunning"],
+        "soultype": "standard",
+        "monster_type": "earth"
     },
     
     "Dried Mummy": {
@@ -841,7 +916,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(80, 105)      # Ancient training
         },
         "tier": "medium",
-        "attack_types": ["normal", "draining", "poison", "burn"]
+        "attack_types": ["normal", "draining", "poison", "burn"],
+        "soultype": "standard",
+        "monster_type": "undead"
     },
 
     "Dust Devil": {
@@ -859,7 +936,29 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(50, 75)        # Can't really block
         },
         "tier": "medium",
-        "attack_types": ["normal", "double", "attack_weaken", "triple"]
+        "attack_types": ["normal", "double", "attack_weaken", "triple"],
+        "soultype": "standard",
+        "monster_type": "spirit"
+    },
+    
+    "Phoenix": {
+        "name": "Phoenix",
+        "stats": {
+            "hp_percent": random.randint(150, 160),       # High HP to represent rebirth
+            "attack_percent": random.randint(95, 120),
+            "defence_percent": random.randint(65, 90),  # Hard to hit but not tough
+            "accuracy_percent": random.randint(100, 125),
+            "evasion_percent": random.randint(105, 130), # Wind form
+            "crit_chance_percent": random.randint(100, 130),
+            "crit_damage_percent": random.randint(100, 125),
+            "armour_penetration_percent": random.randint(100, 125), # Fire penetration
+            "damage_reduction_percent": random.randint(30, 55),    # Weak physical form
+            "block_chance_percent": random.randint(50, 75)        # Can't really block
+        },
+        "tier": "medium",
+        "attack_types": ["normal", "double", "burn", "triple"],
+        "soultype": "standard",
+        "monster_type": "fire"
     },
 
     "Desert Bandit": {
@@ -877,7 +976,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(80, 105)        # Combat training
         },
         "tier": "medium",
-        "attack_types": ["normal", "double", "poison", "defence_break"]
+        "attack_types": ["normal", "double", "poison", "defence_break"],
+        "soultype": "standard",
+        "monster_type": "warrior"
     },
 
     "Leopard": {
@@ -895,7 +996,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(50, 75)         # Dodges instead
         },
         "tier": "medium",
-        "attack_types": ["normal", "double", "reckless", "triple"]
+        "attack_types": ["normal", "double", "reckless", "triple"],
+        "soultype": "standard",
+        "monster_type": "grass"
     },
     
     # Medium-Hard enemies
@@ -914,7 +1017,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(50, 80)         # Dodges rather than blocks
         },
         "tier": "medium-hard",
-        "attack_types": ["normal", "double", "reckless", "power", "stunning"]
+        "attack_types": ["normal", "double", "reckless", "power", "stunning"],
+        "soultype": "standard",
+        "monster_type": "earth"
     },
 
     "Twisted Mesquite": {
@@ -932,7 +1037,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(90, 120)     # Good at blocking
         },
         "tier": "medium-hard",
-        "attack_types": ["normal", "poison", "stunning", "draining", "damage_reflect"]
+        "attack_types": ["normal", "poison", "stunning", "draining", "damage_reflect"],
+        "soultype": "standard",
+        "monster_type": "undead"
     },
 
     "Dustier Devil": {
@@ -950,7 +1057,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(50, 70)      # Doesn't block, evades
         },
         "tier": "medium-hard",
-        "attack_types": ["normal", "double", "stunning", "triple", "draining"]
+        "attack_types": ["normal", "double", "stunning", "triple", "draining"],
+        "soultype": "standard",
+        "monster_type": "spirit"
     },
 
     "Petrified Warrior": {
@@ -968,7 +1077,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(95, 125)     # Skilled defender
         },
         "tier": "medium-hard",
-        "attack_types": ["normal", "power", "stunning", "defence_break", "damage_reflect"]
+        "attack_types": ["normal", "power", "stunning", "defence_break", "damage_reflect"],
+        "soultype": "standard",
+        "monster_type": "earth"
     },
 
     "Thunderbird": {
@@ -986,7 +1097,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(50, 80)         # Dodges instead
         },
         "tier": "medium-hard",
-        "attack_types": ["normal", "double", "stunning", "triple", "attack_weaken"]
+        "attack_types": ["normal", "double", "stunning", "triple", "attack_weaken"],
+        "soultype": "standard",
+        "monster_type": "lightning"
     },
 
     "Valley Tiger": {
@@ -1004,7 +1117,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(55, 85)         # Prefers evasion
         },
         "tier": "medium-hard",
-        "attack_types": ["normal", "double", "reckless", "triple", "power"]
+        "attack_types": ["normal", "double", "reckless", "triple", "power"],
+        "soultype": "standard",
+        "monster_type": "grass"
     },
     
     # Hard Enemies
@@ -1023,7 +1138,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(50, 85)         # Too aggressive to block
         },
         "tier": "hard",
-        "attack_types": ["normal", "power", "poison", "double", "triple"]
+        "attack_types": ["normal", "power", "poison", "double", "triple"],
+        "soultype": "standard",
+        "monster_type": "water"
     },
 
     "Plague Bearer": {
@@ -1041,7 +1158,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(50, 85)         # Doesn't block much
         },
         "tier": "hard",
-        "attack_types": ["normal", "poison", "vampiric", "draining", "attack_weaken"]
+        "attack_types": ["normal", "poison", "vampiric", "draining", "attack_weaken"],
+        "soultype": "standard",
+        "monster_type": "undead"
     },
 
     "Mire Leviathan": {
@@ -1059,7 +1178,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(100, 135)       # Uses size to block
         },
         "tier": "hard",
-        "attack_types": ["normal", "power", "stunning", "poison", "defence_break"]
+        "attack_types": ["normal", "power", "stunning", "poison", "defence_break"],
+        "soultype": "standard",
+        "monster_type": "water"
     },
 
     "Toxic Shambler": {
@@ -1077,7 +1198,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(55, 90)        # Poor coordination
         },
         "tier": "hard",
-        "attack_types": ["normal", "poison", "vampiric", "draining", "double"]
+        "attack_types": ["normal", "poison", "vampiric", "draining", "double"],
+        "soultype": "standard",
+        "monster_type": "undead"
     },
 
     "Swamp Hag": {
@@ -1095,7 +1218,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(60, 95)        # Magical barriers
         },
         "tier": "hard",
-        "attack_types": ["normal", "poison", "stunning", "draining", "attack_weaken"]
+        "attack_types": ["normal", "poison", "stunning", "draining", "attack_weaken"],
+        "soultype": "standard",
+        "monster_type": "water"
     },
 
     "Ancient Golem": {
@@ -1113,7 +1238,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(110, 145)       # Living wall
         },
         "tier": "hard",
-        "attack_types": ["normal", "power", "stunning", "damage_reflect", "defence_break"]
+        "attack_types": ["normal", "power", "stunning", "damage_reflect", "defence_break"],
+        "soultype": "standard",
+        "monster_type": "earth"
     },
     
     "Cursed Pharaoh": {
@@ -1131,7 +1258,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(90, 125)       # Ancient combat training
         },
         "tier": "hard",
-        "attack_types": ["normal", "poison", "stunning", "draining", "attack_weaken"]
+        "attack_types": ["normal", "poison", "stunning", "draining", "attack_weaken"],
+        "soultype": "standard",
+        "monster_type": "undead"
     },
 
     "Temporal Anomaly": {
@@ -1149,7 +1278,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(55, 80)         # Dodges instead
         },
         "tier": "hard",
-        "attack_types": ["normal", "double", "stunning", "defence_break", "attack_weaken"]
+        "attack_types": ["normal", "double", "stunning", "defence_break", "attack_weaken"],
+        "soultype": "standard",
+        "monster_type": "void"
     },
 
     "Ruin Wraith": {
@@ -1167,7 +1298,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(55, 80)         # Phases instead
         },
         "tier": "hard",
-        "attack_types": ["normal", "draining", "vampiric", "stunning", "attack_weaken"]
+        "attack_types": ["normal", "draining", "vampiric", "stunning", "attack_weaken"],
+        "soultype": "standard",
+        "monster_type": "spirit"
     },
 
     "Forgotten Titan": {
@@ -1185,7 +1318,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(100, 135)       # Uses size
         },
         "tier": "hard",
-        "attack_types": ["normal", "power", "reckless", "stunning", "defence_break"]
+        "attack_types": ["normal", "power", "reckless", "stunning", "defence_break"],
+        "soultype": "standard",
+        "monster_type": "warrior"
     },
 
     "Frost Giant": {
@@ -1203,7 +1338,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(95, 130)       # Ice shield
         },
         "tier": "hard",
-        "attack_types": ["normal", "power", "stunning", "freeze", "defence_break"]
+        "attack_types": ["normal", "power", "stunning", "freeze", "defence_break"],
+        "soultype": "standard",
+        "monster_type": "ice"
     },
 
     "Storm Harpy": {
@@ -1221,7 +1358,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(50, 85)         # Dodges instead
         },
         "tier": "hard",
-        "attack_types": ["normal", "double", "stunning", "triple", "attack_weaken"]
+        "attack_types": ["normal", "double", "stunning", "triple", "attack_weaken"],
+        "soultype": "lightning",
+        "monster_type": "earth"
     },
     
     "Avalanche Elemental": {
@@ -1239,7 +1378,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(100, 135)       # Natural shield
         },
         "tier": "hard",
-        "attack_types": ["normal", "power", "freeze", "stunning", "damage_reflect"]
+        "attack_types": ["normal", "power", "freeze", "stunning", "damage_reflect"],
+        "soultype": "ice",
+        "monster_type": "earth"
     },
 
     "Mountain Wyvern": {
@@ -1257,13 +1398,15 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(60, 95)        # Prefers dodging
         },
         "tier": "hard",
-        "attack_types": ["normal", "double", "reckless", "stunning", "poison"]
+        "attack_types": ["normal", "double", "reckless", "stunning", "poison"],
+        "soultype": "standard",
+        "monster_type": "wind"
     },
 
     "Yeti Alpha": {
         "name": "Yeti Alpha",
         "stats": {
-            "hp_percent": random.randint(115, 150),      # Massive beast
+            "hp_percent": random.randint(115, 150),      # Massive earth
             "attack_percent": random.randint(110, 145),  # Primal strength
             "defence_percent": random.randint(100, 135), # Thick fur
             "accuracy_percent": random.randint(75, 110),  # Wild swings
@@ -1275,7 +1418,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(85, 120)        # Uses size
         },
         "tier": "hard",
-        "attack_types": ["normal", "power", "reckless", "freeze", "stunning"]
+        "attack_types": ["normal", "power", "reckless", "freeze", "stunning"],
+        "soultype": "standard",
+        "monster_type": "ice"
     },
 
     "Fire Elemental": {
@@ -1293,7 +1438,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(50, 85)         # Fluid form
         },
         "tier": "hard",
-        "attack_types": ["normal", "power", "reckless", "burn", "stunning"]
+        "attack_types": ["normal", "power", "reckless", "burn", "stunning"],
+        "soultype": "standard",
+        "monster_type": "fire"
     },
 
     "Sandstorm Djinn": {
@@ -1311,7 +1458,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(50, 85)         # Dodges instead
         },
         "tier": "hard",
-        "attack_types": ["normal", "double", "stunning", "damage_reflect", "attack_weaken"]
+        "attack_types": ["normal", "double", "stunning", "damage_reflect", "attack_weaken"],
+        "soultype": "standard",
+        "monster_type": "spirit"
     },
 
     "Mirage Assassin": {
@@ -1329,7 +1478,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(55, 80)         # Pure evasion
         },
         "tier": "hard",
-        "attack_types": ["normal", "double", "poison", "triple", "stunning"]
+        "attack_types": ["normal", "double", "poison", "triple", "stunning"],
+        "soultype": "standard",
+        "monster_type": "warrior"
     },
     
     "Sunburst Phoenix": {
@@ -1347,7 +1498,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(50, 85)         # Dodges instead
         },
         "tier": "hard",
-        "attack_types": ["normal", "power", "reckless", "burn", "stunning"]
+        "attack_types": ["normal", "power", "reckless", "burn", "stunning"],
+        "soultype": "standard",
+        "monster_type": "fire"
     },
 
     "Desert Colossus": {
@@ -1365,7 +1518,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(100, 135)       # Living wall
         },
         "tier": "hard",
-        "attack_types": ["normal", "power", "stunning", "defence_break", "damage_reflect"]
+        "attack_types": ["normal", "power", "stunning", "defence_break", "damage_reflect"],
+        "soultype": "standard",
+        "monster_type": "warrior"
     },
 
     "Nightmare Stalker": {
@@ -1383,7 +1538,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(55, 80)         # Phases through
         },
         "tier": "hard",
-        "attack_types": ["normal", "double", "vampiric", "stunning", "attack_weaken"]
+        "attack_types": ["normal", "double", "vampiric", "stunning", "attack_weaken"],
+        "soultype": "standard",
+        "monster_type": "grass"
     },
 
     "Void Weaver": {
@@ -1401,7 +1558,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(50, 85)         # Warps space instead
         },
         "tier": "hard",
-        "attack_types": ["normal", "draining", "stunning", "attack_weaken", "poison"]
+        "attack_types": ["normal", "draining", "stunning", "attack_weaken", "poison"],
+        "soultype": "standard",
+        "monster_type": "void"
     },
 
     "Shadow Dragon": {
@@ -1419,7 +1578,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(65, 100)        # Prefers evasion
         },
         "tier": "hard",
-        "attack_types": ["normal", "power", "triple", "stunning", "draining"]
+        "attack_types": ["normal", "power", "triple", "stunning", "draining"],
+        "soultype": "standard",
+        "monster_type": "dragon"
     },
 
     "Ethereal Banshee": {
@@ -1437,7 +1598,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(50, 75)         # Can't block
         },
         "tier": "hard",
-        "attack_types": ["normal", "draining", "stunning", "attack_weaken", "double"]
+        "attack_types": ["normal", "draining", "stunning", "attack_weaken", "double"],
+        "soultype": "standard",
+        "monster_type": "spirit"
     },
 
     "Abyssal Behemoth": {
@@ -1455,7 +1618,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(100, 135)       # Natural barrier
         },
         "tier": "hard",
-        "attack_types": ["normal", "power", "reckless", "stunning", "defence_break"]
+        "attack_types": ["normal", "power", "reckless", "stunning", "defence_break"],
+        "soultype": "standard",
+        "monster_type": "void"
     },
     
     # Very Hard Enemies
@@ -1474,7 +1639,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(110, 150)       # Guardian's duty
         },
         "tier": "very-hard",
-        "attack_types": ["normal", "power", "stunning", "draining", "defence_break", "damage_reflect"]
+        "attack_types": ["normal", "power", "stunning", "draining", "defence_break", "damage_reflect"],
+        "soultype": "standard",
+        "monster_type": "undead"
     },
 
     "Soul Reaver": {
@@ -1492,7 +1659,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(60, 100)        # Phases through
         },
         "tier": "very-hard",
-        "attack_types": ["normal", "triple", "vampiric", "draining", "attack_weaken", "stunning"]
+        "attack_types": ["normal", "triple", "vampiric", "draining", "attack_weaken", "stunning"],
+        "soultype": "standard",
+        "monster_type": "spirit"
     },
 
     "Bone Colossus": {
@@ -1510,7 +1679,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(110, 150)       # Living wall
         },
         "tier": "very-hard",
-        "attack_types": ["normal", "power", "stunning", "reckless", "defence_break", "damage_reflect"]
+        "attack_types": ["normal", "power", "stunning", "reckless", "defence_break", "damage_reflect"],
+        "soultype": "standard",
+        "monster_type": "undead"
     },
 
     "Spectral Devourer": {
@@ -1528,7 +1699,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(55, 95)        # Can't block
         },
         "tier": "very-hard",
-        "attack_types": ["normal", "vampiric", "poison", "draining", "attack_weaken", "stunning"]
+        "attack_types": ["normal", "vampiric", "poison", "draining", "attack_weaken", "stunning"],
+        "soultype": "standard",
+        "monster_type": "spirit"
     },
 
     "Lich King": {
@@ -1546,7 +1719,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(100, 140)       # Spell shields
         },
         "tier": "very-hard",
-        "attack_types": ["normal", "draining", "poison", "freeze", "attack_weaken", "stunning"]
+        "attack_types": ["normal", "draining", "poison", "freeze", "attack_weaken", "stunning"],
+        "soultype": "standard",
+        "monster_type": "undead"
     },
     
     "Timeless Sphinx": {
@@ -1564,7 +1739,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(80, 120)        # Prefers evasion
         },
         "tier": "very-hard",
-        "attack_types": ["normal", "stunning", "draining", "poison", "attack_weaken", "damage_reflect"]
+        "attack_types": ["normal", "stunning", "draining", "poison", "attack_weaken", "damage_reflect"],
+        "soultype": "standard",
+        "monster_type": "arcane"
     },
 
     "Eternal Pharaoh": {
@@ -1582,7 +1759,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(110, 150)       # Divine shield
         },
         "tier": "very-hard",
-        "attack_types": ["normal", "power", "poison", "draining", "defence_break", "stunning"]
+        "attack_types": ["normal", "power", "poison", "draining", "defence_break", "stunning"],
+        "soultype": "standard",
+        "monster_type": "undead"
     },
 
     "Anubis Reborn": {
@@ -1600,7 +1779,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(90, 130)       # Death's shield
         },
         "tier": "very-hard",
-        "attack_types": ["normal", "vampiric", "stunning", "double", "defence_break", "triple"]
+        "attack_types": ["normal", "vampiric", "stunning", "double", "defence_break", "triple"],
+        "soultype": "standard",
+        "monster_type": "arcane"
     },
 
     "Mummy Emperor": {
@@ -1618,7 +1799,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(115, 155)       # Royal guard training
         },
         "tier": "very-hard",
-        "attack_types": ["normal", "power", "poison", "stunning", "damage_reflect", "damage_reflect"]
+        "attack_types": ["normal", "power", "poison", "stunning", "damage_reflect", "damage_reflect"],
+        "soultype": "standard",
+        "monster_type": "undead"
     },
 
     "Living Obelisk": {
@@ -1636,7 +1819,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(120, 160)       # Living wall
         },
         "tier": "very-hard",
-        "attack_types": ["normal", "power", "stunning", "reckless", "damage_reflect", "defence_break"]
+        "attack_types": ["normal", "power", "stunning", "reckless", "damage_reflect", "defence_break"],
+        "soultype": "standard",
+        "monster_type": "earth"
     },
 
     "Apocalypse Horseman": {
@@ -1654,7 +1839,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(90, 130)       # Prefers offense
         },
         "tier": "very-hard",
-        "attack_types": ["normal", "reckless", "poison", "draining", "attack_weaken", "stunning"]
+        "attack_types": ["normal", "reckless", "poison", "draining", "attack_weaken", "stunning"],
+        "soultype": "standard",
+        "monster_type": "warrior"
     },
     
     "Abyssal Wyrm": {
@@ -1672,7 +1859,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(85, 125)        # Uses size
         },
         "tier": "very-hard",
-        "attack_types": ["normal", "power", "poison", "stunning", "defence_break", "reckless"]
+        "attack_types": ["normal", "power", "poison", "stunning", "defence_break", "reckless"],
+        "soultype": "standard",
+        "monster_type": "dragon"
     },
 
     "Void Titan": {
@@ -1690,7 +1879,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(110, 150)       # Living barrier
         },
         "tier": "very-hard",
-        "attack_types": ["normal", "reckless", "stunning", "draining", "defence_break", "confusion"]
+        "attack_types": ["normal", "reckless", "stunning", "draining", "defence_break", "confusion"],
+        "soultype": "standard",
+        "monster_type": "void"
     },
 
     "Chaos Incarnate": {
@@ -1708,7 +1899,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(60, 100)        # Can't focus
         },
         "tier": "very-hard",
-        "attack_types": ["normal", "double", "poison", "vampiric", "attack_weaken", "stunning"]
+        "attack_types": ["normal", "double", "poison", "vampiric", "attack_weaken", "stunning"],
+        "soultype": "standard",
+        "monster_type": "void"
     },
 
     "Eternity Warden": {
@@ -1726,7 +1919,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(115, 155)       # Guardian's duty
         },
         "tier": "very-hard",
-        "attack_types": ["normal", "power", "stunning", "freeze", "defence_break", "damage_reflect"]
+        "attack_types": ["normal", "power", "stunning", "freeze", "defence_break", "damage_reflect"],
+        "soultype": "standard",
+        "monster_type": "ice"
     },
 
     "Ancient Wyvern": {
@@ -1744,7 +1939,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(80, 120)        # Dodges instead
         },
         "tier": "very-hard",
-        "attack_types": ["normal", "triple", "poison", "reckless", "stunning", "attack_weaken"]
+        "attack_types": ["normal", "triple", "poison", "reckless", "stunning", "attack_weaken"],
+        "soultype": "standard",
+        "monster_type": "dragon"
     },
 
     "Elemental Drake": {
@@ -1762,7 +1959,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(75, 115)        # Avoids instead
         },
         "tier": "very-hard",
-        "attack_types": ["normal", "burn", "poison", "freeze", "stunning", "confusion"]
+        "attack_types": ["normal", "burn", "poison", "freeze", "stunning", "confusion"],
+        "soultype": "standard",
+        "monster_type": "ice"
     },
     
     "Dragonlord": {
@@ -1780,7 +1979,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(95, 135)       # Prefers domination
         },
         "tier": "very-hard",
-        "attack_types": ["normal", "power", "reckless", "stunning", "damage_reflect", "confusion"]
+        "attack_types": ["normal", "power", "reckless", "stunning", "damage_reflect", "confusion"],
+        "soultype": "standard",
+        "monster_type": "dragon"
     },
 
     "Chromatic Dragon": {
@@ -1798,7 +1999,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(80, 120)        # Relies on evasion
         },
         "tier": "very-hard",
-        "attack_types": ["normal", "burn", "poison", "freeze", "stunning", "confusion"]
+        "attack_types": ["normal", "burn", "poison", "freeze", "stunning", "confusion"],
+        "soultype": "standard",
+        "monster_type": "dragon"
     },
 
     "Elder Dragon": {
@@ -1816,7 +2019,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(105, 145)       # Ancient defenses
         },
         "tier": "very-hard",
-        "attack_types": ["normal", "power", "stunning", "draining", "defence_break", "damage_reflect"]
+        "attack_types": ["normal", "power", "stunning", "draining", "defence_break", "damage_reflect"],
+        "soultype": "standard",
+        "monster_type": "dragon"
     },
     
     # Extreme Enemies
@@ -1835,7 +2040,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(120, 150)       # Living wall
         },
         "tier": "extreme",
-        "attack_types": ["normal", "power", "reckless", "burn", "stunning", "damage_reflect", "defence_break"]
+        "attack_types": ["normal", "power", "reckless", "burn", "stunning", "damage_reflect", "defence_break"],
+        "soultype": "boss",
+        "monster_type": "fire"
     },
 
     "Phoenix Overlord": {
@@ -1853,7 +2060,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(80, 110)        # Dodges instead
         },
         "tier": "extreme",
-        "attack_types": ["normal", "double", "stunning", "triple", "burn", "attack_weaken", "vampiric"]
+        "attack_types": ["normal", "double", "stunning", "triple", "burn", "attack_weaken", "vampiric"],
+        "soultype": "boss",
+        "monster_type": "fire"
     },
 
     "Volcanic Titan": {
@@ -1871,7 +2080,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(120, 150)       # Mountain shield
         },
         "tier": "extreme",
-        "attack_types": ["normal", "power", "stunning", "damage_reflect", "burn", "defence_break", "reckless"]
+        "attack_types": ["normal", "power", "stunning", "damage_reflect", "burn", "defence_break", "reckless"],
+        "soultype": "boss",
+        "monster_type": "fire"
     },
 
     "Inferno Wyrm": {
@@ -1889,7 +2100,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(90, 120)        # Aggressive nature
         },
         "tier": "extreme",
-        "attack_types": ["normal", "double", "power", "reckless", "defence_break" "burn", "attack_weaken"]
+        "attack_types": ["normal", "double", "power", "reckless", "defence_break" "burn", "attack_weaken"],
+        "soultype": "boss",
+        "monster_type": "fire"
     },
 
     "Cinder Archfiend": {
@@ -1907,7 +2120,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(85, 115)        # Offensive nature
         },
         "tier": "extreme",
-        "attack_types": ["normal", "power", "confusion", "vampiric", "attack_weaken", "burn", "defence_break"]
+        "attack_types": ["normal", "power", "confusion", "vampiric", "attack_weaken", "burn", "defence_break"],
+        "soultype": "boss",
+        "monster_type": "fire"
     },
     
     "Cosmic Devourer": {
@@ -1925,7 +2140,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(80, 110)        # Can't block reality
         },
         "tier": "extreme",
-        "attack_types": ["normal", "double", "triple", "confusion", "stunning", "draining", "attack_weaken"]
+        "attack_types": ["normal", "double", "triple", "confusion", "stunning", "draining", "attack_weaken"],
+        "soultype": "boss",
+        "monster_type": "void"
     },
 
     "Astral Behemoth": {
@@ -1943,7 +2160,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(115, 145)       # Cosmic shield
         },
         "tier": "extreme",
-        "attack_types": ["normal", "power", "confusion", "reckless", "defence_break", "stunning", "damage_reflect"]
+        "attack_types": ["normal", "power", "confusion", "reckless", "defence_break", "stunning", "damage_reflect"],
+        "soultype": "boss",
+        "monster_type": "void"
     },
 
     "Galactic Leviathan": {
@@ -1961,7 +2180,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(110, 140)       # Cosmic mass
         },
         "tier": "extreme",
-        "attack_types": ["normal", "power", "poison", "stunning", "defence_break"]
+        "attack_types": ["normal", "power", "poison", "stunning", "defence_break"],
+        "soultype": "boss",
+        "monster_type": "arcane"
     },
 
     "Nebula Colossus": {
@@ -1979,7 +2200,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(120, 150)       # Gas giant
         },
         "tier": "extreme",
-        "attack_types": ["normal", "power", "confusion", "damage_reflect", "reckless", "stunning", "defence_break"]
+        "attack_types": ["normal", "power", "confusion", "damage_reflect", "reckless", "stunning", "defence_break"],
+        "soultype": "boss",
+        "monster_type": "arcane"
     },
 
     "Celestial Titan": {
@@ -1997,7 +2220,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(115, 145)       # Divine guard
         },
         "tier": "extreme",
-        "attack_types": ["normal", "power", "confusion", "double", "stunning", "draining", "defence_break"]
+        "attack_types": ["normal", "power", "confusion", "double", "stunning", "draining", "defence_break"],
+        "soultype": "boss",
+        "monster_type": "arcane"
     },
     
     # Boss Monsters
@@ -2016,7 +2241,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(125, 155)       # Holy shield
         },
         "tier": "boss",
-        "attack_types": ["normal", "power", "stunning", "draining", "reckless", "damage_reflect", "triple"]
+        "attack_types": ["normal", "power", "stunning", "draining", "reckless", "damage_reflect", "triple"],
+        "soultype": "boss",
+        "monster_type": "warrior"
     },
 
     "Celestial Arbiter": {
@@ -2034,7 +2261,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(100, 130)       # Dodges instead
         },
         "tier": "boss",
-        "attack_types": ["normal", "double", "draining", "stunning", "triple", "vampiric", "attack_weaken"]
+        "attack_types": ["normal", "double", "draining", "stunning", "triple", "vampiric", "attack_weaken"],
+        "soultype": "boss",
+        "monster_type": "arcane"
     },
 
     "Astral Demiurge": {
@@ -2052,7 +2281,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(115, 145)       # Creation shield
         },
         "tier": "boss",
-        "attack_types": ["normal", "power", "poison", "freeze", "stunning", "vampiric", "defence_break"]
+        "attack_types": ["normal", "power", "poison", "freeze", "stunning", "vampiric", "defence_break"],
+        "soultype": "boss",
+        "monster_type": "void"
     },
 
     "Ethereal Leviathan": {
@@ -2070,7 +2301,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(100, 130)       # Phase through
         },
         "tier": "boss",
-        "attack_types": ["normal", "reckless", "draining", "double", "poison", "triple", "damage_reflect"]
+        "attack_types": ["normal", "reckless", "draining", "double", "poison", "triple", "damage_reflect"],
+        "soultype": "boss",
+        "monster_type": "spirit"
     },
 
     "Divine Architect": {
@@ -2088,7 +2321,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(125, 155)       # Divine shield
         },
         "tier": "boss",
-        "attack_types": ["normal", "power", "stunning", "freeze", "draining", "reckless", "defence_break"]
+        "attack_types": ["normal", "power", "stunning", "freeze", "draining", "reckless", "defence_break"],
+        "soultype": "boss",
+        "monster_type": "arcane"
     },
     
     # Event Enemies
@@ -2107,7 +2342,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(75, 100)
         },
         "tier": "medium",
-        "attack_types": ["normal", "power", "stunning", "damage_reflect", "defence_break"]
+        "attack_types": ["normal", "power", "stunning", "damage_reflect", "defence_break"],
+        "soultype": "standard",
+        "monster_type": "warrior"
     },
     
     "Echo Wraith": {
@@ -2125,7 +2362,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(35, 60)
         },
         "tier": "medium",
-        "attack_types": ["normal", "double", "vampiric", "draining", "attack_weaken"]
+        "attack_types": ["normal", "double", "vampiric", "draining", "attack_weaken"],
+        "soultype": "boss",
+        "monster_type": "spirit"
     },
     
     "Crystal Guardian": {
@@ -2143,7 +2382,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(70, 80)
         },
         "tier": "medium-hard",
-        "attack_types": ["power", "reckless", "attack_weaken", "defence_break", "damage_reflect"]
+        "attack_types": ["power", "reckless", "attack_weaken", "defence_break", "damage_reflect"],
+        "soultype": "boss",
+        "monster_type": "arcane"
     },
     
     "Void Walker": {
@@ -2162,7 +2403,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(50, 75)        # Dodges rather than blocks
         },
         "tier": "hard",  # Makes it a significant threat
-        "attack_types": ["normal", "double", "triple", "vampiric", "void_drain", "reality_rend"]
+        "attack_types": ["normal", "double", "triple", "vampiric", "void_drain", "reality_rend"],
+        "soultype": "boss",
+        "monster_type": "void"
     },
 
     "Empowered Void Walker": {
@@ -2181,7 +2424,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(60, 85)         # Still prefers dodging
         },
         "tier": "very-hard",
-        "attack_types": ["normal", "double", "triple", "reckless", "damage_reflect", "vampiric", "void_drain", "reality_rend"]
+        "attack_types": ["normal", "double", "triple", "reckless", "damage_reflect", "vampiric", "void_drain", "reality_rend"],
+        "soultype": "boss",
+        "monster_type": "void"
     },
     
     "Soul Forgemaster": {
@@ -2199,7 +2444,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(100, 130)
         },
         "tier": "boss",
-        "attack_types": ["normal", "power", "stunning", "vampiric", "draining", "defence_break"]
+        "attack_types": ["normal", "power", "stunning", "vampiric", "draining", "defence_break"],
+        "soultype": "boss",
+        "monster_type": "arcane"
     },
 
     
@@ -2220,7 +2467,9 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": 1
         },
         "tier": "medium",
-        "attack_types": ["confusion"]
+        "attack_types": ["confusion"],
+        "soultype": "standard",
+        "monster_type": "test"
     }
 }
 
@@ -2547,12 +2796,16 @@ def get_opposing_types():
     """Define type matchups for resistances/weaknesses"""
     return {
         "fire": "ice",
-        "ice": "fire",
-        "spirit": "construct",
-        "construct": "corrupted",
-        "corrupted": "arcane",
+        "ice": "wind",
+        "wind": "grass",
+        "grass": "earth",
+        "earth": "lightning",
+        "lightning": "water",
+        "water": "dragon",
+        "dragon": "warrior",
+        "warrior": "undead",
+        "undead": "spirit",
+        "spirit": "arcane",
         "arcane": "void",
-        "void": "spirit",
-        "storm": "earth",
-        "earth": "storm"
+        "void": "fire"
     }

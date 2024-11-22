@@ -8,7 +8,7 @@ class WorldMap:
             "Village": {"enemies": [], "connected_to": ["Forest", "Plains"], "min_level": 1},
             #Easy Monster Areas (levels 1-4)
             "Deepwoods": {"enemies": ["Wood Spirit", "Deepwood Stalker", "Deep Bat", "Giant Firefly", "Treant"], "connected_to": ["Forest", "Swamp"], "min_level": 2},
-            "Cave": {"enemies": ["Bat", "Goblin", "Spider", "Slime", "Frog"], "connected_to": ["Plains", "Temple"], "min_level": 2},
+            "Cave": {"enemies": ["Goblin", "Bat", "Spider", "Slime", "Frog"], "connected_to": ["Plains", "Temple"], "min_level": 2},
             "Forest": {"enemies": ["Tree Sprite", "Snake", "Forest Hawk", "Locust", "Leprechaun"], "connected_to": ["Village", "Deepwoods", "Mountain"], "min_level": 1},
             "Plains": {"enemies": ["Rat", "Boar", "Plains Hawk", "Strider", "Bull"], "connected_to": ["Village", "Cave", "Desert"], "min_level": 1},
             
@@ -16,7 +16,7 @@ class WorldMap:
             "Swamp": {"enemies": ["Alligator", "Poison Frog", "Swamp Troll", "Mosquito Swarm", "Bog Witch"], "connected_to": ["Deepwoods", "Toxic Swamp"], "min_level": 5},
             "Temple": {"enemies": ["Stone Golem", "Cultist", "Mummy", "Animated Statue", "Temple Guardian"], "connected_to": ["Cave", "Ruins"], "min_level": 5},
             "Mountain": {"enemies": ["Mountain Lion", "Rock Elemental", "Harpy", "Yeti", "Orc"], "connected_to": ["Forest", "Valley", "Mountain Peaks"], "min_level": 3},
-            "Desert": {"enemies": ["Sand Wurm", "Dried Mummy", "Dust Devil", "Desert Bandit", "Leopard"], "connected_to": ["Plains", "Valley", "Scorching Plains"], "min_level": 3},
+            "Desert": {"enemies": ["Sand Wurm", "Dried Mummy", "Dust Devil", "Desert Bandit", "Leopard", "Phoenix"], "connected_to": ["Plains", "Valley", "Scorching Plains"], "min_level": 3},
             
             #Medium-Hard Monster Areas (levels 10-14)
             "Valley": {"enemies": ["Canyon Cougar", "Twisted Mesquite", "Dustier Devil", "Petrified Warrior", "Thunderbird", "Valley Tiger"], "connected_to": ["Mountain", "Desert", "Shadowed Valley"], "min_level": 7},

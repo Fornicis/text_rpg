@@ -236,7 +236,7 @@ class RandomEventSystem:
                 ("Reject the offer", self._outcome_soul_reject)
             ],
             {
-                "min_level": 4,
+                "min_level": 8,
                 "location_type": ["Cave", "Death Valley", "Death Caves", "Temple", "Ancient Ruins", "Shadowed Valley"]
             }
         ))
@@ -252,8 +252,7 @@ class RandomEventSystem:
                     ("Challenge the forge", self._outcome_forge_challenge)
                 ],
                 {
-                    "min_level": 15,
-                    "location_type": ["Ancient Ruins", "Death Valley", "Death Caves", "Temple", "Heavens"]
+                    "min_level": 10,
                 }
             )) 
        
@@ -375,13 +374,13 @@ class RandomEventSystem:
         while True:
             try:
                 choice = int(input("\nEnter your choice (or 0 to try to leave): "))
-                if choice == 0:
+                """if choice == 0:
                     if random.random() < 0.7: # 70% chance to successfully leave
                         print("You carefully leave the area...")
                         return
                     else:
                         print("You can't avoid this situation...")
-                        continue
+                        continue"""
                     
                 if event.handle_choice(choice - 1, player, game):
                     break
@@ -1195,7 +1194,8 @@ class RandomEventSystem:
         """Create a soul crystal to store power"""
         standard_souls = sum(player.kill_tracker.values())
         variant_souls = sum(player.variant_kill_tracker.values()) * 5
-        total_souls = standard_souls + variant_souls
+        boss_souls = sum(player.boss_kill_tracker.values()) * 10
+        total_souls = standard_souls + variant_souls + boss_souls
         
         print(f"\nAvailable Souls: {total_souls}")
         print("\nCrystal Types:")
@@ -1598,10 +1598,10 @@ class RandomEventSystem:
         # Map quality to item tier
         tier_mapping = {
             "basic": "rare",
-            "enhanced": "rare",
-            "greater": "epic",
-            "blessed": "epic",
-            "soulbound": "legendary"
+            "enhanced": "epic",
+            "greater": "masterwork",
+            "blessed": "legendary",
+            "soulbound": "mythical"
         }
         target_tier = tier_mapping.get(quality, "rare")
         
@@ -1616,13 +1616,14 @@ class RandomEventSystem:
             
         # Select and modify base item
         base_item = random.choice(valid_items)
+        #print(f"Base item chosen is {base_item.name}") Debug print
         modified_item = self._modify_equipment_with_souls(base_item, souls_used, 
             quality, preferred_stats)
         
         player.add_item(modified_item)
         
         # Display item creation details
-        print(f"\nCreated: {modified_item.name} ({modified_item.type})")
+        print(f"\nCreated: {modified_item.name} ({modified_item.type.title()})")
         print("Stats:")
         stats_to_display = [
             ("Attack", modified_item.attack),
@@ -1686,11 +1687,11 @@ class RandomEventSystem:
         
         # Quality multipliers for stats
         quality_multipliers = {
-            "basic": 1.2,
-            "enhanced": 1.4,
-            "greater": 1.6,
-            "blessed": 1.8,
-            "soulbound": 2.0
+            "basic": 1.3,
+            "enhanced": 1.6,
+            "greater": 1.9,
+            "blessed": 2.2,
+            "soulbound": 2.5
         }
         multiplier = quality_multipliers.get(quality, 1.0)
         
@@ -1722,18 +1723,19 @@ class RandomEventSystem:
             if monster_counts else "unknown"
         
         prefixes = {
-            "beast": ["Feral", "Bestial", "Savage", "Wild"],
+            "earth": ["Feral", "Bestial", "Savage", "Wild"],
+            "wind": ["Tempest", "Gale", "Zephyr", "Windswept"],
+            "water": ["Tidal", "Aqua", "Ocean", "Torrent"],
+            "grass": ["Verdant", "Wild", "Primal", "Natural"],
             "dragon": ["Draconic", "Wyrm", "Dragon-Forged", "Scaled"],
             "undead": ["Deathbound", "Grave-Touched", "Ghostly", "Spectral"],
             "spirit": ["Ethereal", "Phantom", "Spirit-Touched", "Wraithbound"],
             "fire": ["Blazing", "Infernal", "Flame-Forged", "Molten"],
             "ice": ["Frozen", "Frost-Touched", "Glacial", "Rimefrost"],
-            "storm": ["Thunder", "Lightning", "Storm-Forged", "Tempest"],
+            "lightning": ["Thunder", "Lightning", "Storm-Forged", "Tempest"],
             "arcane": ["Mystic", "Spellbound", "Arcane", "Enchanted"],
             "void": ["Void-Touched", "Null", "Cosmic", "Astral"],
             "warrior": ["Battle", "War-Forged", "Champion's", "Warrior"],
-            "construct": ["Golem", "Stone-Forged", "Artificial", "Construct"],
-            "corrupted": ["Corrupt", "Tainted", "Defiled", "Blighted"]
         }
         
         suffixes = {
@@ -1765,9 +1767,9 @@ class RandomEventSystem:
                     
         # Process variant souls - add their preferences with higher weight
         if souls_used.get("variant"):
-            variant_stats = ["accuracy", "crit_chance", "crit_damage", "armour_penetration"]
+            variant_stats = ["accuracy", "crit_chance", "crit_damage", "armour_penetration", "attack", "evasion"]
             for stat in variant_stats:
-                stat_votes[stat] = stat_votes.get(stat, 0) + sum(souls_used["variant"].values()) * 2
+                stat_votes[stat] = stat_votes.get(stat, 0) + sum(souls_used["variant"].values()) * 3
                 
         # Process boss souls - add all high-tier stats
         if souls_used.get("boss"):
@@ -1776,7 +1778,7 @@ class RandomEventSystem:
                 "armour_penetration", "damage_reduction", "block_chance"
             ]
             for stat in boss_stats:
-                stat_votes[stat] = stat_votes.get(stat, 0) + sum(souls_used["boss"].values()) * 3
+                stat_votes[stat] = stat_votes.get(stat, 0) + sum(souls_used["boss"].values()) * 6
                 
         # Return top stats
         sorted_stats = sorted(stat_votes.items(), key=lambda x: x[1], reverse=True)
@@ -1800,29 +1802,30 @@ class RandomEventSystem:
     def _create_soul_crystal(self, player, game, crystal_type, selected_souls):
         """Create a soul crystal with the selected souls"""
         # Define base parameters for crystal types
+        total_souls = sum(selected_souls["standard"].values()) + (sum(selected_souls["variant"].values()) * 5) + (sum(selected_souls["boss"].values()) * 10)
         crystal_params = {
             "lesser": {
                 "buff_count": random.randint(1, 2),
-                "min_value": 6,
-                "max_value": 10,
-                "min_duration": 5,
-                "max_duration": 8,
+                "min_value": random.randint(total_souls // 25, total_souls // 20),
+                "max_value": random.randint(total_souls // 15, total_souls // 10),
+                "min_duration": random.randint(total_souls // 20, total_souls // 15),
+                "max_duration": random.randint(total_souls // 12, total_souls // 8),
                 "tier": "uncommon"
             },
             "greater": {
                 "buff_count": random.randint(2, 3),
-                "min_value": 8,
-                "max_value": 12,
-                "min_duration": 8,
-                "max_duration": 12,
+                "min_value": random.randint(total_souls // 25, total_souls // 20),
+                "max_value": random.randint(total_souls // 15, total_souls // 10),
+                "min_duration": random.randint(total_souls // 20, total_souls // 15),
+                "max_duration": random.randint(total_souls // 12, total_souls // 8),
                 "tier": "rare"
             },
             "perfect": {
                 "buff_count": random.randint(3, 4),
-                "min_value": 10,
-                "max_value": 15,
-                "min_duration": 10,
-                "max_duration": 15,
+                "min_value": random.randint(total_souls // 25, total_souls // 20),
+                "max_value": random.randint(total_souls // 15, total_souls // 10),
+                "min_duration": random.randint(total_souls // 20, total_souls // 15),
+                "max_duration": random.randint(total_souls // 12, total_souls // 8),
                 "tier": "epic"
             }
         }
@@ -1834,38 +1837,49 @@ class RandomEventSystem:
         stored_buffs = {}
         for _ in range(params["buff_count"]):
             if not preferred_stats:  # Guard against empty preferred_stats
-                break
+                continue
                 
             stat = random.choice(preferred_stats)
             value = random.randint(params["min_value"], params["max_value"])
             duration = random.randint(params["min_duration"], params["max_duration"])
             
             # Adjust values for certain stats
-            if stat in ["accuracy", "crit_chance"]:
-                value = value // 2
-            elif stat in ["crit_damage"]:
+            if stat in ["accuracy", "crit_damage"]:
                 value *= 2
-                
-            stored_buffs[stat] = (value, duration)
+            elif stat in ["armour_penetration", "damage_reduction", "block_chance"]:
+                value = value // 2
+            
+            if stat in stored_buffs:
+                old_value, old_duration = stored_buffs[stat]
+                stored_buffs[stat] = (old_value + value, old_duration + duration)
+            else:
+                stored_buffs[stat] = (value, duration)
         
         # Create special effects
         special_effects = []
         
         # Add boss resonance if boss souls used
-        for boss, count in selected_souls.get("boss", {}).items():
-            special_effects.append(BossResonance(boss))
+        if selected_souls.get("boss"):
+            # Sum up total boss souls
+            total_boss_souls = sum(selected_souls["boss"].values())
+            # Get most common boss monster soul used
+            special_effects.append(BossResonance("Boss Monsters", total_boss_souls))
             
         # Add variant affinity if variant souls used
-        for variant, count in selected_souls.get("variant", {}).items():
-            special_effects.append(VariantAffinity(variant))
+        if selected_souls.get("variant"):
+            # Sum up total variant souls
+            total_variant_souls = sum(selected_souls["variant"].values())
+            most_common_variant = max(selected_souls["variant"].items(), key=lambda x: x[1])
+            special_effects.append(VariantAffinity(most_common_variant[0], total_variant_souls))
             
         # Add soul echo for most common standard soul
         if selected_souls.get("standard"):
-            most_common = max(selected_souls["standard"].items(), key=lambda x: x[1])
-            special_effects.append(SoulEcho(most_common[0], most_common[1]))
+            most_common_monster = max(selected_souls["standard"].items(), key=lambda x: x[1])
+            monster_type = get_type_for_monster(most_common_monster[0])
+            special_effects.append(SoulEcho(monster_type, most_common_monster[1]))
         
         # Calculate crystal value based on buffs and effects
-        base_value = sum(value for value, _ in stored_buffs.values())
+        base_value = sum(value for value, _ in stored_buffs.values()) * 5
         crystal_value = base_value * (len(special_effects) + 1)
         
         # Create crystal
@@ -1897,9 +1911,9 @@ class RandomEventSystem:
                 for stat in random.sample(preferred_stats, min(2, len(preferred_stats))):
                     value = random.randint(8, 12)
                     if stat in ["accuracy", "crit_chance"]:
-                        value = value // 2
-                    elif stat in ["crit_damage"]:
                         value *= 2
+                    elif stat in ["armour_penetration", "damage_reduction", "block_chance"]:
+                        value = value // 2
                     duration = random.randint(10, 15)
                     player.apply_buff(stat, value, duration, combat_only=False)
                     print(f"Gained +{value} {stat.replace('_', ' ').title()} for {duration} turns!")
@@ -1918,9 +1932,9 @@ class RandomEventSystem:
                 for stat in random.sample(preferred_stats, min(3, len(preferred_stats))):
                     value = random.randint(10, 15)
                     if stat in ["accuracy", "crit_chance"]:
-                        value = value // 2
-                    elif stat in ["crit_damage"]:
                         value *= 2
+                    elif stat in ["armour_penetration", "damage_reduction", "block_chance"]:
+                        value = value // 2
                     duration = random.randint(12, 18)
                     player.apply_buff(stat, value, duration, combat_only=False)
                     print(f"Gained +{value} {stat.replace('_', ' ').title()} for {duration} turns!")
@@ -1967,9 +1981,9 @@ class RandomEventSystem:
                 stat = random.choice(preferred_stats)
                 value = random.randint(12, 18)
                 if stat in ["accuracy", "crit_chance"]:
+                        value *= 2
+                elif stat in ["armour_penetration", "damage_reduction", "block_chance"]:
                     value = value // 2
-                elif stat in ["crit_damage"]:
-                    value *= 2
                 duration = random.randint(15, 22)
                 player.apply_buff(stat, value, duration, combat_only=False)
                 print(f"Gained +{value} {stat.replace('_', ' ').title()} for {duration} turns!")

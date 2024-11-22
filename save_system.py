@@ -49,24 +49,40 @@ def save_game(player, current_location, filename):
             item_data["used"] = item.used
             item_data["soul_source"] = item.soul_source
             
-            # Save special effects data
+            # Modify how special effects are saved
             special_effects_data = []
             for effect in item.special_effects:
                 effect_data = {
-                    "type": effect.__class__.__name__,  # Store the class name
+                    "type": effect.__class__.__name__,
                     "description": effect.description,
                     "effect_details": effect.effect_details
                 }
-                # Store additional attributes based on effect type
-                if hasattr(effect, 'boss_type'):
-                    effect_data["boss_type"] = effect.boss_type
-                if hasattr(effect, 'variant_type'):
-                    effect_data["variant_type"] = effect.variant_type
-                if hasattr(effect, 'element'):
+                
+                # Add specific data based on effect type
+                if isinstance(effect, SoulEcho):
+                    effect_data.update({
+                        "enemy_type": effect.enemy_type,
+                        "kill_count": effect.kill_count,
+                        "bonus": effect.bonus,  # Make sure bonus is saved
+                        "duration": effect.duration
+                    })
+                elif isinstance(effect, BossResonance):
+                    effect_data.update({
+                        "boss_type": effect.boss_type,
+                        "kill_count": effect.kill_count,
+                        "bonus": effect.bonus,
+                        "duration": effect.duration
+                    })
+                elif isinstance(effect, VariantAffinity):
+                    effect_data.update({
+                        "variant_type": effect.variant_type,
+                        "kill_count": effect.kill_count,
+                        "bonus": effect.bonus,
+                        "duration": effect.duration
+                    })
+                elif isinstance(effect, ElementalResonance):
                     effect_data["element"] = effect.element
-                if hasattr(effect, 'enemy_type'):
-                    effect_data["enemy_type"] = effect.enemy_type
-                    effect_data["kill_count"] = effect.kill_count
+                    
                 special_effects_data.append(effect_data)
             item_data["special_effects"] = special_effects_data
         
@@ -155,7 +171,6 @@ def save_game(player, current_location, filename):
             "used_variant_tracker": player.used_variant_tracker,
             "boss_kill_tracker": player.boss_kill_tracker,
             "used_boss_kill_tracker": player.used_boss_kill_tracker,
-            "weapon_stamina_cost": player.weapon_stamina_cost,
             "level_modifiers": player.level_modifiers,
             "equipment_modifiers": player.equipment_modifiers,
             "buff_modifiers": player.buff_modifiers,
@@ -202,30 +217,48 @@ def load_game(filename):
                 player.inventory.append(all_items[item_data])
         else:  # New save format
             if "is_soul_crystal" in item_data:
-                # Recreate special effects
                 special_effects = []
-                for effect_data in item_data["special_effects"]:
-                    effect_class = globals()[effect_data["type"]]  # Get effect class by name
-                    if effect_data["type"] == "BossResonance":
-                        effect = BossResonance(effect_data["boss_type"])
-                    elif effect_data["type"] == "VariantAffinity":
-                        effect = VariantAffinity(effect_data["variant_type"])
-                    elif effect_data["type"] == "ElementalResonance":
-                        effect = ElementalResonance(effect_data["element"])
-                    elif effect_data["type"] == "SoulEcho":
-                        effect = SoulEcho(effect_data["enemy_type"], effect_data["kill_count"])
-                    special_effects.append(effect)
+                if "special_effects" in item_data:
+                    for effect_data in item_data["special_effects"]:
+                        if effect_data["type"] == "SoulEcho":
+                            effect = SoulEcho(
+                                effect_data["enemy_type"],
+                                effect_data["kill_count"],
+                                effect_data["bonus"],
+                                effect_data["duration"]
+                            )
+                        elif effect_data["type"] == "BossResonance":
+                            effect = BossResonance(
+                                effect_data["boss_type"],
+                                effect_data["kill_count"],
+                                stored_bonus=effect_data["bonus"],
+                                stored_duration=effect_data.get("duration", effect_data["bonus"] // 2)
+                                )
+                        elif effect_data["type"] == "VariantAffinity":
+                            effect = VariantAffinity(
+                                effect_data["variant_type"],
+                                effect_data["kill_count"],
+                                stored_bonus=effect_data["bonus"],
+                                stored_duration=effect_data.get("duration", effect_data["bonus"] // 2)
+                                )
+                        elif effect_data["type"] == "ElementalResonance":
+                            effect = ElementalResonance(effect_data["element"])
+                            
+                        # Restore description and effect details
+                        effect.description = effect_data["description"]
+                        effect.effect_details = effect_data["effect_details"]
+                        special_effects.append(effect)
                 
-                # Create soul crystal
+                # Create the soul crystal with all its data
                 item = SoulCrystal(
                     item_data["name"],
                     item_data["value"],
                     item_data["tier"],
                     item_data["stored_buffs"],
-                    special_effects,
+                    special_effects,  # Add the reconstructed special effects
                     item_data["soul_source"]
                 )
-                item.used = item_data["used"]
+                item.used = item_data.get("used", False)
                 
             elif "soulbound" in item_data and item_data["soulbound"]:
                 # Get weapon_type from stats if it exists
@@ -324,7 +357,6 @@ def load_game(filename):
     player.used_variant_tracker = player_data["used_variant_tracker"]
     player.boss_kill_tracker = player_data["boss_kill_tracker"]
     player.used_boss_kill_tracker = player_data["used_boss_kill_tracker"]
-    player.weapon_stamina_cost = player_data["weapon_stamina_cost"]
     
     # Load new modifier dictionaries
     player.level_modifiers = player_data["level_modifiers"]

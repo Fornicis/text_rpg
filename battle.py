@@ -616,7 +616,7 @@ class Battle:
         if self.player.weapon_coating:
             print(f"\nYour weapon is coated with {self.player.weapon_coating['name']} ({self.player.weapon_coating['remaining_duration']} attacks remaining)")
         
-        print(f"\nLevel {enemy.level} {enemy.name}, HP: {enemy.hp}")
+        print(f"\nLevel {enemy.level} {enemy.name} ({enemy.monster_type.title()}), HP: {enemy.hp}")
         print(f"Atk: {enemy.attack}, Acc: {enemy.accuracy}, Crit: {enemy.crit_chance}%, Crit Dmg: {enemy.crit_damage}%, AP: {enemy.armour_penetration}")
         print(f"Def: {enemy.defence}, Eva: {enemy.evasion}, DR: {enemy.damage_reduction}, BC: {enemy.block_chance}%")
         

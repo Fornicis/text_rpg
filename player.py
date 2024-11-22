@@ -137,54 +137,73 @@ class Character:
         modifiers = {}
         
         # Check soul crystal effects for relevant effects
-        for effect_name, effect_data in attacker.soul_crystal_effects.items():
-            # Boss resonance
-            if effect_name == "boss_resonance" and defender.name == effect_data["target"]:
-                for stat, value in effect_data.items():
-                    if stat != "target":
-                        modifiers[stat] = modifiers.get(stat, 0) + value
+        if hasattr(attacker, 'soul_crystal_effects') and attacker.soul_crystal_effects:
+            for effect_name, effect_data in attacker.soul_crystal_effects.items():
+                # Boss resonance
+                if effect_name == "boss_resonance":
+                # Check if the defender's soultype is "boss"
+                    soultype = defender.soultype
+                    if soultype == "boss":
+                        for stat, value in effect_data.items():
+                            if stat != "target" and stat != "combats_remaining":
+                                modifiers[stat] = modifiers.get(stat, 0) + value
+                            
+                # Variant affinity
+                if effect_name == "variant_affinity":
+                    # Get the first word of the defender's name as the variant type
+                    defender_name_parts = defender.name.split()
+                    if len(defender_name_parts) > 1:
+                        variant_type = defender_name_parts[0]
+                        target_variant = effect_data.get("target")
                         
-            # Variant affinity
-            elif effect_name == "variant_affinity" and hasattr(defender, 'variant') and defender.variant.get('type') == effect_data["target"]:
-                for stat, value in effect_data.items():
-                    if stat != "target":
-                        modifiers[stat] = modifiers.get(stat, 0) + value
-                        
-            # Soul echo
-            elif effect_name == "soul_echo" and defender.name == effect_data["target"]:
-                if "damage" in effect_data:
-                    modifiers["damage_multiplier"] = 1 + (effect_data["damage"] / 100)
-
+                        if variant_type == target_variant:
+                            # print(f"Applying variant affinity against {variant_type} monster") # Debug
+                            for stat, value in effect_data.items():
+                                if stat != "target" and stat != "combats_remaining":
+                                    modifiers[stat] = modifiers.get(stat, 0) + value
+                                
+                # Soul echo
+                if effect_name == "soul_echo":
+                    target = effect_data.get("target", "").lower()
+                    if hasattr(defender, 'monster_type') and defender.monster_type.lower() == target:
+                        modifiers["damage_multiplier"] = 1 + (effect_data["damage_multiplier"] / 100)
+                        # print(f"Soul Echo active! Adding damage multiplier: {modifiers['damage_multiplier']}") Debug Print
+        
+        """if modifiers:
+            print(f"Applied special effects modifiers: {modifiers}")""" # Debug Print
+        
         return modifiers
     
     def calculate_damage(self, attacker, defender, attack_type):
         # Get any special effects that apply to this combat
-        combat_modifiers = self.apply_special_effects(attacker, defender)
-        
+        soul_crystal_modifiers = self.apply_special_effects(attacker, defender)
+        # print(f"Soul crystal modifiers: {soul_crystal_modifiers}") Debug print
         # Calculate hit chance with modifiers
-        hit_chance = max(5, min(95, attacker.accuracy + combat_modifiers.get("accuracy", 0) - defender.evasion))
+        hit_chance = max(5, min(95, attacker.accuracy + getattr(soul_crystal_modifiers, "accuracy", 0) - (defender.evasion + getattr(soul_crystal_modifiers, "evasion", 0))))
         
         # Check if the attack hits
         if random.randint(1, 100) > hit_chance:
             return 0, "miss", hit_chance, False  # Attack missed
         
         # Check for block
-        if not defender.stunned and random.randint(1, 100) <= defender.block_chance:
+        if not defender.stunned and random.randint(1, 100) <= (defender.block_chance + getattr(soul_crystal_modifiers, "block_chance", 0)):
             return 0, "blocked", hit_chance, False  # Attack blocked
 
         # Calculate base damage
         attack_info = attacker.attack_types[attack_type]
-        base_damage = (attacker.attack + combat_modifiers.get("attack", 0)) * attack_info["damage_modifier"]
+        base_damage = (attacker.attack + getattr(soul_crystal_modifiers, "attack", 0)) * attack_info["damage_modifier"]
+        # print(f"Base Damage: {base_damage}") Debug Print
         random_damage = random.randint(int(base_damage * 0.9), int(base_damage * 1.1))
+        # print(f"Random Damage: {random_damage}") Debug Print
         
         # Apply armor penetration
-        effective_defence = max(0, defender.defence - attacker.armour_penetration)
+        effective_defence = max(0, (defender.defence + getattr(soul_crystal_modifiers, "defence", 0)) - (attacker.armour_penetration + getattr(soul_crystal_modifiers, "armour_penetration", 0)))
         
         # Calculate initial damage
         damage = max(0, random_damage - effective_defence)
-        
+        # print(f"Initial damage (random damage - effective defence): {damage}") Debug Print
         # Check for critical hit
-        base_crit_chance = attacker.crit_chance + combat_modifiers.get("crit_chance", 0)
+        base_crit_chance = attacker.crit_chance + getattr(soul_crystal_modifiers, "crit_chance", 0)
         if defender.stunned:
             base_crit_chance += 25  # 25% increased crit chance against stunned targets
             
@@ -192,18 +211,21 @@ class Character:
         shattered_stun = False
         
         if is_critical:
-            damage = int(damage * (attacker.crit_damage / 100))
+            damage = int(damage * ((attacker.crit_damage + getattr(soul_crystal_modifiers, "crit_damage", 0)) / 100))
             if defender.stunned:
                 shattered_stun = True
                 defender.stunned = False
         
         # Apply damage multiplier from soul echo if present
-        if "damage_multiplier" in combat_modifiers:
-            damage = int(damage * combat_modifiers["damage_multiplier"])
-        
+        if "damage_multiplier" in soul_crystal_modifiers:
+            print(f"Before damage multiplier: {damage}")
+            # print(f"Applying multiplier: {soul_crystal_modifiers['damage_multiplier']}") Debug Print
+            damage = int(damage * soul_crystal_modifiers["damage_multiplier"])
+            # print(f"After damage multiplier: {damage}") Debug Print
         # Apply damage reduction
-        damage = int(damage * (1 - (defender.damage_reduction / 100)))
-        
+        # print(f"{(1 - ((defender.damage_reduction + getattr(soul_crystal_modifiers, 'damage_reduction', 0)) / 100))}") Debug Print
+        damage = int(damage * (1 - ((defender.damage_reduction + getattr(soul_crystal_modifiers, "damage_reduction", 0)) / 100)))
+        # print(f"Damage after damage reduction: {damage}") Debug Print
         # Ensure minimum damage of 1 if the attack hits
         damage = max(1, damage)
         
@@ -609,11 +631,11 @@ class Player(Character):
             combats = effect_data["combats_remaining"]
             
             if effect_name == "boss_resonance":
-                print(f"- {effect_type}: +20 Attack and Defence vs {target} ({combats} combats remaining)")
+                print(f"- {effect_type}: +{effect_data['attack']} Attack and Defence vs Bosses ({combats} combats remaining)")
             elif effect_name == "variant_affinity":
-                print(f"- {effect_type}: +15 Accuracy and +10 Crit Chance vs {target} variants ({combats} combats remaining)")
+                print(f"- {effect_type}: +{effect_data['accuracy']} and +{effect_data['crit_chance']} vs {target.title()} variants ({combats} combats remaining)")
             elif effect_name == "soul_echo":
-                print(f"- {effect_type}: +{effect_data['damage']}% damage vs {target} ({combats} combats remaining)")
+                print(f"- {effect_type}: +{effect_data['damage_multiplier']}% damage vs {target.title()} type enemies ({combats} combats remaining)")
     
     def equip_item(self, item):
     # Equip an item and apply its stats to the appropriate dictionary
@@ -1440,7 +1462,7 @@ class Player(Character):
             "Echo Wraith", "Crystal Guardian", "Void Walker", "Empowered Void Walker", "Divine Architect",
             "Ethereal Leviathan", "Astral Demiurge", "Celestial Arbiter", "Seraphim Guardian", "Celestial Titan",
             "Nebula Colossus", "Galatic Leviathan", "Astral Behemoth", "Cosmic Devourer", "Cinder Archfiend",
-            "Inferno Wyrm", "Volcanic Titan", "Phoenix Overlord", "Magma Colossus"
+            "Inferno Wyrm", "Volcanic Titan", "Phoenix Overlord", "Magma Colossus", "Soul Forgemaster"
         }
         
         # Split the enemy name into parts to separate variant from base name
