@@ -1,6 +1,6 @@
 import random
 from player import Player
-from items import Item
+from items import Item, SoulCrystal
 from display import clear_screen
 
 class BaseShop:
@@ -44,27 +44,38 @@ class BaseShop:
                 self.display_item_stats(item, player)
                 
     def display_sellable_items(self, player):
-        # Shows a list of items the player can sell, offers half item value
         print("\nItems you can sell:")
         sellable_items = self.get_sellable_items(player)
         
-        # Group stackable items
-        item_groups = {}
-        for item in sellable_items:
-            if item.name in item_groups:
-                if item.is_stackable():
-                    item_groups[item.name]['quantity'] += item.stack_size
+        # Sort items - soul crystals last, everything else alphabetically
+        sorted_items = sorted(sellable_items, key=lambda x: (x.type == "soul_crystal", x.name))
+        
+        display_items = []
+        current_group = None
+        
+        # Group consecutive stackable items with same name, keep soul crystals individual
+        for item in sorted_items:
+            if item.type == "soul_crystal":
+                display_items.append({'item': item, 'quantity': 1, 'is_group': False})
             else:
-                item_groups[item.name] = {
-                    'item': item,
-                    'quantity': item.stack_size if item.is_stackable() else 1
-                }
-                
+                if current_group and current_group['item'].name == item.name:
+                    current_group['quantity'] += item.stack_size
+                else:
+                    current_group = {'item': item, 'quantity': item.stack_size, 'is_group': True}
+                    display_items.append(current_group)
+        
         # Display items
-        for i, (name, info) in enumerate(item_groups.items(), 1):
+        for i, info in enumerate(display_items, 1):
             item = info['item']
-            quantity_str = f" x{info['quantity']}" if item.is_stackable() else ""
-            print(f"{i}. {name}{quantity_str} (Sell value: {item.value // 2} gold each)")
+            quantity_str = f" x{info['quantity']}" if info['is_group'] and info['quantity'] > 1 else ""
+            print(f"{i}. {item.name}{quantity_str} (Sell value: {item.value // 2} gold each)")
+            
+            # Show stats for soul crystals using the class method
+            if item.type == "soul_crystal":
+                print(item.get_description())
+                print()  # Add blank line for readability
+            
+        return display_items
             
     def display_item_stats(self, item, player):
         print(f"   Type: {item.type.capitalize()}")
@@ -87,7 +98,7 @@ class BaseShop:
                     print(f"   {stat_name}: +{stat_value}%")
                 else:
                     print(f"   {stat_name}: +{stat_value}")
-
+        
         if item.type == "weapon":
             stamina_cost = player.get_weapon_stamina_cost(item.weapon_type)
             print(f"   Weapon Type: {item.weapon_type.capitalize()}")
@@ -299,95 +310,62 @@ class BaseShop:
             input("\nPress Enter to continue...")
 
     def sell_items(self, player):
-        """Handle selling items with stack support"""
         while True:
             clear_screen()
-            self.display_sellable_items(player)
-            print("\nEnter the item number and quantity to sell.")
-            print("Examples:")
-            print("  '1 5' to sell 5 of item 1")
-            print("  '1' to sell 1 of item 1")
-            print("Type 'q' to finish selling")
-
-            choice = input("\nYour choice: ").lower()
+            display_items = self.display_sellable_items(player)
+            
+            print("\nEnter item number to sell (or 'q' to quit):")
+            choice = input().lower()
             
             if choice == 'q':
                 break
                 
             try:
-                parts = choice.split()
-                if len(parts) == 1:
-                    item_idx = int(parts[0]) - 1
-                    quantity = 1
-                elif len(parts) == 2:
-                    item_idx = int(parts[0]) - 1
-                    quantity = int(parts[1])
-                else:
-                    print("Invalid input format.")
-                    continue
-                
-                sellable_items = self.get_sellable_items(player)
-                
-                # Group items by name for stacked display
-                item_groups = {}
-                for item in sellable_items:
-                    if item.name in item_groups:
-                        if item.is_stackable():
-                            item_groups[item.name]['quantity'] += item.stack_size
-                            item_groups[item.name]['items'].append(item)
-                    else:
-                        item_groups[item.name] = {
-                            'items': [item],
-                            'quantity': item.stack_size if item.is_stackable() else 1
-                        }
-                
-                sorted_groups = sorted(item_groups.items())
-                
-                if 0 <= item_idx < len(sorted_groups):
-                    item_name, group_data = sorted_groups[item_idx]
-                    total_available = group_data['quantity']
+                item_idx = int(choice) - 1
+                if 0 <= item_idx < len(display_items):
+                    item_info = display_items[item_idx]
+                    item = item_info['item']
+                    max_quantity = item_info['quantity']
                     
-                    if quantity > total_available:
-                        print(f"You only have {total_available} {item_name}!")
-                        input("\nPress Enter to continue...")
+                    if max_quantity > 1:
+                        print(f"\nHow many {item.name} to sell? (1-{max_quantity}):")
+                        quantity = int(input())
+                        if quantity < 1 or quantity > max_quantity:
+                            print("Invalid quantity!")
+                            input("\nPress Enter to continue...")
+                            continue
+                    else:
+                        quantity = 1
+                    
+                    sell_value = (item.value // 2) * quantity
+                    print(f"\nSelling {quantity}x {item.name} for {sell_value} gold")
+                    if input("Confirm? (y/n): ").lower() != 'y':
                         continue
                     
-                    items = group_data['items']
-                    first_item = items[0]
-                    sell_value = (first_item.value // 2) * quantity
-                    
-                    print(f"\nSelling {quantity}x {item_name} for {sell_value} gold")
-                    confirm = input("Confirm? (y/n): ").lower()
-                    
-                    if confirm == 'y':
-                        remaining_to_sell = quantity
-                        
-                        for item in items:
-                            if remaining_to_sell <= 0:
+                    # Remove items from inventory
+                    if item_info['is_group']:
+                        remaining = quantity
+                        inventory_items = [i for i in player.inventory if i.name == item.name]
+                        for inv_item in inventory_items:
+                            if remaining <= 0:
                                 break
-                                
-                            if item.is_stackable():
-                                if item.stack_size <= remaining_to_sell:
-                                    player.inventory.remove(item)
-                                    remaining_to_sell -= item.stack_size
-                                else:
-                                    item.stack_size -= remaining_to_sell
-                                    remaining_to_sell = 0
+                            if inv_item.stack_size <= remaining:
+                                player.inventory.remove(inv_item)
+                                remaining -= inv_item.stack_size
                             else:
-                                player.inventory.remove(item)
-                                remaining_to_sell -= 1
-                                
-                        player.gold += sell_value
-                        print(f"Sold {quantity}x {item_name} for {sell_value} gold!")
-                        
-                        # Add items back to shop inventory
-                        base_item = first_item
-                        self.add_item(base_item, quantity)
+                                inv_item.stack_size -= remaining
+                                remaining = 0
+                    else:
+                        player.inventory.remove(item)
+                    
+                    player.gold += sell_value
+                    print(f"Sold {quantity}x {item.name} for {sell_value} gold!")
+                    self.add_item(item, quantity)
+                    
                 else:
                     print("Invalid item number!")
-            
             except ValueError:
-                print("Invalid input. Please enter numbers.")
+                print("Invalid input!")
             
             input("\nPress Enter to continue...")
             

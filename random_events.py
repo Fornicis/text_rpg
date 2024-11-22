@@ -252,7 +252,7 @@ class RandomEventSystem:
                     ("Challenge the forge", self._outcome_forge_challenge)
                 ],
                 {
-                    "min_level": 10,
+                    "min_level": 1,
                 }
             )) 
        
@@ -1417,9 +1417,9 @@ class RandomEventSystem:
                             enemy, available = enemies[idx]
                             available -= selected_souls["standard"].get(enemy, 0)
                             
-                            amount = input(f"\nHow many {enemy} souls? (max {available}): ")
+                            amount = input(f"\nHow many {enemy} souls? (max {remaining}): ")
                             if amount.isdigit():
-                                amount = min(int(amount), available)
+                                amount = min(int(amount), remaining)
                                 selected_souls["standard"][enemy] = selected_souls["standard"].get(enemy, 0) + amount
                                 selected_souls["total_value"] += amount
                                 
@@ -1443,9 +1443,9 @@ class RandomEventSystem:
                             variant, available = variants[idx]
                             available -= selected_souls["variant"].get(variant, 0)
                             
-                            amount = input(f"\nHow many {variant} souls? (max {available}): ")
+                            amount = input(f"\nHow many {variant} souls? (max {remaining}): ")
                             if amount.isdigit():
-                                amount = min(int(amount), available)
+                                amount = min(int(amount), remaining)
                                 selected_souls["variant"][variant] = selected_souls["variant"].get(variant, 0) + amount
                                 selected_souls["total_value"] += amount * 5
                                 
@@ -1471,9 +1471,9 @@ class RandomEventSystem:
                             boss, available = bosses[idx]
                             available -= selected_souls["boss"].get(boss, 0)
                             
-                            amount = input(f"\nHow many {boss} souls? (max {available}): ")
+                            amount = input(f"\nHow many {boss} souls? (max {remaining}): ")
                             if amount.isdigit():
-                                amount = min(int(amount), available)
+                                amount = min(int(amount), remaining)
                                 selected_souls["boss"][boss] = selected_souls["boss"].get(boss, 0) + amount
                                 selected_souls["total_value"] += amount * 10
                                 
@@ -1874,13 +1874,14 @@ class RandomEventSystem:
             
         # Add soul echo for most common standard soul
         if selected_souls.get("standard"):
+            total_monster_souls = sum(selected_souls["standard"].values())
             most_common_monster = max(selected_souls["standard"].items(), key=lambda x: x[1])
             monster_type = get_type_for_monster(most_common_monster[0])
-            special_effects.append(SoulEcho(monster_type, most_common_monster[1]))
+            special_effects.append(SoulEcho(monster_type, total_monster_souls))
         
         # Calculate crystal value based on buffs and effects
-        base_value = sum(value for value, _ in stored_buffs.values()) * 5
-        crystal_value = base_value * (len(special_effects) + 1)
+        base_value = sum(value for value, _ in stored_buffs.values()) * 10
+        crystal_value = base_value * (len(special_effects) * 2)
         
         # Create crystal
         crystal = SoulCrystal(

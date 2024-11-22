@@ -982,7 +982,7 @@ class SoulEcho(CrystalEffect):
         else:
             self.bonus = stored_bonus
             self.duration = stored_duration
-        description = f"Echoes with the essence of {kill_count} {enemy_type.title()} based enemies"
+        description = f"Echoes with the essence of {kill_count} standard enemies (Primary type: {enemy_type.title()})"
         effect_details = f"+{self.bonus}% damage against {enemy_type.title()} based enemies (Lasts {self.duration} combats)"
         super().__init__(description, effect_details)
         
