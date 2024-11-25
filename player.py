@@ -4,16 +4,177 @@ from display import pause, title_screen
 from game_config import VARIANT_TYPES
 from status_effects import *
 
+PLAYER_ATTACK_TYPES = {
+    "normal": {
+        "name": "Normal Attack",
+        "stamina_modifier": 0,
+        "damage_modifier": 1,
+        "effect": None
+    },
+    "power": {
+        "name": "Power Attack",
+        "stamina_modifier": 3,
+        "damage_modifier": 1.5,
+        "effect": None
+    },
+    "quick": {
+        "name": "Quick Attack",
+        "stamina_modifier": 1,
+        "damage_modifier": 0.8,
+        "extra_attacks": 1,
+        "effect": None
+    },
+    "stunning": {
+        "name": "Stunning Blow",
+        "stamina_modifier": 2,
+        "damage_modifier": 0.8,
+        "effect": "stun"
+    },
+    "triple": {
+        "name": "Triple Strike",
+        "stamina_modifier": 4,
+        "damage_modifier": 0.9,
+        "extra_attacks": 2,
+        "self_damage": True
+    },
+    "reckless": {
+        "name": "Reckless Attack",
+        "stamina_modifier": 5,
+        "damage_modifier": 2.0,
+        "self_damage": True
+    },
+    "precision": {
+        "name": "Precision Strike",
+        "stamina_modifier": 3,
+        "damage_modifier": 1.2,
+        "stat_buffs": {
+            "accuracy": 30,
+            "crit_chance": 20
+        }
+    },
+    "flurry": {
+        "name": "Flurry of Blows",
+        "stamina_modifier": 6,
+        "damage_modifier": 0.6,
+        "extra_attacks": 4
+    },
+    "sweep": {
+        "name": "Sweeping Strike",
+        "stamina_modifier": 4,
+        "damage_modifier": 1.3,
+        "stat_buffs": {
+            "defence": 15
+        }
+    },
+    "balanced": {
+        "name": "Balanced Strike",
+        "stamina_modifier": 3,
+        "damage_modifier": 1.1,
+        "stat_buffs": {
+            "accuracy": 15,
+            "block_chance": 15
+        }
+    },
+    "crushing": {
+        "name": "Crushing Blow",
+        "stamina_modifier": 5,
+        "damage_modifier": 1.6,
+        "effect": "defence_break"
+    },
+    "cleave": {
+        "name": "Mighty Cleave",
+        "stamina_modifier": 7,
+        "damage_modifier": 1.8,
+        "stat_buffs": {
+            "armour_penetration": 30
+        },
+        "self_damage": True
+    },
+    # Stance attacks
+    "defensive": {
+        "name": "Defensive Stance",
+        "stamina_modifier": 2,
+        "damage_modifier": 0,
+        "duration": 5,
+        "stance_type": "defensive",
+        "defence_boost_percentage": 33
+    },
+    "power_stance": {
+        "name": "Power Stance",
+        "stamina_modifier": 2,
+        "damage_modifier": 0,
+        "duration": 5,
+        "stance_type": "power",
+        "attack_boost_percentage": 33
+    },
+    "berserker_stance": {
+        "name": "Berserker Stance",
+        "stamina_modifier": 4,
+        "damage_modifier": 0,
+        "duration": 5,
+        "stance_type": "berserker",
+        "attack_boost_percentage": 50
+    },
+    "accuracy_stance": {
+        "name": "Accuracy Stance",
+        "stamina_modifier": 2,
+        "damage_modifier": 0,
+        "duration": 5,
+        "stance_type": "accuracy",
+        "accuracy_boost_percentage": 33
+    },
+    "evasion_stance": {
+        "name": "Evasion Stance",
+        "stamina_modifier": 2,
+        "damage_modifier": 0,
+        "duration": 5,
+        "stance_type": "evasion",
+        "evasion_boost_percentage": 33
+    }
+}
+
+# Define weapon type attack availability
+WEAPON_ATTACK_TYPES = {
+    "light": [
+        "normal", "quick", "triple", "precision", 
+        "flurry", "accuracy_stance", "evasion_stance"
+    ],
+    "medium": [
+        "normal", "power", "stunning", "reckless", "sweep",
+        "balanced", "defensive", "power_stance"
+    ],
+    "heavy": [
+        "normal", "power", "stunning", "reckless", "crushing",
+        "cleave", "defensive", "power_stance", "berserker_stance"
+    ],
+    "soulbound": [
+        "normal", "quick", "triple", "precision", "flurry",
+        "power", "reckless", "stunning", "crushing", "sweep", "cleave", "balanced", "defensive",
+        "power_stance", "berserker_stance", "accuracy_stance", "evasion_stance"
+    ]
+}
+
 class Character:
     def __init__(self, name, hp, attack, defence, accuracy=70, evasion=5, crit_chance=5, crit_damage=150, armour_penetration=0, damage_reduction=0, block_chance=0):
         # Initialize basic character attributes
         self.name = name
         self.hp = hp
         self.max_hp = hp
-        self.attack = attack
         self.attack_types = {
             "normal": {"name": "Normal Attack", "stamina_modifier": 0, "damage_modifier": 1},
         }
+        # Base stats
+        self.base_attack = attack
+        self.base_defence = defence
+        self.base_accuracy = accuracy
+        self.base_evasion = evasion
+        self.base_crit_chance = crit_chance
+        self.base_crit_damage = crit_damage
+        self.base_armour_penetration = armour_penetration
+        self.base_damage_reduction = damage_reduction
+        self.base_block_chance = block_chance
+        # Current stats (will be calculated)
+        self.attack = attack
         self.defence = defence
         self.accuracy = accuracy
         self.evasion = evasion
@@ -27,6 +188,15 @@ class Character:
         self.status_effects = []
         self.pause = pause
         self.title_screen = title_screen
+        self.buff_modifiers = {"attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, 
+                              "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, 
+                              "damage_reduction": 0, "block_chance": 0}
+        self.combat_buff_modifiers = {"attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, 
+                                     "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, 
+                                     "damage_reduction": 0, "block_chance": 0}
+        self.debuff_modifiers = {"attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, 
+                                "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, 
+                                "damage_reduction": 0, "block_chance": 0}
     
     def display_attack_animation(self, attacker_name, attack_name):
         #Shows the enemy attacking in a dramatic way!
@@ -175,6 +345,14 @@ class Character:
         return modifiers
     
     def calculate_damage(self, attacker, defender, attack_type):
+        from enemies import ENEMY_ATTACK_TYPES
+        # Get attack info based on attacker type
+        if isinstance(attacker, Player):
+            attack_info = PLAYER_ATTACK_TYPES[attack_type]
+            damage_modifier = attack_info["damage_modifier"]
+        else:
+            attack_info = ENEMY_ATTACK_TYPES[attack_type]
+            damage_modifier = attack_info["damage_modifier"]
         # Get any special effects that apply to this combat
         soul_crystal_modifiers = self.apply_special_effects(attacker, defender)
         # print(f"Soul crystal modifiers: {soul_crystal_modifiers}") Debug print
@@ -190,8 +368,7 @@ class Character:
             return 0, "blocked", hit_chance, False  # Attack blocked
 
         # Calculate base damage
-        attack_info = attacker.attack_types[attack_type]
-        base_damage = (attacker.attack + getattr(soul_crystal_modifiers, "attack", 0)) * attack_info["damage_modifier"]
+        base_damage = (attacker.attack + getattr(soul_crystal_modifiers, "attack", 0)) * damage_modifier
         # print(f"Base Damage: {base_damage}") Debug Print
         random_damage = random.randint(int(base_damage * 0.9), int(base_damage * 1.1))
         # print(f"Random Damage: {random_damage}") Debug Print
@@ -232,12 +409,21 @@ class Character:
         return damage, "critical" if is_critical else "normal", hit_chance, shattered_stun
 
     def perform_attack(self, target, attack_type):
-        attack_info = self.attack_types[attack_type]
+        from enemies import ENEMY_ATTACK_TYPES
+        # Check to see who is attacking
+        if isinstance(self, Player):
+            attack_info = PLAYER_ATTACK_TYPES[attack_type]
+        else:  # Enemy attacker
+            attack_info = ENEMY_ATTACK_TYPES[attack_type]
         message = f"{self.name} used {attack_info['name']}."
         total_damage = 0
         hits = 1 + attack_info.get("extra_attacks", 0)
         attack_hit = False
         shattered_freeze = False
+        
+        # Apply attack-specific buffs before damage calculation (player only)
+        if isinstance(self, Player) and 'stat_buffs' in attack_info:
+            self.apply_attack_buffs(attack_info['stat_buffs'])
 
         for i in range(hits):
             damage, hit_type, hit_chance, freeze_shatter = self.calculate_damage(self, target, attack_type)
@@ -271,11 +457,15 @@ class Character:
             self_damage = int(total_damage * 0.2)  # 20% of total damage as self-damage
             self_damage_info = {"type": attack_type, "damage": self_damage}
             self.take_damage(self_damage)
-            message += f"\n{self.name} takes {self_damage} self-damage from the {attack_type} attack!"
+            message += f"\n{self.name} takes {self_damage} self-damage from the {attack_type.replace('_', ' ').title()} attack!"
         
         print(message.rstrip())
         
         self.remove_status_effect("Freeze")
+        
+        # Remove attack-specific buffs after damage calculation (player only)
+        if isinstance(self, Player) and 'stat_buffs' in attack_info:
+            self.remove_attack_buffs(attack_info['stat_buffs'])
 
         return message, total_damage, self_damage_info, attack_hit
 
@@ -336,6 +526,76 @@ class Character:
 
     def get_status_effects_display(self):
         return ", ".join(str(effect) for effect in self.status_effects)
+    
+    def apply_buff(self, stat, value, duration=0, combat_only=True):
+        """Apply a buff to a stat"""
+        if stat in self.buff_modifiers:
+            self.buff_modifiers[stat] += value
+            self.recalculate_stats()
+
+    def remove_buff(self, stat, value):
+        """Remove a buff from a stat"""
+        if stat in self.buff_modifiers:
+            self.buff_modifiers[stat] = max(0, self.buff_modifiers[stat] - value)
+            self.recalculate_stats()
+
+    def apply_debuff(self, stat, value):
+        """Apply a debuff to a stat"""
+        if stat in self.debuff_modifiers:
+            self.debuff_modifiers[stat] += value
+            self.recalculate_stats()
+
+    def remove_debuff(self, stat, value):
+        """Remove a debuff from a stat"""
+        if stat in self.debuff_modifiers:
+            self.debuff_modifiers[stat] = max(0, self.debuff_modifiers[stat] - value)
+            self.recalculate_stats()
+            
+    def apply_attack_buffs(self, stat_buffs):
+        """Apply temporary stat buffs from an attack"""
+        for stat, value in stat_buffs.items():
+            self.combat_buff_modifiers[stat] += value
+            #print(stat_buffs.items(), stat_buffs.values()) Debug Print
+        self.recalculate_stats()
+
+    def remove_attack_buffs(self, stat_buffs):
+        """Remove temporary stat buffs after an attack"""
+        for stat, value in stat_buffs.items():
+            self.combat_buff_modifiers[stat] -= value
+            #print(stat_buffs.items(), stat_buffs.values()) Debug Print
+        self.recalculate_stats()
+
+    def recalculate_stats(self):
+        # Initialize with base values
+        stats = {
+            "attack": self.base_attack,
+            "defence": self.base_defence,
+            "evasion": self.base_evasion,
+            "accuracy": self.base_accuracy,
+            "crit_chance": self.base_crit_chance,
+            "crit_damage": self.base_crit_damage,
+            "damage_reduction": self.base_damage_reduction,
+            "armour_penetration": self.base_armour_penetration,
+            "block_chance": self.base_block_chance
+        }
+
+        # Apply all modifiers
+        for stat in stats:
+            # Add buffs and combat buffs
+            stats[stat] += self.buff_modifiers.get(stat, 0)
+            stats[stat] += self.combat_buff_modifiers.get(stat, 0)
+            # Subtract debuffs
+            stats[stat] = max(0, stats[stat] - self.debuff_modifiers.get(stat, 0))
+
+        # Update current stats with calculated values
+        for stat, value in stats.items():
+            if stat == "crit_damage":
+                value = max(100, value)
+            elif stat in ["damage_reduction", "armour_penetration", "block_chance"]:
+                value = max(0, value)
+            else:
+                value = max(1, value)
+            setattr(self, stat, value)
         
 class Player(Character):
     def __init__(self, name):
@@ -390,17 +650,6 @@ class Player(Character):
             "shield": None,
             "back": None,
             "ring": None,
-        }
-        self.attack_types = {
-            "normal": {"name": "Normal Attack", "stamina_modifier": 0, "damage_modifier": 1},
-            "power": {"name": "Power Attack", "stamina_modifier": 3, "damage_modifier": 1.5},
-            "quick": {"name": "Quick Attack", "stamina_modifier": 1, "damage_modifier": 0.8, "extra_attacks": 1},
-            "stunning": {"name": "Stunning Blow", "stamina_modifier": 2, "damage_modifier": 0.8},
-            "defensive": {"name": "Defensive Stance", "stamina_modifier": 2, "damage_modifier": 0, "defence_boost_percentage": 33, "duration": 5},
-            "power_stance": {"name": "Power Stance", "stamina_modifier": 2, "damage_modifier": 0, "attack_boost_percentage": 33, "duration": 5},
-            "berserker_stance": {"name": "Berserker Stance", "stamina_modifier": 4, "damage_modifier": 0, "attack_boost_percentage": 50, "duration": 5},
-            "accuracy_stance": {"name": "Accuracy Stance", "stamina_modifier": 2, "damage_modifier": 0, "accuracy_boost_percentage": 33, "duration": 5},
-            "evasion_stance": {"name": "Evasion Stance", "stamina_modifier": 2, "damage_modifier": 0, "evasion_boost_percentage": 33, "duration": 5}
         }
         self.items = initialise_items()
         self.give_starter_items()
@@ -568,35 +817,36 @@ class Player(Character):
             "block_chance": self.base_block_chance
         }
 
-        # Apply modifiers from various sources
-        modifier_sources = [
-            self.level_modifiers,
-            self.equipment_modifiers,
-            self.buff_modifiers,
-            self.combat_buff_modifiers,
-            self.weapon_buff_modifiers
-        ]
-
-        for modifier_dict in modifier_sources:
-            for stat in stats:
-                if stat in modifier_dict:
-                    stats[stat] += modifier_dict[stat]
-
-        # Apply debuffs
+        # First add level modifiers
         for stat in stats:
-            if stat in self.debuff_modifiers:
-                stats[stat] = max(0, stats[stat] - self.debuff_modifiers[stat])
+            if stat in self.level_modifiers:
+                stats[stat] += self.level_modifiers[stat]
 
-        # Update character stats
-        self.attack = stats["attack"]
-        self.defence = stats["defence"]
-        self.evasion = stats["evasion"]
-        self.accuracy = stats["accuracy"]
-        self.crit_chance = stats["crit_chance"]
-        self.crit_damage = stats["crit_damage"]
-        self.damage_reduction = stats["damage_reduction"]
-        self.armour_penetration = stats["armour_penetration"]
-        self.block_chance = stats["block_chance"]
+        # Then add equipment modifiers
+        for stat in stats:
+            if stat in self.equipment_modifiers:
+                stats[stat] += self.equipment_modifiers[stat]
+
+        # Apply all other modifiers
+        for stat in stats:
+            # Add buff modifiers
+            stats[stat] += self.buff_modifiers.get(stat, 0)
+            # Add combat buff modifiers
+            stats[stat] += self.combat_buff_modifiers.get(stat, 0)
+            # Add weapon buff modifiers
+            stats[stat] += self.weapon_buff_modifiers.get(stat, 0)
+            # Subtract debuff modifiers
+            stats[stat] = max(0, stats[stat] - self.debuff_modifiers.get(stat, 0))
+
+        # Update character stats with calculated values
+        for stat, value in stats.items():
+            if stat == "crit_damage":
+                value = max(100, value)
+            elif stat in ["damage_reduction", "armour_penetration", "block_chance"]:
+                value = max(0, value)
+            else:
+                value = max(1, value)
+            setattr(self, stat, value)
 
         # Ensure crit_chance and crit_damage stay within reasonable bounds
         self.crit_chance = max(0, min(100, self.crit_chance))
@@ -794,72 +1044,49 @@ class Player(Character):
             return True, f"Applied {item.name}. You will heal for {item.tick_effect} HP every turn for {item.duration} turns."
         return False, "This item does not have a heal over time effect."
     
-    def apply_defensive_stance(self):
-        attack_info = self.attack_types["defensive"]
+    def apply_defensive_stance(self, duration, boost_percentage):
+        """Apply defensive stance with specified duration and boost percentage"""
         existing_effect = next((effect for effect in self.status_effects if effect.name == "Defensive Stance"), None)
         if existing_effect:
             existing_effect.reset_duration()
-            #print(f"Your Defensive Stance has been refreshed for {attack_info['duration']} turns.")
         else:
-            defensive_stance_effect = DEFENSIVE_STANCE(
-                attack_info["duration"], 
-                attack_info["defence_boost_percentage"]
-            )
+            defensive_stance_effect = DEFENSIVE_STANCE(duration, boost_percentage)
             self.apply_status_effect(defensive_stance_effect)
-            #print(f"You've entered a Defensive Stance for {attack_info['duration']} turns.")
-            
-    def apply_power_stance(self):
-        attack_info = self.attack_types["power_stance"]
+
+    def apply_power_stance(self, duration, boost_percentage):
+        """Apply power stance with specified duration and boost percentage"""
         existing_effect = next((effect for effect in self.status_effects if effect.name == "Power Stance"), None)
         if existing_effect:
             existing_effect.reset_duration()
-            #print(f"Your Power Stance has been refreshed for {attack_info['duration']} turns.")
         else:
-            power_stance_effect = POWER_STANCE(
-                attack_info["duration"], 
-                attack_info["attack_boost_percentage"]
-            )
+            power_stance_effect = POWER_STANCE(duration, boost_percentage)
             self.apply_status_effect(power_stance_effect)
-            #print(f"You've entered a power Stance for {attack_info['duration']} turns.")
-            
-    def apply_berserker_stance(self):
-        attack_info = self.attack_types["berserker_stance"]
+
+    def apply_berserker_stance(self, duration, boost_percentage):
+        """Apply berserker stance with specified duration and boost percentage"""
         existing_effect = next((effect for effect in self.status_effects if effect.name == "Berserker Stance"), None)
         if existing_effect:
             existing_effect.reset_duration()
-            #print(f"Your Power Stance has been refreshed for {attack_info['duration']} turns.")
         else:
-            berserker_stance_effect = BERSERKER_STANCE(
-                attack_info["duration"], 
-                attack_info["attack_boost_percentage"]
-            )
+            berserker_stance_effect = BERSERKER_STANCE(duration, boost_percentage)
             self.apply_status_effect(berserker_stance_effect)
-            #print(f"You've entered a power Stance for {attack_info['duration']} turns.")
-    
-    def apply_accuracy_stance(self):
-        attack_info = self.attack_types["accuracy_stance"]
+
+    def apply_accuracy_stance(self, duration, boost_percentage):
+        """Apply accuracy stance with specified duration and boost percentage"""
         existing_effect = next((effect for effect in self.status_effects if effect.name == "Accuracy Stance"), None)
         if existing_effect:
             existing_effect.reset_duration()
-            #print(f"Your Accuracy Stance has been refreshed for {attack_info['duration']} turns.")
         else:
-            accuracy_stance_effect = ACCURACY_STANCE(
-                attack_info["duration"], 
-                attack_info["accuracy_boost_percentage"]
-            )
+            accuracy_stance_effect = ACCURACY_STANCE(duration, boost_percentage)
             self.apply_status_effect(accuracy_stance_effect)
-            #print(f"You've entered a accuracy Stance for {attack_info['duration']} turns.")
-            
-    def apply_evasion_stance(self):
-        attack_info = self.attack_types["evasion_stance"]
+
+    def apply_evasion_stance(self, duration, boost_percentage):
+        """Apply evasion stance with specified duration and boost percentage"""
         existing_effect = next((effect for effect in self.status_effects if effect.name == "Evasion Stance"), None)
         if existing_effect:
             existing_effect.reset_duration()
         else:
-            evasion_stance_effect = EVASION_STANCE(
-                attack_info["duration"],
-                attack_info["evasion_boost_percentage"]
-            )
+            evasion_stance_effect = EVASION_STANCE(duration, boost_percentage)
             self.apply_status_effect(evasion_stance_effect)
             
     def update_buffs(self):
@@ -1213,7 +1440,7 @@ class Player(Character):
         stats_str = ", ".join(stats)
         effect_desc = self.get_effect_description(item)
 
-        print(f"{idx}. {item.name} ", end="")
+        print(f"{idx}. {item.name} [{item.type.title()} - {item.tier.title()}] ", end="")
         if stats_str:
             print(f"({stats_str}) ", end="")
         if effect_desc and effect_desc != "Unknown effect":
@@ -1223,7 +1450,7 @@ class Player(Character):
     def _display_stacked_item(self, idx, item, count):
         """Helper method to displa a stacked item"""
         effect_desc = self.get_effect_description(item)
-        print(f"{idx}. {item.name} x{count} [{effect_desc}] (Value: {item.value} gold each)")
+        print(f"{idx}. {item.name} x{count} [{item.type.title()} - {item.tier.title()}] [{effect_desc}] (Value: {item.value} gold each)")
     
     def show_consumables(self):
         # Display consumable items in inventory
@@ -1311,62 +1538,67 @@ class Player(Character):
         return self.stamina >= stamina_cost
     
     def get_available_attack_types(self):
-        # Get the current weapon_type
-        equipped_weapon = self.equipped.get("weapon")
-        weapon_type = equipped_weapon.weapon_type
-        
+        # Check if in a stance that limits attacks
         if any(effect.name == "Defensive Stance" for effect in self.status_effects):
-            return {"normal": self.attack_types["normal"]}
-        if any(effect.name == "Power Stance" for effect in self.status_effects):
-            return {"normal": self.attack_types["normal"], "power": self.attack_types["power"]}
-        if any(effect.name == "Berserker Stance" for effect in self.status_effects):
-            return {"normal": self.attack_types["normal"], "power": self.attack_types["power"]}
-        if any(effect.name == "Accuracy Stance" for effect in self.status_effects):
-            return {"normal": self.attack_types["normal"], "quick": self.attack_types["quick"], "stunning": self.attack_types["stunning"]}
-        if any(effect.name == "Evasion Stance" for effect in self.status_effects):
-            return{"normal": self.attack_types["normal"], "quick": self.attack_types["quick"]}
+            return {"normal": PLAYER_ATTACK_TYPES["normal"]}
+            
+        # Get weapon type
+        equipped_weapon = self.equipped.get("weapon")
+        weapon_type = equipped_weapon.weapon_type if equipped_weapon else "light"
         
-        if weapon_type == "light":
-            available_attacks = {
-                "normal": self.attack_types["normal"],
-                "quick": self.attack_types["quick"],
-                "accuracy_stance": self.attack_types["accuracy_stance"],
-                "evasion_stance": self.attack_types["evasion_stance"]
-            }
-            return available_attacks
-        elif weapon_type == "medium":
-            available_attacks = {
-                "normal": self.attack_types["normal"],
-                "power": self.attack_types["power"],
-                "stunning": self.attack_types["stunning"],
-                "defensive": self.attack_types["defensive"],
-                "power_stance": self.attack_types["power_stance"]
-            }
-            return available_attacks
-        elif weapon_type == "heavy":
-            available_attacks = {
-                "normal": self.attack_types["normal"],
-                "power": self.attack_types["power"],
-                "stunning": self.attack_types["stunning"],
-                "defensive": self.attack_types["defensive"],
-                "power_stance": self.attack_types["power_stance"],
-                "berserker_stance": self.attack_types["berserker_stance"]
-            }
-            return available_attacks
+        # Get available attacks for weapon type
+        available_attack_names = WEAPON_ATTACK_TYPES[weapon_type]
+        available_attacks = {name: PLAYER_ATTACK_TYPES[name] 
+                            for name in available_attack_names}
         
-        return self.attack_types
+        return available_attacks
 
     def display_attack_options(self):
+        """Display available attack options with costs"""
         print("\nChoose your attack type:")
         available_attacks = self.get_available_attack_types()
-        for i, (key, value) in enumerate(available_attacks.items(), 1):
-            weapon_type = self.equipped.get("weapon", {"weapon_type": "light"}).weapon_type
-            base_stamina_cost = self.get_weapon_stamina_cost(weapon_type)
-            total_stamina_cost = base_stamina_cost + value['stamina_modifier']
-            print(f"[{i}] {value['name']} (Stamina cost: {total_stamina_cost})")
+        weapon_type = self.equipped.get("weapon", {"weapon_type": "light"}).weapon_type
+        base_stamina = self.get_weapon_stamina_cost(weapon_type)
         
-        if any(effect.name == "Defensive Stance" for effect in self.status_effects):
-            print("\n(You can only use Normal Attack while in Defensive Stance)")
+        for i, (_, attack) in enumerate(available_attacks.items(), 1):
+            # Basic attack info
+            cost = base_stamina + attack['stamina_modifier']
+            info = [f"Stamina cost: {cost}"]
+            
+            # Add damage modifier if it does damage
+            if attack['damage_modifier'] > 0:
+                damage = int(attack['damage_modifier'] * 100)
+                info.append(f"Damage: {damage}%")
+                
+            # Add number of attacks if it has extra
+            if 'extra_attacks' in attack:
+                total_hits = attack['extra_attacks'] + 1
+                info.append(f"Hits: {total_hits}")
+                
+            # Add stat buffs if any
+            if 'stat_buffs' in attack:
+                buffs = [f"{stat.replace('_', ' ').title()} +{value}" 
+                        for stat, value in attack['stat_buffs'].items()]
+                info.append("Buffs: " + ", ".join(buffs))
+                
+            # Add stance info if it's a stance
+            if 'stance' in attack:
+                stance = attack['stance']
+                for key, value in stance.items():
+                    if key.endswith('_percentage'):
+                        info.append(f"{key.split('_')[0].title()} +{value}%")
+                info.append(f"Duration: {stance['duration']} turns")
+                
+            # Add effects if any
+            if attack.get('effect'):
+                info.append(f"Effect: {attack['effect'].replace('_', ' ').title()}")
+                
+            # Add self damage warning if applicable
+            if attack.get('self_damage'):
+                info.append("Deals 20% self damage")
+                
+            # Print the formatted attack option
+            print(f"[{i}] {attack['name']} ({', '.join(info)})")
 
     def display_kill_stats(self):
         """
