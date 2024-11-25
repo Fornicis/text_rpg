@@ -1,19 +1,64 @@
 from player import Character
 from game_config import MONSTER_TYPES
+from status_effects import *
 import random
 
 class Enemy(Character):
     def __init__(self, name=None, hp=None, attack=None, defence=None, accuracy=None, evasion=None, 
-                 crit_chance=None, crit_damage=None, armour_penetration=None, damage_reduction=None, 
-                 block_chance=None, exp=None, gold=None, tier=None, level=0, attack_types=None, template=None, player=None):
-        """
-        Initialise enemy either from direct stats or from a template + player scaling
-        If template and player are provided, scale stats based on player
-        Otherwise use provided stats directly
-        """
+             crit_chance=None, crit_damage=None, armour_penetration=None, damage_reduction=None, 
+             block_chance=None, exp=None, gold=None, tier=None, level=0, attack_types=None, template=None, player=None):
+        
         if template and player:
-            # Set Default Percentages for all stats
-            default_percentages = {
+            self.template = template
+            self.debug_info = {}  # Store debug calculation info
+            
+            # Calculate stats and store debug info
+            stats = self._calculate_stats_with_debug(player, template)
+            
+            hp = stats['hp']
+            attack = stats['attack']
+            defence = stats['defence']
+            accuracy = stats['accuracy']
+            evasion = stats['evasion']
+            crit_chance = stats['crit_chance']
+            crit_damage = stats['crit_damage']
+            armour_penetration = stats['armour_penetration']
+            damage_reduction = stats['damage_reduction']
+            block_chance = stats['block_chance']
+            exp = stats['exp']
+            gold = stats['gold']
+            level = stats['level']
+            tier = template["tier"]
+            final_name = stats['name']
+            base_attack_types = stats['attack_types']
+
+        super().__init__(final_name, hp, attack, defence, accuracy, evasion, 
+                        crit_chance, crit_damage, armour_penetration, 
+                        damage_reduction, block_chance)
+        
+        self.exp = exp
+        self.gold = gold
+        self.tier = tier
+        self.level = level
+        self.stunned = False
+        self.monster_type = self._determine_monster_type(final_name)
+        
+        # Update attack types initialization
+        if template and player:
+            self.attack_types = {attack_type: ENEMY_ATTACK_TYPES[attack_type] 
+                            for attack_type in stats['attack_types']}
+        elif attack_types:
+            self.attack_types = {attack_type: ENEMY_ATTACK_TYPES[attack_type] 
+                            for attack_type in attack_types}
+        else:
+            self.attack_types = {"normal": ENEMY_ATTACK_TYPES["normal"]}
+            
+    def _calculate_stats_with_debug(self, player, template):
+        stats = {}
+        debug = self.debug_info
+        
+        # Store base percentages and modifications
+        debug['base_percentages'] = {
             "hp_percent": 100,
             "attack_percent": 100,
             "defence_percent": 100,
@@ -26,117 +71,354 @@ class Enemy(Character):
             "block_chance_percent": 100
         }
         
-            # Update defaults with template stats
-            base_percentages = default_percentages.copy()
-            base_percentages.update(template["stats"])
+        # Store template modifications
+        debug['template_mods'] = template["stats"].copy()
+        base_percentages = debug['base_percentages'].copy()
+        base_percentages.update(debug['template_mods'])
+        
+        # Handle variant
+        stats['name'] = template['name']
+        # Store and track attack types
+        debug['attack_types'] = {
+            'base': template["attack_types"].copy(),
+            'final': template["attack_types"].copy()
+        }
+        
+        stats['attack_types'] = template["attack_types"].copy()
+        debug['variant_roll'] = random.random()
+        
+        if debug['variant_roll'] < 10.1:
+            debug['available_variants'] = [(name, var_data["chance"]) 
+                                         for name, var_data in MONSTER_VARIANTS.items()]
             
-            # First roll for whether this should be a variant at all (10% chance)
-            final_name = template['name']
-            # Create a copy of the template's attack types
-            base_attack_types = template["attack_types"].copy()
+            total_weight = sum(weight for _, weight in debug['available_variants'])
+            variant_roll = random.random() * total_weight
+            current_weight = 0
             
-            if random.random() < 0.1:  # 10% chance for any variant
-                # Create a list of variants with their relative weights
-                available_variants = [(name, var_data["chance"]) 
-                                    for name, var_data in MONSTER_VARIANTS.items()]
-                
-                # Get total weight for normalization
-                total_weight = sum(weight for _, weight in available_variants)
-                
-                # Roll for specific variant
-                variant_roll = random.random() * total_weight
-                current_weight = 0
-                
-                for variant_name, weight in available_variants:
-                    current_weight += weight
-                    if variant_roll <= current_weight:
-                        variant = MONSTER_VARIANTS[variant_name]
-                        # Store the complete variant data
-                        self.variant = {
-                            'name': variant_name,
-                            'loot_modifiers': variant.get('loot_modifiers', {}).copy()
-                        }
-                        final_name = f"{variant_name} {template['name']}"
-                        
-                        # Apply variant stat modifiers
-                        for stat, modifier in variant["stats"].items():
+            for variant_name, weight in debug['available_variants']:
+                current_weight += weight
+                if variant_roll <= current_weight:
+                    variant = MONSTER_VARIANTS[variant_name]
+                    self.variant = {
+                        'name': variant_name,
+                        'stats': variant.get('stats', {}).copy(),
+                        'loot_modifiers': variant.get('loot_modifiers', {}).copy()
+                    }
+                    stats['name'] = f"{variant_name} {template['name']}"
+                    
+                    debug['variant_mods'] = variant.get('stats', {}).copy()
+                    if "stats" in self.variant:
+                        for stat, modifier in self.variant["stats"].items():
                             if stat in base_percentages:
                                 base_percentages[stat] = int(base_percentages[stat] * (modifier / 100))
-                        
-                        # Handle additional attacks if specified
-                        if "additional_attacks" in variant:
-                            base_attack_types.extend(variant["additional_attacks"])
-                        
-                        break
-                else:
-                    self.variant = None
+                    
+                    if "additional_attacks" in variant:
+                        variant_attacks = variant["additional_attacks"]
+                        stats['attack_types'].extend(variant_attacks)
+                        debug['attack_types']['variant_added'] = variant_attacks
+                        debug['attack_types']['final'] = stats['attack_types']
+                    break
             else:
                 self.variant = None
-            
-            # Calculate actual stats
-            hp = int(player.max_hp * base_percentages["hp_percent"] / 100)
-            attack = int((player.base_attack + player.level_modifiers.get("attack") + player.equipment_modifiers.get("attack") * (base_percentages["attack_percent"] * max(1, level + 2 / player.level)) / 100))
-            defence = int((player.base_defence + player.level_modifiers.get("defence") + player.equipment_modifiers.get("defence") * (base_percentages["defence_percent"] * max(1, level + 2 / player.level)) / 100))
-            accuracy = int((player.base_accuracy + player.level_modifiers.get("accuracy", 0) + player.equipment_modifiers.get("accuracy", 0)) * base_percentages["accuracy_percent"] / 100)
-            evasion = int((player.base_evasion + player.level_modifiers.get("evasion", 0) + player.equipment_modifiers.get("evasion", 0)) * base_percentages["evasion_percent"] / 100)
-            crit_chance = int((player.base_crit_chance + player.level_modifiers.get("crit_chance", 0) + player.equipment_modifiers.get("crit_chance", 0)) * base_percentages["crit_chance_percent"] / 100)
-            crit_damage = int((player.base_crit_damage + player.level_modifiers.get("crit_damage", 0) + player.equipment_modifiers.get("crit_damage", 0)) * base_percentages["crit_damage_percent"] / 100)
-            armour_penetration = int((player.base_armour_penetration + player.level_modifiers.get("armour_penetration", 0) + player.equipment_modifiers.get("armour_penetration", 0)) * base_percentages["armour_penetration_percent"] / 100)
-            damage_reduction = int((player.base_damage_reduction + player.level_modifiers.get("damage_reduction", 0) + player.equipment_modifiers.get("damage_reduction", 0)) * base_percentages["damage_reduction_percent"] / 100)
-            block_chance = int((player.base_block_chance + player.level_modifiers.get("block_chance", 0) + player.equipment_modifiers.get("block_chance", 0)) * base_percentages["block_chance_percent"] / 100)
-            
-            # Ensure minimum values
-            hp = max(1, hp)
-            attack = max(1, attack)
-            defence = max(1, defence)
-            accuracy = max(1, accuracy)
-            evasion = max(1, evasion)
-            crit_chance = max(1, crit_chance)
-            crit_damage = max(100, crit_damage)
-            armour_penetration = max(0, armour_penetration)
-            damage_reduction = max(0, damage_reduction)
-            block_chance = max(0, block_chance)
-            
-            # Set rewards
-            exp = random.randint(10, 20) * player.level
-            gold = random.randint(10, 15) * player.level
-            
-            if self.variant:
-                exp = int(exp * 1.5)
-                if 'loot_modifiers' in variant and 'gold_multiplier' in variant['loot_modifiers']:
-                    gold = int(gold * variant['loot_modifiers']['gold_multiplier'])
-                # Store variant info for loot drops
-                self.variant = variant
-                name = f"{variant_name} {template['name']}"
-            else:
-                self.variant = None
-            
-            # Handle attack types
-            attack_types = template["attack_types"].copy()
-            if self.variant and "additional_attacks" in variant:
-                attack_types.extend(variant["additional_attacks"])
-            
-            # Get level and tier from template
-            level = random.randint(max(1, player.level - random.randint(1, 2)), player.level + random.randint(1, 2))
-            tier = template["tier"]
-        
-        # Initialise the character with either calculated or provided stats
-        super().__init__(final_name if template and player else name, hp, attack, defence, accuracy, evasion, 
-                        crit_chance, crit_damage, armour_penetration, 
-                        damage_reduction, block_chance)
-        
-        self.exp = exp
-        self.gold = gold
-        self.tier = tier
-        self.level = level
-        self.stunned = False
-        self.monster_type = self._determine_monster_type(name)
-        
-        # Initialise attack types
-        if attack_types:
-            self.attack_types = {attack_type: ENEMY_ATTACK_TYPES[attack_type] for attack_type in base_attack_types}
         else:
-            self.attack_types = {"normal": ENEMY_ATTACK_TYPES["normal"]}
+            self.variant = None
+            debug['variant_mods'] = {}
+
+        # Level calculations        
+        level_min = max(1, player.level - random.randint(1, 2))
+        level_max = player.level + random.randint(1, 2)
+        stats['level'] = random.randint(level_min, level_max)
+        debug['level_calc'] = {
+            'min': level_min,
+            'max': level_max,
+            'chosen': stats['level']
+        }
+        
+        # Store level scaling
+        debug['level_diff'] = max(1, stats['level'] + 2 - player.level)
+        debug['level_scale'] = min(1.5, 1 + (debug['level_diff'] * 0.1))
+        
+        # Store player base stats for calculations
+        debug['player_stats'] = {
+            'max_hp': player.max_hp,
+            'base_attack': player.base_attack,
+            'level_attack': player.level_modifiers.get("attack", 0),
+            'equipment_attack': player.equipment_modifiers.get("attack", 0),
+            'base_defence': player.base_defence,
+            'level_defence': player.level_modifiers.get("defence", 0),
+            'equipment_defence': player.equipment_modifiers.get("defence", 0)
+        }
+
+        # Calculate and store main stats
+        stats['hp'] = int(player.max_hp * base_percentages["hp_percent"] / 100)
+        stats['attack'] = int((player.base_attack + player.level_modifiers.get("attack") + 
+                    (player.equipment_modifiers.get("attack") * 0.6)) * 
+                    (base_percentages["attack_percent"] / 100) * debug['level_scale'])
+        stats['defence'] = int((player.base_defence + player.level_modifiers.get("defence") + 
+                    (player.equipment_modifiers.get("defence") * 0.6)) * 
+                    (base_percentages["defence_percent"] / 100) * debug['level_scale'])
+                    
+        # Store final percentages used
+        debug['final_percentages'] = base_percentages.copy()
+        
+        # Calculate remaining stats with caps
+        stats.update(self._calculate_secondary_stats(player, base_percentages))
+        
+        # Calculate rewards
+        debug['exp_roll'] = random.randint(random.randint(8, 20), random.randint(12, 30))
+        debug['gold_roll'] = random.randint(random.randint(8, 20), random.randint(12, 30))
+        stats['exp'] = debug['exp_roll'] * max(1, player.level)
+        stats['gold'] = debug['gold_roll'] * max(1, player.level)
+        
+        if self.variant:
+            stats['exp'] = int(stats['exp'] * 1.5)
+            if 'loot_modifiers' in self.variant and 'gold_multiplier' in self.variant['loot_modifiers']:
+                stats['gold'] = int(stats['gold'] * self.variant['loot_modifiers']['gold_multiplier'])
+        
+        return stats
+    
+    def _calculate_secondary_stats(self, player, base_percentages):
+        """Calculate secondary stats with caps and store debug information"""
+        stats = {}
+        self.debug_info['secondary_calc'] = {}
+        debug = self.debug_info['secondary_calc']
+        
+        # Accuracy calculation
+        base_accuracy = (player.base_accuracy + player.level_modifiers.get("accuracy", 0) + 
+                        (player.equipment_modifiers.get("accuracy", 0) * 0.5))
+        accuracy = int(base_accuracy * base_percentages["accuracy_percent"] / 100)
+        stats['accuracy'] = min(95, accuracy)
+        debug['accuracy'] = {
+            'base': player.base_accuracy,
+            'level_mod': player.level_modifiers.get("accuracy", 0),
+            'equipment_mod': player.equipment_modifiers.get("accuracy", 0),
+            'equipment_scaled': player.equipment_modifiers.get("accuracy", 0) * 0.5,
+            'total_base': base_accuracy,
+            'percent_mod': base_percentages["accuracy_percent"],
+            'calculated': accuracy,
+            'final': stats['accuracy']
+        }
+        
+        # Evasion calculation
+        base_evasion = (player.base_evasion + player.level_modifiers.get("evasion", 0) + 
+                    (player.equipment_modifiers.get("evasion", 0) * 0.6))
+        evasion = int(base_evasion * base_percentages["evasion_percent"] / 100)
+        stats['evasion'] = min(50, evasion)
+        debug['evasion'] = {
+            'base': player.base_evasion,
+            'level_mod': player.level_modifiers.get("evasion", 0),
+            'equipment_mod': player.equipment_modifiers.get("evasion", 0),
+            'equipment_scaled': player.equipment_modifiers.get("evasion", 0) * 0.6,
+            'total_base': base_evasion,
+            'percent_mod': base_percentages["evasion_percent"],
+            'calculated': evasion,
+            'final': stats['evasion']
+        }
+        
+        # Crit chance calculation
+        base_crit_chance = (player.base_crit_chance + player.level_modifiers.get("crit_chance", 0) + 
+                        (player.equipment_modifiers.get("crit_chance", 0) * 0.6))
+        crit_chance = int(base_crit_chance * base_percentages["crit_chance_percent"] / 100)
+        stats['crit_chance'] = min(50, crit_chance)
+        debug['crit_chance'] = {
+            'base': player.base_crit_chance,
+            'level_mod': player.level_modifiers.get("crit_chance", 0),
+            'equipment_mod': player.equipment_modifiers.get("crit_chance", 0),
+            'equipment_scaled': player.equipment_modifiers.get("crit_chance", 0) * 0.6,
+            'total_base': base_crit_chance,
+            'percent_mod': base_percentages["crit_chance_percent"],
+            'calculated': crit_chance,
+            'final': stats['crit_chance']
+        }
+        
+        # Crit damage calculation
+        base_crit_damage = (player.base_crit_damage + player.level_modifiers.get("crit_damage", 0) + 
+                        (player.equipment_modifiers.get("crit_damage", 0) * 0.6))
+        crit_damage = int(base_crit_damage * base_percentages["crit_damage_percent"] / 100)
+        stats['crit_damage'] = min(250, max(100, crit_damage))  # Minimum 100%, maximum 250%
+        debug['crit_damage'] = {
+            'base': player.base_crit_damage,
+            'level_mod': player.level_modifiers.get("crit_damage", 0),
+            'equipment_mod': player.equipment_modifiers.get("crit_damage", 0),
+            'equipment_scaled': player.equipment_modifiers.get("crit_damage", 0) * 0.6,
+            'total_base': base_crit_damage,
+            'percent_mod': base_percentages["crit_damage_percent"],
+            'calculated': crit_damage,
+            'final': stats['crit_damage']
+        }
+        
+        # Armour penetration calculation
+        base_armour_pen = (player.base_armour_penetration + 
+                        player.level_modifiers.get("armour_penetration", 0) + 
+                        (player.equipment_modifiers.get("armour_penetration", 0) * 0.6))
+        armour_pen = int(base_armour_pen * base_percentages["armour_penetration_percent"] / 100)
+        stats['armour_penetration'] = min(50, armour_pen)
+        debug['armour_penetration'] = {
+            'base': player.base_armour_penetration,
+            'level_mod': player.level_modifiers.get("armour_penetration", 0),
+            'equipment_mod': player.equipment_modifiers.get("armour_penetration", 0),
+            'equipment_scaled': player.equipment_modifiers.get("armour_penetration", 0) * 0.6,
+            'total_base': base_armour_pen,
+            'percent_mod': base_percentages["armour_penetration_percent"],
+            'calculated': armour_pen,
+            'final': stats['armour_penetration']
+        }
+        
+        # Damage reduction calculation
+        base_damage_red = (player.base_damage_reduction + 
+                        player.level_modifiers.get("damage_reduction", 0) + 
+                        (player.equipment_modifiers.get("damage_reduction", 0) * 0.6))
+        damage_red = int(base_damage_red * base_percentages["damage_reduction_percent"] / 100)
+        stats['damage_reduction'] = min(30, damage_red)
+        debug['damage_reduction'] = {
+            'base': player.base_damage_reduction,
+            'level_mod': player.level_modifiers.get("damage_reduction", 0),
+            'equipment_mod': player.equipment_modifiers.get("damage_reduction", 0),
+            'equipment_scaled': player.equipment_modifiers.get("damage_reduction", 0) * 0.6,
+            'total_base': base_damage_red,
+            'percent_mod': base_percentages["damage_reduction_percent"],
+            'calculated': damage_red,
+            'final': stats['damage_reduction']
+        }
+        
+        # Block chance calculation
+        base_block = (player.base_block_chance + 
+                    player.level_modifiers.get("block_chance", 0) + 
+                    (player.equipment_modifiers.get("block_chance", 0) * 0.6))
+        block = int(base_block * base_percentages["block_chance_percent"] / 100)
+        stats['block_chance'] = min(30, block)
+        debug['block_chance'] = {
+            'base': player.base_block_chance,
+            'level_mod': player.level_modifiers.get("block_chance", 0),
+            'equipment_mod': player.equipment_modifiers.get("block_chance", 0),
+            'equipment_scaled': player.equipment_modifiers.get("block_chance", 0) * 0.6,
+            'total_base': base_block,
+            'percent_mod': base_percentages["block_chance_percent"],
+            'calculated': block,
+            'final': stats['block_chance']
+        }
+        
+        return stats
+
+    def debug_stat_calculation(self, player):
+        """Display full calculation process using stored debug info"""
+        debug = []
+        debug.append(f"\n=== Detailed Stat Calculation for {self.name} ===\n")
+        
+        # Base percentages
+        debug.append("1. Initial Base Percentages:")
+        for stat, value in self.debug_info['base_percentages'].items():
+            debug.append(f"{stat}: {value}%")
+        
+        # Template modifications
+        debug.append("\n2. Template Modifications:")
+        for stat, value in self.debug_info['template_mods'].items():
+            debug.append(f"{stat} modified to: {value}%")
+            
+        # Variant modifications if any
+        if self.variant:
+            debug.append("\n3. Variant Modifications:")
+            for stat, modifier in self.debug_info['variant_mods'].items():
+                debug.append(f"{stat}: {modifier}%")
+                
+        # Level scaling
+        debug.append("\n4. Level Scaling:")
+        debug.append(f"Level range: {self.debug_info['level_calc']['min']} - {self.debug_info['level_calc']['max']}")
+        debug.append(f"Chosen level: {self.debug_info['level_calc']['chosen']}")
+        debug.append(f"Level difference: {self.debug_info['level_diff']}")
+        debug.append(f"Level scale: {self.debug_info['level_scale']:.2f}")
+        
+        # Main stat calculations
+        debug.append("\n5. Main Stat Calculations:")
+        
+        # HP calculation
+        base_hp = self.debug_info['player_stats']['max_hp']
+        hp_percent = self.debug_info['final_percentages']['hp_percent']
+        debug.append(f"HP Calculation:")
+        debug.append(f"Base HP (from player): {base_hp}")
+        debug.append(f"Percentage modifier: {hp_percent}%")
+        debug.append(f"Final HP: {base_hp} * {hp_percent}% = {self.hp}")
+        
+        # Attack calculation
+        attack_base = self.debug_info['player_stats']['base_attack']
+        attack_level = self.debug_info['player_stats']['level_attack']
+        attack_equipment = self.debug_info['player_stats']['equipment_attack']
+        attack_percent = self.debug_info['final_percentages']['attack_percent']
+        
+        debug.append(f"\nAttack Calculation:")
+        debug.append(f"Base attack: {attack_base}")
+        debug.append(f"Level modifier: {attack_level}")
+        debug.append(f"Equipment modifier (60%): {attack_equipment * 0.6}")
+        debug.append(f"Combined base: {attack_base + attack_level + (attack_equipment * 0.6)}")
+        debug.append(f"Percentage modifier: {attack_percent}%")
+        debug.append(f"Level scaling: {self.debug_info['level_scale']:.2f}")
+        debug.append(f"Final attack: {self.attack}")
+        
+        # Defence Calculation
+        defence_base = self.debug_info['player_stats']['base_defence']
+        defence_level = self.debug_info['player_stats']['level_defence']
+        defence_equipment = self.debug_info['player_stats']['equipment_defence']
+        defence_percent = self.debug_info['final_percentages']['defence_percent']
+        
+        debug.append(f"\nDefence Calculation:")
+        debug.append(f"Base defence: {defence_base}")
+        debug.append(f"Level modifier: {defence_level}")
+        debug.append(f"Equipment modifier (60%): {defence_equipment * 0.6}")
+        debug.append(f"Combined base: {defence_base + defence_level + (defence_equipment * 0.6)}")
+        debug.append(f"Percentage modifier: {defence_percent}%")
+        debug.append(f"Level scaling: {self.debug_info['level_scale']:.2f}")
+        debug.append(f"Final defence: {self.defence}")
+        
+        # Secondary stats calculations
+        debug.append("\n6. Secondary Stats Calculations:")
+        
+        secondary_stats = self.debug_info['secondary_calc']
+        for stat_name, stat_info in secondary_stats.items():
+            debug.append(f"\n{stat_name.replace('_', ' ').title()} Calculation:")
+            debug.append(f"Base: {stat_info['base']}")
+            debug.append(f"Level modifier: {stat_info['level_mod']}")
+            debug.append(f"Equipment modifier: {stat_info['equipment_mod']}")
+            debug.append(f"Equipment scaled: {stat_info['equipment_scaled']}")
+            debug.append(f"Total base: {stat_info['total_base']}")
+            debug.append(f"Percentage modifier: {stat_info['percent_mod']}%")
+            debug.append(f"Calculated value: {stat_info['calculated']}")
+            debug.append(f"Final value (after caps): {stat_info['final']}")
+            
+        # Add attack types section
+        debug.append("\n7. Attack Types:")
+        debug.append("Base attack types:")
+        for attack in self.debug_info['attack_types']['base']:
+            attack_info = ENEMY_ATTACK_TYPES[attack]
+            debug.append(f"- {attack_info['name']}:")
+            debug.append(f"  Damage modifier: {attack_info['damage_modifier']}")
+            if 'effect' in attack_info and attack_info['effect']:
+                debug.append(f"  Effect: {attack_info['effect']}")
+            if 'extra_attacks' in attack_info:
+                debug.append(f"  Extra attacks: {attack_info['extra_attacks']}")
+        
+        if 'variant_added' in self.debug_info['attack_types']:
+            debug.append("\nVariant added attack types:")
+            for attack in self.debug_info['attack_types']['variant_added']:
+                attack_info = ENEMY_ATTACK_TYPES[attack]
+                debug.append(f"- {attack_info['name']}:")
+                debug.append(f"  Damage modifier: {attack_info['damage_modifier']}")
+                if 'effect' in attack_info and attack_info['effect']:
+                    debug.append(f"  Effect: {attack_info['effect']}")
+                if 'extra_attacks' in attack_info:
+                    debug.append(f"  Extra attacks: {attack_info['extra_attacks']}")
+        
+        debug.append("\nFinal available attacks:")
+        debug.append(f"Total unique attacks: {len(set(self.debug_info['attack_types']['final']))}")
+        for attack in set(self.debug_info['attack_types']['final']):
+            attack_info = ENEMY_ATTACK_TYPES[attack]
+            debug.append(f"- {attack_info['name']}:")
+            debug.append(f"  Damage modifier: {attack_info['damage_modifier']}")
+            if 'effect' in attack_info and attack_info['effect']:
+                debug.append(f"  Effect: {attack_info['effect']}")
+            if 'extra_attacks' in attack_info:
+                debug.append(f"  Extra attacks: {attack_info['extra_attacks']}")
+        
+        return "\n".join(debug)
     
     def _determine_monster_type(self, name):
         """Determine monster type based on name"""
@@ -146,10 +428,20 @@ class Enemy(Character):
         return "unknown"
     
     def choose_attack(self):
+        """Choose a random attack from available attack types"""
         if self.stunned:
             self.stunned = False
             return None
-        return random.choice(list(self.attack_types.keys()))
+            
+        # Get all available attack types
+        available_attacks = list(self.attack_types.keys())
+        
+        # Choose random attack
+        if available_attacks:
+            return random.choice(available_attacks)
+        
+        # Fallback to normal attack if somehow no attacks available
+        return "normal"
 
     def get_level_appropriate_attacks(self):
         """Get attacks available at current level"""
@@ -176,6 +468,7 @@ def create_enemy(enemy_type, player=None):
         enemy = Enemy(template=template, player=player)
         enemy.soultype = template.get("soultype", "standard")
         enemy.monster_type = template.get("monster_type", "unknown")
+        print(enemy.debug_stat_calculation(player))
         return enemy
     return None
 
@@ -2444,7 +2737,7 @@ ENEMY_TEMPLATES = {
             "block_chance_percent": random.randint(100, 130)
         },
         "tier": "boss",
-        "attack_types": ["normal", "power", "stunning", "vampiric", "draining", "defence_break"],
+        "attack_types": ["attack_weaken", "power", "double", "reckless", "defence_break", "damage_reflect", "burn"],
         "soultype": "boss",
         "monster_type": "arcane"
     },
@@ -2569,11 +2862,16 @@ MONSTER_VARIANTS = {
         "chance": 0.1, # 10% chance to spawn
         "stats": {
             # Increases stat by amount / 100 (150 = 1.5x stat)
-            "attack_percent": 150,
-            "accuracy_percent": 120,
-            "crit_chance_percent": 130,
             "hp_percent": 80,
-            "defence_percent": 70
+            "attack_percent": 150,
+            "defence_percent": 70,
+            "accuracy_percent": 120,
+            "evasion_percent": 100,
+            "crit_chance_percent": 130,
+            "crit_damage_percent": 100,
+            "armour_penetration_percent": 100,
+            "damage_reduction_percent": 100,
+            "block_chance_percent": 100
         },
         "lore": "Driven mad by dark energies, this creature attacks with unnatural ferocity!",
         "additional_attacks": ["reckless"],
@@ -2590,11 +2888,15 @@ MONSTER_VARIANTS = {
         "chance": 0.08,
         "stats": {
             "hp_percent": 150,
+            "attack_percent": 80,
             "defence_percent": 140,
-            "damage_reduction_percent": 130,
-            "attack_percent": 120,
+            "accuracy_percent": 100,
             "evasion_percent": 70,
-            "block_chance_percent": 60,
+            "crit_chance_percent": 100,
+            "crit_damage_percent": 100,
+            "armour_penetration_percent": 100,
+            "damage_reduction_percent": 130,
+            "block_chance_percent": 60
         },
         "lore": "This creature has lived for centuries, growing ever stronger with age!",
         "additional_attacks": ["draining", "confusion"],
@@ -2611,11 +2913,16 @@ MONSTER_VARIANTS = {
     "Ethereal": {
         "chance": 0.07,
         "stats": {
-            "evasion_percent": 200,
-            "accuracy_percent": 150,
-            "crit_damage_percent": 140,
+            "hp_percent": 50,
+            "attack_percent": 100,
             "defence_percent": 60,
-            "hp_percent": 50
+            "accuracy_percent": 150,
+            "evasion_percent": 200,
+            "crit_chance_percent": 100,
+            "crit_damage_percent": 140,
+            "armour_penetration_percent": 100,
+            "damage_reduction_percent": 100,
+            "block_chance_percent": 100
         },
         "lore": "Partially phased into another dimension, this being is incredibly hard to hit!",
         "additional_attacks": ["attack_weaken", "defence_break"],
@@ -2630,10 +2937,15 @@ MONSTER_VARIANTS = {
         "chance": 0.06,
         "stats": {
             "hp_percent": 200,
+            "attack_percent": 100,
             "defence_percent": 150,
-            "damage_reduction": 130,
+            "accuracy_percent": 75,
             "evasion_percent": 25,
-            "accuracy_percent": 75
+            "crit_chance_percent": 100,
+            "crit_damage_percent": 100,
+            "armour_penetration_percent": 100,
+            "damage_reduction_percent": 130,
+            "block_chance_percent": 100
         },
         "lore": "This monster has grown to an enourmous size, becoming a true titan!",
         "additional_attacks": ["power"],
@@ -2647,12 +2959,16 @@ MONSTER_VARIANTS = {
     "Corrupted": {
         "chance": 0.09,
         "stats": {
-            "attack_percent": 130,
-            "armour_penetration_percent": 150,
             "hp_percent": 120,
-            "damage_reduction_percent": 60,
+            "attack_percent": 130,
             "defence_percent": 70,
-            "accuracy_percent": 80
+            "accuracy_percent": 80,
+            "evasion_percent": 100,
+            "crit_chance_percent": 100,
+            "crit_damage_percent": 100,
+            "armour_penetration_percent": 150,
+            "damage_reduction_percent": 60,
+            "block_chance_percent": 80
         },
         "lore": "Dark energies have twisted this creature, granting both power and instability",
         "additional_attacks": ["poison", "burn"],
@@ -2666,11 +2982,14 @@ MONSTER_VARIANTS = {
     "Swift": {
         "chance": 0.1,
         "stats": {
+            "hp_percent": 100,
+            "attack_percent": 90,
+            "defence_percent": 80,
             "accuracy_percent": 150,
             "evasion_percent": 150,
             "crit_chance_percent": 130,
-            "attack_percent": 90,
-            "defence_percent": 80,
+            "crit_damage_percent": 100,
+            "armour_penetration_percent": 100,
             "damage_reduction_percent": 60,
             "block_chance_percent": 70
         },
@@ -2686,11 +3005,16 @@ MONSTER_VARIANTS = {
     "Vampiric": {
         "chance": 0.08,
         "stats": {
-            "attack_percent": 130,
             "hp_percent": 120,
-            "crit_chance_percent": 140,
+            "attack_percent": 130,
             "defence_percent": 90,
-            "evasion_percent": 75
+            "accuracy_percent": 100,
+            "evasion_percent": 75,
+            "crit_chance_percent": 140,
+            "crit_damage_percent": 100,
+            "armour_penetration_percent": 100,
+            "damage_reduction_percent": 100,
+            "block_chance_percent": 100
         },
         "lore": "This being drains the life force of its victims, growing stronger with each strike!",
         "additional_attacks": ["vampiric"],
@@ -2704,12 +3028,16 @@ MONSTER_VARIANTS = {
     "Armoured": {
         "chance": 0.08,
         "stats": {
-            "defence_percent": 180,
-            "damage_reduction_percent": 150,
-            "block_chance_percent": 140,
+            "hp_percent": 100,
             "attack_percent": 70,
+            "defence_percent": 180,
             "accuracy_percent": 80,
-            "evasion_percent": 75
+            "evasion_percent": 75,
+            "crit_chance_percent": 100,
+            "crit_damage_percent": 100,
+            "armour_penetration_percent": 100,
+            "damage_reduction_percent": 150,
+            "block_chance_percent": 140
         },
         "lore": "Covered in thick natural armour, this creature is incredibly difficult to harm!",
         "additional_attacks": ["damage_reflect"],
@@ -2723,12 +3051,16 @@ MONSTER_VARIANTS = {
     "Void-Touched": {
         "chance": 0.08,  # 8% chance to spawn
         "stats": {
+            "hp_percent": 85,
             "attack_percent": 130,
+            "defence_percent": 75,
             "accuracy_percent": 140,
             "evasion_percent": 140,
             "crit_chance_percent": 120,
-            "hp_percent": 85,
-            "defence_percent": 75
+            "crit_damage_percent": 100,
+            "armour_penetration_percent": 100,
+            "damage_reduction_percent": 100,
+            "block_chance_percent": 100
         },
         "lore": "This being has been altered by void energy, gaining supernatural precision but becoming more unstable!",
         "additional_attacks": ["reality_rend", "void_drain"],
