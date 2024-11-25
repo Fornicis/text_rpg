@@ -1,6 +1,6 @@
 from enemies import Enemy, create_enemy, get_type_for_monster
 from game_config import MONSTER_TYPES
-from items import create_soulbound_item, SoulCrystal, BossResonance, VariantAffinity, SoulEcho, ElementalResonance
+from items import create_soulbound_item, SoulCrystal, BossResonance, VariantAffinity, SoulEcho, ElementalResonance, SoulboundItem
 from display import clear_screen
 from enum import Enum
 import random
@@ -1271,7 +1271,7 @@ class RandomEventSystem:
         # Create and fight the Soul Forgemaster
         enemy = self._trigger_scaled_encounter(player, game, ["Soul Forgemaster"])
         
-        if enemy and enemy.hp <= 0:
+        if enemy and not enemy.is_alive():  # Victory condition
             print("\nThe forge acknowledges your victory!")
             
             def grant_power():
@@ -1306,7 +1306,7 @@ class RandomEventSystem:
             ]
             
             self._resolve_weighted_outcome(outcomes, player)
-        else:
+        elif enemy and enemy.is_alive():  # Defeat condition
             print("\nThe Soul Forgemaster was too powerful...")
             print("Perhaps you should return when you're stronger.")
             
@@ -1443,9 +1443,9 @@ class RandomEventSystem:
                             variant, available = variants[idx]
                             available -= selected_souls["variant"].get(variant, 0)
                             
-                            amount = input(f"\nHow many {variant} souls? (max {remaining}): ")
+                            amount = input(f"\nHow many {variant} souls? (max {int(remaining/5)}): ")
                             if amount.isdigit():
-                                amount = min(int(amount), remaining)
+                                amount = min(int(amount), int(remaining/5))
                                 selected_souls["variant"][variant] = selected_souls["variant"].get(variant, 0) + amount
                                 selected_souls["total_value"] += amount * 5
                                 
@@ -1471,9 +1471,9 @@ class RandomEventSystem:
                             boss, available = bosses[idx]
                             available -= selected_souls["boss"].get(boss, 0)
                             
-                            amount = input(f"\nHow many {boss} souls? (max {remaining}): ")
+                            amount = input(f"\nHow many {boss} souls? (max {int(remaining/10)}): ")
                             if amount.isdigit():
-                                amount = min(int(amount), remaining)
+                                amount = min(int(amount), int(remaining/10))
                                 selected_souls["boss"][boss] = selected_souls["boss"].get(boss, 0) + amount
                                 selected_souls["total_value"] += amount * 10
                                 
@@ -1660,6 +1660,68 @@ class RandomEventSystem:
             else:
                 print("\nForged using mysterious energies...")
 
+    def _calculate_item_value(self, item):
+        """Calculate item value based on stats and tier
+        
+        Each stat contributes to the final value with different weights.
+        Tier multipliers are applied at the end.
+        Soulbound items get a 50% bonus to final value.
+        """
+        base_value = 100  # Starting base value
+        
+        # Stat value multipliers
+        if item.type == "weapon":
+            stat_multipliers = {
+                'attack': 5,
+                'defence': 5,
+                'accuracy': 5,
+                'evasion': 10,
+                'crit_chance': 10,
+                'crit_damage': 3,
+                'armour_penetration': 10,
+                'damage_reduction': 10,
+                'block_chance': 8
+            }
+        else:
+            stat_multipliers = {
+                'attack': 15,
+                'defence': 15,
+                'accuracy': 10,
+                'evasion': 20,
+                'crit_chance': 30,
+                'crit_damage': 20,
+                'armour_penetration': 20,
+                'damage_reduction': 20,
+                'block_chance': 15
+            }
+        
+        # Calculate value from stats
+        value = base_value
+        for stat, multiplier in stat_multipliers.items():
+            stat_value = getattr(item, stat, 0)
+            if stat_value > 0:
+                value += stat_value * multiplier
+                
+        # Tier multipliers
+        tier_multipliers = {
+            'common': 1,
+            'uncommon': 2,
+            'rare': 4,
+            'epic': 7,
+            'masterwork': 11,
+            'legendary': 16,
+            'mythical': 22
+        }
+        
+        # Apply tier multiplier
+        value *= tier_multipliers.get(item.tier, 1)
+        
+        # Apply Soulbound multiplier to all Soulbound items
+        if isinstance(item, SoulboundItem):
+            value *= 1.5  # 50% bonus for all soulbound items
+            
+        return int(value)
+    
     def _modify_equipment_with_souls(self, base_item, souls_used, quality, preferred_stats):
         """Apply soul-based modifications to equipment"""
         # Generate themed name
@@ -1677,7 +1739,7 @@ class RandomEventSystem:
             modified_item = type(base_item)(
                 new_name,
                 base_item.type,
-                base_item.value * 2,  # Double base value
+                base_item.value,  # Initial value will be recalculated
                 base_item.tier
             )
         
@@ -1708,6 +1770,9 @@ class RandomEventSystem:
                 bonus_multiplier = 1.2 if stat in preferred_stats else 1.0
                 new_value = int(base_value * multiplier * bonus_multiplier)
                 setattr(modified_item, stat, new_value)
+        
+        # Calculate and set new value based on stats
+        modified_item.value = self._calculate_item_value(modified_item)
         
         return modified_item
 
@@ -1799,6 +1864,59 @@ class RandomEventSystem:
         sorted_affinities = sorted(affinities.items(), key=lambda x: x[1], reverse=True)
         return [equip for equip, _ in sorted_affinities[:3]]  # Return top 3 equipment types
     
+    def _calculate_crystal_value(self, stored_buffs, special_effects):
+        """Calculate soul crystal value based on stored buffs and special effects
+        
+        Args:
+            stored_buffs: Dict of stat: (value, duration) pairs
+            special_effects: List of CrystalEffect objects
+        
+        Returns:
+            int: Calculated value of the crystal
+        """
+        value = 0
+        
+        # Value from stored buffs
+        buff_multipliers = {
+            'attack': 15,
+            'defence': 15,
+            'accuracy': 10,
+            'evasion': 20,
+            'crit_chance': 30,
+            'crit_damage': 20,
+            'armour_penetration': 20,
+            'damage_reduction': 20,
+            'block_chance': 15
+        }
+        
+        # Calculate value from stored buffs
+        for stat, (amount, duration) in stored_buffs.items():
+            multiplier = buff_multipliers.get(stat, 50)  # Default 50 for unknown stats
+            value += amount * multiplier * (duration / 10)  # Duration factor
+            
+        # Value from special effects
+        for effect in special_effects:
+            if isinstance(effect, BossResonance):
+                # Value based on kill count and bonus values
+                value += (effect.bonus * 150) * (effect.duration / 5)
+                
+            elif isinstance(effect, VariantAffinity):
+                # Value based on kill count and bonus values
+                value += (effect.bonus * 100) * (effect.duration / 5)
+                
+            elif isinstance(effect, SoulEcho):
+                # Value based on kill count and percentage bonus
+                value += (effect.bonus * 50) * (effect.duration / 5)
+                
+            elif isinstance(effect, ElementalResonance):
+                # Fixed value for elemental effects
+                value += 2500  # Base value for elemental effects
+                
+        # Apply minimum value
+        value = max(100, value)
+        
+        return int(value)
+    
     def _create_soul_crystal(self, player, game, crystal_type, selected_souls):
         """Create a soul crystal with the selected souls"""
         # Define base parameters for crystal types
@@ -1879,9 +1997,16 @@ class RandomEventSystem:
             monster_type = get_type_for_monster(most_common_monster[0])
             special_effects.append(SoulEcho(monster_type, total_monster_souls))
         
-        # Calculate crystal value based on buffs and effects
-        base_value = sum(value for value, _ in stored_buffs.values()) * 10
-        crystal_value = base_value * (len(special_effects) * 2)
+         # Calculate crystal value using new method
+        crystal_value = self._calculate_crystal_value(stored_buffs, special_effects)
+        
+        # Apply tier multiplier to final value
+        tier_multipliers = {
+            "uncommon": 1,
+            "rare": 1.5,
+            "epic": 2
+        }
+        crystal_value = int(crystal_value * tier_multipliers.get(params["tier"], 1))
         
         # Create crystal
         crystal = SoulCrystal(
