@@ -468,7 +468,7 @@ def create_enemy(enemy_type, player=None):
         enemy = Enemy(template=template, player=player)
         enemy.soultype = template.get("soultype", "standard")
         enemy.monster_type = template.get("monster_type", "unknown")
-        print(enemy.debug_stat_calculation(player))
+        # print(enemy.debug_stat_calculation(player))
         return enemy
     return None
 
