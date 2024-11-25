@@ -20,19 +20,25 @@ class Battle:
             return False, None
 
         # Get and validate attack choice
-        attack_type, available_attacks = self.get_player_attack_choice()
+        attack_type, attack_info = self.get_player_attack_choice()
         if not attack_type:
             return False, None
 
         # Handle stamina cost
-        if not self.handle_stamina_cost(attack_type, available_attacks):
+        if not self.handle_stamina_cost(attack_type, attack_info):
             return False, None
+
+        # Apply any pre-attack buffs
+        self.apply_attack_buffs(attack_info)
 
         # Perform the attack and get results
         message, total_damage, self_damage_info, attack_hit = self.player.perform_attack(enemy, attack_type)
 
-        # Handle post-attack effects
-        self.handle_post_attack_effects(enemy, attack_hit, total_damage, attack_type)
+        # Handle post-attack effects and cleanup
+        self.handle_post_attack_effects(enemy, attack_hit, total_damage, attack_type, attack_info)
+
+        # Remove temporary attack buffs
+        self.remove_attack_buffs(attack_info)
 
         # Check battle ending conditions
         if self.check_battle_end(enemy):
@@ -81,6 +87,7 @@ class Battle:
         return False
 
     def get_player_attack_choice(self):
+        """Get player's attack choice and return attack type and info"""
         self.player.display_attack_options()
         available_attacks = self.player.get_available_attack_types()
         
@@ -88,12 +95,11 @@ class Battle:
             choice = input(f"\nEnter your choice (1-{len(available_attacks)}): ")
             if choice.isdigit() and 1 <= int(choice) <= len(available_attacks):
                 attack_type = list(available_attacks.keys())[int(choice) - 1]
-                return attack_type, available_attacks
-            else:
-                print("Invalid choice. Please try again.")
+                return attack_type, available_attacks[attack_type]
+            print("Invalid choice. Please try again.")
 
-    def handle_stamina_cost(self, attack_type, available_attacks):
-        attack_info = available_attacks[attack_type]
+    def handle_stamina_cost(self, attack_type, attack_info):
+        """Calculate and apply stamina cost for attack"""
         weapon_type = self.player.equipped.get("weapon", {"weapon_type": "light"}).weapon_type
         base_stamina_cost = self.player.get_weapon_stamina_cost(weapon_type)
         total_stamina_cost = base_stamina_cost + attack_info['stamina_modifier']
@@ -105,7 +111,19 @@ class Battle:
         self.player.use_stamina(total_stamina_cost)
         return True
 
-    def handle_post_attack_effects(self, enemy, attack_hit, total_damage, attack_type):
+    def apply_attack_buffs(self, stat_buffs):
+        """Apply temporary stat buffs for attack duration"""
+        for stat, value in stat_buffs.items():
+            if hasattr(self, stat):
+                setattr(self, stat, getattr(self, stat) + value)
+
+    def remove_attack_buffs(self, stat_buffs):
+        """Remove temporary stat buffs after attack"""
+        for stat, value in stat_buffs.items():
+            if hasattr(self, stat):
+                setattr(self, stat, getattr(self, stat) - value)
+                
+    def handle_post_attack_effects(self, enemy, attack_hit, total_damage, attack_type, attack_info):
         # Handle damage reflection
         if attack_hit: # Only reflect damage if the attack hits
             reflected_damage = 0
@@ -118,35 +136,26 @@ class Battle:
                             self.player.take_damage(reflected_damage)
                             print(f"{self.player.name} takes {reflected_damage} reflected damage!")
 
-        # Handle stance effects
-        if attack_hit and attack_type == "stunning":
-            stun_effect = STUN(1, 1)
-            enemy.apply_status_effect(stun_effect)
+        # Handle attack effects
+        if 'effect' in attack_info and attack_hit:
+            self.apply_attack_effect(attack_info['effect'], enemy, self.player, total_damage)
         
+        # Handle stance changes
         if attack_type == "defensive":
-            stance_message = self.player.apply_defensive_stance()
-            if stance_message:
-                print(stance_message)
+            self.player.apply_defensive_stance(attack_info["duration"], attack_info["defence_boost_percentage"])
         elif attack_type == "power_stance":
-            stance_message = self.player.apply_power_stance()
-            if stance_message:
-                print(stance_message)
+            self.player.apply_power_stance(attack_info["duration"], attack_info["attack_boost_percentage"])
         elif attack_type == "berserker_stance":
-            stance_message = self.player.apply_berserker_stance()
-            if stance_message:
-                print(stance_message)
+            self.player.apply_berserker_stance(attack_info["duration"], attack_info["attack_boost_percentage"])
         elif attack_type == "accuracy_stance":
-            stance_message = self.player.apply_accuracy_stance()
-            if stance_message:
-                print(stance_message)
+            self.player.apply_accuracy_stance(attack_info["duration"], attack_info["accuracy_boost_percentage"])
         elif attack_type == "evasion_stance":
-            stance_message = self.player.apply_evasion_stance()
-            if stance_message:
-                print(stance_message)
+            self.player.apply_evasion_stance(attack_info["duration"], attack_info["evasion_boost_percentage"])
+
 
         # Handle weapon coating
         if attack_hit and self.player.weapon_coating:
-            print(f"{enemy.name} is poisoned by your coated weapon!\n")
+            print(f"{enemy.name} is poisoned by your coated weapon!")
             poison_effect = POISON(
                 duration=self.player.weapon_coating['duration'],
                 strength=self.player.weapon_coating['stacks']
@@ -230,6 +239,7 @@ class Battle:
             heal_effect = VAMPIRIC(damage)
             attacker.apply_status_effect(heal_effect)
         elif effect_type == "defence_break":
+            effect_strength = 0.5
             defence_break_effect = DEFENCE_BREAK(4, effect_strength, damage)
             target.apply_status_effect(defence_break_effect)
         elif effect_type == "attack_weaken":
