@@ -75,8 +75,8 @@ class StatModifier(StatusEffect):
             if self.is_debuff:
                 character.apply_debuff(stat, value)
             else:
-                current = character.combat_buff_modifiers.get(stat, 0)
-                character.combat_buff_modifiers[stat] = current + value
+                current = character.buff_modifiers.get(stat, 0)  # Changed from combat_buff_modifiers
+                character.buff_modifiers[stat] = current + value  # Changed from combat_buff_modifiers
         character.recalculate_stats()
         return True
 
@@ -85,8 +85,8 @@ class StatModifier(StatusEffect):
             if self.is_debuff:
                 character.remove_debuff(stat, value)
             else:
-                current = character.combat_buff_modifiers.get(stat, 0)
-                character.combat_buff_modifiers[stat] = max(0, current - value)
+                current = character.buff_modifiers.get(stat, 0)  # Changed from combat_buff_modifiers
+                character.buff_modifiers[stat] = max(0, current - value)  # Changed from combat_buff_modifiers
         character.recalculate_stats()
 
 class ControlEffect(StatusEffect):
@@ -339,11 +339,10 @@ class SelfDamage(StatusEffect):
         character.take_damage(damage)
         print(f"{character.name} takes {damage} self-damage from their {self.attack_type} attack!")
         return True
-
 class DefenceBreak(StatModifier):
     def __init__(self, duration, strength, damage_dealt=0):
-        # Calculate defense reduction based on damage and strength multiplier
-        reduction = int((damage_dealt * 0.33) * strength)  # 33% of damage * strength multiplier
+        # Calculate defense reduction based on damage
+        reduction = int((damage_dealt * 0.33) * strength)
         super().__init__("Defence Break", duration, {"defence": reduction}, is_debuff=True)
         self.strength = strength
 
@@ -352,9 +351,9 @@ class DefenceBreak(StatModifier):
         return super().on_apply(character)
 
     def on_remove(self, character):
-        print(f"{character.name}'s Defence Break effect has worn off.")
+        print(f"{character.name} Defence is no longer broken.")
         super().on_remove(character)
-
+        
 class AttackWeaken(StatModifier):
     def __init__(self, duration, strength, damage_dealt=0):
         # Calculate attack reduction based on damage and strength multiplier
