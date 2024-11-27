@@ -164,6 +164,13 @@ class Battle:
             self.player.update_weapon_coating()
 
     def check_battle_end(self, enemy):
+        if not enemy.is_alive() and not self.player.is_alive():
+            self.end_battle("enemy_defeat", enemy)
+            print(f"\nWith your final mighty strike, you fell the {enemy.name}, but the blow reduces your health to 0!\n")
+            pause()
+            self.end_battle("player_defeat")
+            return True
+        
         if not enemy.is_alive():
             self.end_battle("enemy_defeat", enemy)
             return True
@@ -239,10 +246,11 @@ class Battle:
             heal_effect = VAMPIRIC(damage)
             attacker.apply_status_effect(heal_effect)
         elif effect_type == "defence_break":
-            effect_strength = 0.5
+            effect_strength = 1
             defence_break_effect = DEFENCE_BREAK(4, effect_strength, damage)
             target.apply_status_effect(defence_break_effect)
         elif effect_type == "attack_weaken":
+            effect_strength = 1
             attack_weaken_effect = ATTACK_WEAKEN(4, effect_strength, damage)
             target.apply_status_effect(attack_weaken_effect)
         # Add other effects as needed

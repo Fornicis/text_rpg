@@ -35,13 +35,13 @@ PLAYER_ATTACK_TYPES = {
         "stamina_modifier": 4,
         "damage_modifier": 0.9,
         "extra_attacks": 2,
-        "self_damage": True
+        "effect": "self_damage"
     },
     "reckless": {
         "name": "Reckless Attack",
         "stamina_modifier": 5,
         "damage_modifier": 2.0,
-        "self_damage": True
+        "effect": "self_damage"
     },
     "precision": {
         "name": "Precision Strike",
@@ -88,7 +88,7 @@ PLAYER_ATTACK_TYPES = {
         "stat_buffs": {
             "armour_penetration": 30
         },
-        "self_damage": True
+        "effect": "self_damage"
     },
     # Stance attacks
     "defensive": {
@@ -266,7 +266,7 @@ class Character:
         # Format the stat name
         stat_display = {
             'attack': 'Attack',
-            'defence': 'Defense',
+            'defence': 'Defence',
             'accuracy': 'Accuracy',
             'evasion': 'Evasion',
             'crit_chance': 'Critical Chance',
@@ -452,14 +452,12 @@ class Character:
 
         self.display_attack_animation(self.name, attack_info['name'])
         
-        self_damage_info = None
-        if attack_hit and attack_type in ["reckless", "triple"]:
-            self_damage = int(total_damage * 0.2)  # 20% of total damage as self-damage
-            self_damage_info = {"type": attack_type, "damage": self_damage}
-            self.take_damage(self_damage)
-            message += f"\n{self.name} takes {self_damage} self-damage from the {attack_type.replace('_', ' ').title()} attack!"
-        
         print(message.rstrip())
+        
+        if attack_hit and 'effect' in attack_info:
+            if attack_info['effect'] == 'self_damage':
+                effect = SELF_DAMAGE(total_damage, attack_type)
+                self.apply_status_effect(effect)
         
         self.remove_status_effect("Freeze")
         
@@ -467,7 +465,7 @@ class Character:
         if isinstance(self, Player) and 'stat_buffs' in attack_info:
             self.remove_attack_buffs(attack_info['stat_buffs'])
 
-        return message, total_damage, self_damage_info, attack_hit
+        return message, total_damage, None, attack_hit
 
     def is_alive(self):
         # Check if character is still alive
@@ -700,39 +698,66 @@ class Player(Character):
         #Check for level up
         if self.exp >= self.level * 100:
             self.level_up()
-
+    
     def level_up(self):
         # Increase player stats on level up
         self.level += 1
-        self.max_hp += 10
+        max_hp = random.randint(40, 60)
+        self.max_hp += max_hp
         self.hp = self.max_hp
-        self.level_modifiers["attack"] += 1
-        self.level_modifiers["defence"] += 1
-        self.level_modifiers["accuracy"] += 2
-        self.level_modifiers["evasion"] += 0.5
-        self.level_modifiers["crit_chance"] += 1
-        self.level_modifiers["crit_damage"] += 2
-        self.max_stamina += 5
+        attack = random.randint(2, 5)
+        self.level_modifiers["attack"] += attack
+        defence = random.randint(1, 4)
+        self.level_modifiers["defence"] += defence
+        accuracy = random.randint(2, 4)
+        self.level_modifiers["accuracy"] += accuracy
+        evasion = round(random.uniform(0.5, 1.5), 1)
+        self.level_modifiers["evasion"] += evasion
+        crit_chance = random.randint(1, 2)
+        self.level_modifiers["crit_chance"] += crit_chance
+        crit_damage = random.randint(2, 4)
+        self.level_modifiers["crit_damage"] += crit_damage
+        armour_penetration = 1
+        self.level_modifiers["armour_penetration"] += armour_penetration
+        damage_reduction = 1
+        self.level_modifiers["damage_reduction"] += damage_reduction
+        block_chance = round(random.uniform(0.5, 1.5), 1)
+        self.level_modifiers["block_chance"] += block_chance
+        self.max_stamina += 10
         stamina_restore = self.max_stamina // 4
         self.restore_stamina(stamina_restore)
         self.update_equipment_stats()
         self.exp = self.exp // 4
         print(f"Congratulations! You reached level {self.level}!")
-        print("Your stats have increased.")
+        print(f"Your stats have increased:\nAttack: +{attack}\nDefence: +{defence}\nEvasion: +{evasion}\nAccuracy: +{accuracy}\nCrit Chance: +{crit_chance}%\nCrit Damage: +{crit_damage}%\nArmour Pentration: +{armour_penetration}\nDamage Reduction: +{damage_reduction}\nBlock Chance: +{block_chance}%")
     
     def lose_level(self):
         #Players lose a level and all related stats if they lose a battle, can not go below level 1 or lose more than base stats
         if self.level > 1:
             self.level -= 1
-            self.max_hp -= 10
-            self.level_modifiers["attack"] -= 1
-            self.level_modifiers["defence"] -= 1
-            self.level_modifiers["accuracy"] -= 2
-            self.level_modifiers["evasion"] -= 0.5
-            self.level_modifiers["crit_chance"] -= 1
-            self.level_modifiers["crit_damage"] -= 2
-            self.max_stamina -= 5
-            print(f"You've lost a level. You are now {self.level}")
+            max_hp = random.randint(40, 60)
+            self.max_hp -= max_hp
+            self.hp = self.max_hp
+            attack = random.randint(2, 5)
+            self.level_modifiers["attack"] -= attack
+            defence = random.randint(1, 4)
+            self.level_modifiers["defence"] -= defence
+            accuracy = random.randint(2, 6)
+            self.level_modifiers["accuracy"] -= accuracy
+            evasion = round(random.uniform(0.5, 1.5), 1)
+            self.level_modifiers["evasion"] -= evasion
+            crit_chance = random.randint(1, 3)
+            self.level_modifiers["crit_chance"] -= crit_chance
+            crit_damage = random.randint(2, 6)
+            self.level_modifiers["crit_damage"] -= crit_damage
+            armour_penetration = random.randint(1, 3)
+            self.level_modifiers["armour_penetration"] -= armour_penetration
+            damage_reduction = random.randint(1, 2)
+            self.level_modifiers["damage_reduction"] -= damage_reduction
+            block_chance = round(random.uniform(0.5, 1.5), 1)
+            self.level_modifiers["block_chance"] -= block_chance
+            self.max_stamina -= 10
+            print(f"Your stats have decreased:\nMax Hp: -{max_hp}\nAttack: -{attack}\nDefence: -{defence}\nEvasion: -{evasion}\nAccuracy: -{accuracy}\nCrit Chance: -{crit_chance}%\nCrit Damage: -{crit_damage}%\nArmour Pentration: -{armour_penetration}\nDamage Reduction: -{damage_reduction}\nBlock Chance: -{block_chance}%")
         else:
             print("You're only a puny level 1. We won't take any levels from you...peasant.")
             

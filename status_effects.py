@@ -171,11 +171,11 @@ class StanceEffect(StatusEffect):
 # Specific Effect Implementations
 class Burn(DotEffect):
     def __init__(self, duration, strength=1):
-        super().__init__("Burn", duration, 0.03, is_percent=True)
+        super().__init__("Burn", duration, 0.02, is_percent=True)
         self.strength = strength
         
     def on_apply(self, character):
-        print(f"{character.name} is afflicted with {self.name}! ({self.strength} stack(s), {int(self.strength * (character.max_hp * 0.03))} damage per turn)")
+        print(f"{character.name} is afflicted with {self.name}! ({self.strength} stack(s), {int(self.strength * (character.max_hp * 0.02))} damage per turn)")
         return True
 
 class Poison(DotEffect):
@@ -339,12 +339,14 @@ class SelfDamage(StatusEffect):
         character.take_damage(damage)
         print(f"{character.name} takes {damage} self-damage from their {self.attack_type} attack!")
         return True
+    
 class DefenceBreak(StatModifier):
     def __init__(self, duration, strength, damage_dealt=0):
         # Calculate defense reduction based on damage
         reduction = int((damage_dealt * 0.33) * strength)
         super().__init__("Defence Break", duration, {"defence": reduction}, is_debuff=True)
         self.strength = strength
+        self.reduction = reduction
 
     def on_apply(self, character):
         print(f"{character.name}'s defence is reduced by {self.stat_changes['defence']}!")
