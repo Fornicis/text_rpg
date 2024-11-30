@@ -420,6 +420,7 @@ class Character:
         hits = 1 + attack_info.get("extra_attacks", 0)
         attack_hit = False
         shattered_freeze = False
+        successful_hits = 0 # Track successful hits for weapon_coating effects
         
         # Apply attack-specific buffs before damage calculation (player only)
         if isinstance(self, Player) and 'stat_buffs' in attack_info:
@@ -437,6 +438,8 @@ class Character:
                 attack_hit = True
                 target.take_damage(damage)
                 total_damage += damage
+                if damage > 0:
+                    successful_hits += 1 # Increment by 1 on successful hit
                 if i == 0:
                     message += f"\n{self.name} dealt {damage} damage to {target.name}."
                 else:
@@ -445,7 +448,7 @@ class Character:
                 if hit_type == "critical":
                     message += " Critical hit!"
                     if shattered_freeze:
-                        message += "\nThe frozen state shatters with the critical hit!"
+                        message += "\nThe frozen state shatters with the critical hit!" 
                     
         if total_damage > 0 and hits > 1:
             message += f"\nTotal damage dealt: {total_damage}"
@@ -458,6 +461,16 @@ class Character:
             if attack_info['effect'] == 'self_damage':
                 effect = SELF_DAMAGE(total_damage, attack_type)
                 self.apply_status_effect(effect)
+                
+        if isinstance(self, Player) and self.weapon_coating and successful_hits > 0:
+            total_stacks = self.weapon_coating['stacks'] * successful_hits
+            print(f"{target.name} is poisoned by your coated weapon! ({successful_hits} hits, {total_stacks} total poison stacks)")
+            poison_effect = POISON(
+                duration=self.weapon_coating['duration'],
+                strength= total_stacks
+            )
+            target.apply_status_effect(poison_effect)
+            self.update_weapon_coating()
         
         self.remove_status_effect("Freeze")
         
