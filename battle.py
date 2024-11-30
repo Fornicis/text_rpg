@@ -152,17 +152,6 @@ class Battle:
         elif attack_type == "evasion_stance":
             self.player.apply_evasion_stance(attack_info["duration"], attack_info["evasion_boost_percentage"])
 
-
-        # Handle weapon coating
-        if attack_hit and self.player.weapon_coating:
-            print(f"{enemy.name} is poisoned by your coated weapon!")
-            poison_effect = POISON(
-                duration=self.player.weapon_coating['duration'],
-                strength=self.player.weapon_coating['stacks']
-            )
-            enemy.apply_status_effect(poison_effect)
-            self.player.update_weapon_coating()
-
     def check_battle_end(self, enemy):
         if not enemy.is_alive() and not self.player.is_alive():
             self.end_battle("enemy_defeat", enemy)
@@ -500,8 +489,9 @@ class Battle:
             quantity_str = f" x{quantity}" if quantity > 1 else ""
             tier_str = f"[{item.tier.capitalize()}]"
             value_str = f"({item.value} gold each)" if quantity > 1 else f"({item.value} gold)"
+            slot_str = f"({item.type.capitalize()})"
             
-            print(f"- {name}{quantity_str} {tier_str} {value_str}")
+            print(f"- {name}{quantity_str} {slot_str} {tier_str} {value_str}")
             
             # Show additional info for equipment
             if item.type in ["weapon", "shield", "helm", "chest", "boots", "gloves", "back", "legs", "belt", "ring"]:
