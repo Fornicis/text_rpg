@@ -2060,8 +2060,6 @@ class Enemy(Character):
                 return type_name
         return "unknown"
     
-    
-    
     def get_type_specific_combos(self):
         """Get monster type specific combo moves"""
         type_combos = {
@@ -2140,6 +2138,66 @@ class Enemy(Character):
                     "chance": 0.5,
                     "description": "Mind Shatter"
                 }
+            },
+            "wind": {
+                "double": {
+                    "follow_up": ["triple", "stunning"],
+                    "chance": 0.5,
+                    "description": "Wind Flurry"
+                },
+                "attack_weaken": {
+                    "follow_up": ["confusion", "evasion_stance"],
+                    "chance": 0.4,
+                    "description": "Tempest Dance"
+                }
+            },
+            "grass": {
+                "poison": {
+                    "follow_up": ["draining", "attack_weaken"],
+                    "chance": 0.45,
+                    "description": "Toxic Drain"
+                },
+                "double": {
+                    "follow_up": ["poison", "vampiric"],
+                    "chance": 0.4,
+                    "description": "Nature's Vengeance"
+                }
+            },
+            "earth": {
+                "stunning": {
+                    "follow_up": ["defence_break", "power"],
+                    "chance": 0.5,
+                    "description": "Tectonic Crush"
+                },
+                "damage_reflect": {
+                    "follow_up": ["defensive", "stunning"],
+                    "chance": 0.45,
+                    "description": "Mountain's Defense"
+                }
+            },
+            "water": {
+                "draining": {
+                    "follow_up": ["freeze", "vampiric"],
+                    "chance": 0.45,
+                    "description": "Drowning Depths"
+                },
+                "defence_break": {
+                    "follow_up": ["triple", "freeze"],
+                    "chance": 0.4,
+                    "description": "Crushing Wave"
+                }
+            },
+            "lightning": {
+                "stunning": {
+                    "follow_up": ["double", "triple"],
+                    "chance": 0.6,
+                    "description": "Thunder Strike"
+                },
+                "attack_weaken": {
+                    "follow_up": ["power", "stunning"],
+                    "chance": 0.45,
+                    "description": "Storm's Fury"
+                }
             }
         }
         return type_combos.get(self.monster_type, {})
@@ -2162,10 +2220,25 @@ class Enemy(Character):
                 "chance": 0.3,
                 "description": "DoT then life steal"
             },
+            "freeze": {
+                "follow_up": ["power", "defence_break"],
+                "chance": 0.45,
+                "description": "Freeze then shatter"
+            },
+            "burn": {
+                "follow_up": ["double", "triple"],
+                "chance": 0.35,
+                "description": "Burn then rapid strikes"
+            },
             "defence_break": {
                 "follow_up": ["power", "reckless"],
                 "chance": 0.4,
                 "description": "Break defense then power hit"
+            },
+            "void_drain": {
+                "follow_up": ["reality_rend", "confusion"],
+                "chance": 0.5,
+                "description": "Drain then reality tear"
             }
         }
         return generic_combos.get(last_move, None)
