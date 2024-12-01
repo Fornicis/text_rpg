@@ -1577,6 +1577,8 @@ class Enemy(Character):
             self.template = template
             self.tier = template["tier"]
             self.stat_focus = template.get("stat_focus", "balanced")
+            self.last_moves = []
+            self.combo_counter = 0
             self.debug_info = {}  # Store debug calculation info
             
             # Calculate stats and store debug info
@@ -2058,21 +2060,189 @@ class Enemy(Character):
                 return type_name
         return "unknown"
     
+    
+    
+    def get_type_specific_combos(self):
+        """Get monster type specific combo moves"""
+        type_combos = {
+            "fire": {
+                "burn": {
+                    "follow_up": ["power", "reckless"],
+                    "chance": 0.45,
+                    "description": "Burning Power Assault"
+                },
+                "power": {
+                    "follow_up": ["double", "triple"],
+                    "chance": 0.4,
+                    "description": "Blazing Flurry"
+                }
+            },
+            "ice": {
+                "freeze": {
+                    "follow_up": ["power", "defence_break"],
+                    "chance": 0.5,
+                    "description": "Frozen Shatter"
+                }
+            },
+            "void": {
+                "void_drain": {
+                    "follow_up": ["reality_rend"],
+                    "chance": 0.6,
+                    "description": "Void Collapse"
+                },
+                "reality_rend": {
+                    "follow_up": ["confusion", "draining"],
+                    "chance": 0.4,
+                    "description": "Reality Drain"
+                }
+            },
+            "spirit": {
+                "draining": {
+                    "follow_up": ["vampiric", "attack_weaken"],
+                    "chance": 0.5,
+                    "description": "Spirit Siphon"
+                }
+            },
+            "warrior": {
+                "stunning": {
+                    "follow_up": ["triple", "power"],
+                    "chance": 0.45,
+                    "description": "Warrior's Fury"
+                },
+                "defence_break": {
+                    "follow_up": ["reckless", "power"],
+                    "chance": 0.4,
+                    "description": "Warrior's Rage"
+                }
+            },
+            "undead": {
+                "poison": {
+                    "follow_up": ["draining", "vampiric"],
+                    "chance": 0.5,
+                    "description": "Death's Touch"
+                }
+            },
+            "dragon": {
+                "burn": {
+                    "follow_up": ["triple", "reckless"],
+                    "chance": 0.55,
+                    "description": "Dragon's Wrath"
+                },
+                "power": {
+                    "follow_up": ["stunning", "defence_break"],
+                    "chance": 0.45,
+                    "description": "Dragon's Might"
+                }
+            },
+            "arcane": {
+                "confusion": {
+                    "follow_up": ["draining", "attack_weaken"],
+                    "chance": 0.5,
+                    "description": "Mind Shatter"
+                }
+            }
+        }
+        return type_combos.get(self.monster_type, {})
+
+    def check_generic_combo(self, last_move):
+        """Check for generic combo sequences"""
+        generic_combos = {
+            "stunning": {
+                "follow_up": ["power", "reckless"],
+                "chance": 0.4,
+                "description": "Stun into heavy damage"
+            },
+            "attack_weaken": {
+                "follow_up": ["triple", "reckless"],
+                "chance": 0.35,
+                "description": "Weaken defense then multi-hit"
+            },
+            "poison": {
+                "follow_up": ["draining", "vampiric"],
+                "chance": 0.3,
+                "description": "DoT then life steal"
+            },
+            "defence_break": {
+                "follow_up": ["power", "reckless"],
+                "chance": 0.4,
+                "description": "Break defense then power hit"
+            }
+        }
+        return generic_combos.get(last_move, None)
+
     def choose_attack(self):
-        """Choose a random attack from available attack types"""
+        """
+        Enhanced attack selection with combo system
+        """
         if self.stunned:
             self.stunned = False
             return None
             
-        # Get all available attack types
         available_attacks = list(self.attack_types.keys())
+        if not available_attacks:
+            return "normal"
         
-        # Choose random attack
-        if available_attacks:
-            return random.random(available_attacks)
+        hp_percent = (self.hp / self.max_hp) * 100
         
-        # Fallback to normal attack if somehow no attacks available
-        return "normal"
+        # Check for ongoing combo
+        if self.last_moves:
+            # Try type-specific combo first
+            type_combo = self.get_type_specific_combos().get(self.last_moves[-1])
+            if type_combo and random.random() < type_combo["chance"]:
+                available_follow_ups = [x for x in type_combo["follow_up"] if x in available_attacks]
+                if available_follow_ups:
+                    choice = random.choice(available_follow_ups)
+                    self._update_last_moves(choice)
+                    return choice
+            
+            # Try generic combo
+            generic_combo = self.check_generic_combo(self.last_moves[-1])
+            if generic_combo and random.random() < generic_combo["chance"]:
+                available_follow_ups = [x for x in generic_combo["follow_up"] if x in available_attacks]
+                if available_follow_ups:
+                    choice = random.choice(available_follow_ups)
+                    self._update_last_moves(choice)
+                    return choice
+
+        # Health-based decisions
+        if hp_percent <= 30:
+            desperate_moves = ["vampiric", "reckless", "power", "void_drain"]
+            available_desperate = [x for x in desperate_moves if x in available_attacks]
+            if available_desperate:
+                choice = random.choice(available_desperate)
+                self._update_last_moves(choice)
+                return choice
+                
+        elif hp_percent <= 50:
+            defensive_moves = ["draining", "damage_reflect", "stunning", "double"]
+            available_defensive = [x for x in defensive_moves if x in available_attacks]
+            if available_defensive and random.random() < 0.7:
+                choice = random.choice(available_defensive)
+                self._update_last_moves(choice)
+                return choice
+                
+        elif hp_percent >= 80:
+            aggressive_moves = ["triple", "power", "reckless", "poison"]
+            available_aggressive = [x for x in aggressive_moves if x in available_attacks]
+            if available_aggressive and random.random() < 0.6:
+                choice = random.choice(available_aggressive)
+                self._update_last_moves(choice)
+                return choice
+
+        # Avoid move repetition
+        available_moves = [x for x in available_attacks if self.last_moves.count(x) < 2]
+        if not available_moves:
+            available_moves = available_attacks
+            
+        choice = random.choice(available_moves)
+        self._update_last_moves(choice)
+        return choice
+
+    def _update_last_moves(self, move):
+        """Track last 3 moves"""
+        self.last_moves.append(move)
+        if len(self.last_moves) > 3:
+            self.last_moves.pop(0)
 
 def get_stat_range(tier, stat_type):
     """Get the appropriate stat range based on tier and stat type"""
