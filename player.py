@@ -1576,18 +1576,21 @@ class Player(Character):
         return self.stamina >= stamina_cost
     
     def get_available_attack_types(self):
-        # Check if in a stance that limits attacks
-        if any(effect.name == "Defensive Stance" for effect in self.status_effects):
-            return {"normal": PLAYER_ATTACK_TYPES["normal"]}
-            
-        # Get weapon type
         equipped_weapon = self.equipped.get("weapon")
         weapon_type = equipped_weapon.weapon_type if equipped_weapon else "light"
         
-        # Get available attacks for weapon type
         available_attack_names = WEAPON_ATTACK_TYPES[weapon_type]
-        available_attacks = {name: PLAYER_ATTACK_TYPES[name] 
-                            for name in available_attack_names}
+        available_attacks = {}
+        
+        # Check if any stance is active
+        active_stance = any(effect.name.endswith("Stance") for effect in self.status_effects)
+        
+        # Add each available attack, filtering out stances if one is active
+        for name in available_attack_names:
+            attack = PLAYER_ATTACK_TYPES[name]
+            if active_stance and "stance_type" in attack:
+                continue
+            available_attacks[name] = attack
         
         return available_attacks
 

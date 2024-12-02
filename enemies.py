@@ -1018,244 +1018,244 @@ TIER_RANGES = {
 
 STAT_FOCUSES = {
     "tank": {
-        "hp": round(random.uniform(1.2, 1.4), 2),
-        "attack": round(random.uniform(0.7, 0.9), 2),
-        "defence": round(random.uniform(1.3, 1.5), 2),
-        "accuracy": round(random.uniform(0.8, 1.0), 2),
-        "evasion": round(random.uniform(0.6, 0.8), 2),
-        "crit_chance": round(random.uniform(0.7, 0.9), 2),
-        "crit_damage": round(random.uniform(0.7, 0.9), 2),
-        "armour_penetration": round(random.uniform(0.8, 1.0), 2),
-        "damage_reduction": round(random.uniform(1.2, 1.4), 2),
-        "block_chance": round(random.uniform(1.3, 1.5), 2)
+        "hp": round(random.uniform(1.25, 1.35), 2),
+        "attack": round(random.uniform(0.75, 0.85), 2),
+        "defence": round(random.uniform(1.35, 1.45), 2),
+        "accuracy": round(random.uniform(0.85, 0.95), 2),
+        "evasion": round(random.uniform(0.65, 0.75), 2),
+        "crit_chance": round(random.uniform(0.75, 0.85), 2),
+        "crit_damage": round(random.uniform(0.75, 0.85), 2),
+        "armour_penetration": round(random.uniform(0.85, 0.95), 2),
+        "damage_reduction": round(random.uniform(1.25, 1.35), 2),
+        "block_chance": round(random.uniform(1.35, 1.45), 2)
     },
     "damage_dealer": {
-        "hp": round(random.uniform(0.8, 1.0), 2),
-        "attack": round(random.uniform(1.3, 1.5), 2),
-        "defence": round(random.uniform(0.7, 0.9), 2),
-        "accuracy": round(random.uniform(1.1, 1.3), 2),
-        "evasion": round(random.uniform(0.9, 1.1), 2),
-        "crit_chance": round(random.uniform(1.2, 1.4), 2),
-        "crit_damage": round(random.uniform(1.3, 1.5), 2),
-        "armour_penetration": round(random.uniform(1.1, 1.3), 2),
-        "damage_reduction": round(random.uniform(0.7, 0.9), 2),
-        "block_chance": round(random.uniform(0.6, 0.8), 2)
+        "hp": round(random.uniform(0.85, 0.95), 2),
+        "attack": round(random.uniform(1.35, 1.45), 2),
+        "defence": round(random.uniform(0.75, 0.85), 2),
+        "accuracy": round(random.uniform(1.15, 1.35), 2),
+        "evasion": round(random.uniform(0.95, 1.05), 2),
+        "crit_chance": round(random.uniform(1.25, 1.35), 2),
+        "crit_damage": round(random.uniform(1.35, 1.45), 2),
+        "armour_penetration": round(random.uniform(1.15, 1.25), 2),
+        "damage_reduction": round(random.uniform(0.75, 0.85), 2),
+        "block_chance": round(random.uniform(0.65, 0.75), 2)
     },
     "agile": {
-        "hp": round(random.uniform(0.8, 1.0), 2),
-        "attack": round(random.uniform(0.8, 1.0), 2),
-        "defence": round(random.uniform(0.7, 0.9), 2),
-        "accuracy": round(random.uniform(1.2, 1.4), 2),
-        "evasion": round(random.uniform(1.3, 1.5), 2),
-        "crit_chance": round(random.uniform(1.1, 1.3), 2),
-        "crit_damage": round(random.uniform(1.0, 1.2), 2),
-        "armour_penetration": round(random.uniform(0.9, 1.1), 2),
-        "damage_reduction": round(random.uniform(0.7, 0.9), 2),
-        "block_chance": round(random.uniform(0.6, 0.8), 2)
+        "hp": round(random.uniform(0.85, 0.95), 2),
+        "attack": round(random.uniform(0.85, 0.95), 2),
+        "defence": round(random.uniform(0.75, 0.85), 2),
+        "accuracy": round(random.uniform(1.25, 1.35), 2),
+        "evasion": round(random.uniform(1.35, 1.45), 2),
+        "crit_chance": round(random.uniform(1.15, 1.25), 2),
+        "crit_damage": round(random.uniform(1.05, 1.15), 2),
+        "armour_penetration": round(random.uniform(0.95, 1.05), 2),
+        "damage_reduction": round(random.uniform(0.75, 0.85), 2),
+        "block_chance": round(random.uniform(0.65, 0.75), 2)
     },
     "balanced": {
-        "hp": round(random.uniform(0.9, 1.1), 2),
-        "attack": round(random.uniform(0.9, 1.1), 2),
-        "defence": round(random.uniform(0.9, 1.1), 2),
-        "accuracy": round(random.uniform(0.9, 1.1), 2),
-        "evasion": round(random.uniform(0.9, 1.1), 2),
-        "crit_chance": round(random.uniform(0.9, 1.1), 2),
-        "crit_damage": round(random.uniform(0.9, 1.1), 2),
-        "armour_penetration": round(random.uniform(0.9, 1.1), 2),
-        "damage_reduction": round(random.uniform(0.9, 1.1), 2),
-        "block_chance": round(random.uniform(0.9, 1.1), 2)
+        "hp": round(random.uniform(0.95, 1.05), 2),
+        "attack": round(random.uniform(0.95, 1.05), 2),
+        "defence": round(random.uniform(0.95, 1.05), 2),
+        "accuracy": round(random.uniform(0.95, 1.05), 2),
+        "evasion": round(random.uniform(0.95, 1.05), 2),
+        "crit_chance": round(random.uniform(0.95, 1.05), 2),
+        "crit_damage": round(random.uniform(0.95, 1.05), 2),
+        "armour_penetration": round(random.uniform(0.95, 1.05), 2),
+        "damage_reduction": round(random.uniform(0.95, 1.05), 2),
+        "block_chance": round(random.uniform(0.95, 1.05), 2)
     },
     "berserker": {
-        "hp": round(random.uniform(1.0, 1.2), 2),
-        "attack": round(random.uniform(1.4, 1.6), 2),
-        "defence": round(random.uniform(0.3, 0.5), 2),
-        "accuracy": round(random.uniform(1.0, 1.2), 2),
-        "evasion": round(random.uniform(0.7, 0.9), 2),
-        "crit_chance": round(random.uniform(1.3, 1.5), 2),
-        "crit_damage": round(random.uniform(1.4, 1.6), 2),
-        "armour_penetration": round(random.uniform(1.2, 1.4), 2),
-        "damage_reduction": round(random.uniform(0.5, 0.7), 2),
-        "block_chance": round(random.uniform(0.4, 0.6), 2)
+        "hp": round(random.uniform(1.05, 1.15), 2),
+        "attack": round(random.uniform(1.45, 1.55), 2),
+        "defence": round(random.uniform(0.35, 0.45), 2),
+        "accuracy": round(random.uniform(1.05, 1.15), 2),
+        "evasion": round(random.uniform(0.75, 0.85), 2),
+        "crit_chance": round(random.uniform(1.35, 1.45), 2),
+        "crit_damage": round(random.uniform(1.45, 1.55), 2),
+        "armour_penetration": round(random.uniform(1.25, 1.35), 2),
+        "damage_reduction": round(random.uniform(0.55, 0.65), 2),
+        "block_chance": round(random.uniform(0.45, 0.55), 2)
     },
     "assassin": {
-        "hp": round(random.uniform(0.7, 0.9), 2),
-        "attack": round(random.uniform(1.2, 1.4), 2),
-        "defence": round(random.uniform(0.6, 0.8), 2),
-        "accuracy": round(random.uniform(1.3, 1.5), 2),
-        "evasion": round(random.uniform(1.2, 1.4), 2),
-        "crit_chance": round(random.uniform(1.4, 1.6), 2),
-        "crit_damage": round(random.uniform(1.3, 1.5), 2),
-        "armour_penetration": round(random.uniform(1.3, 1.5), 2),
-        "damage_reduction": round(random.uniform(0.6, 0.8), 2),
-        "block_chance": round(random.uniform(0.5, 0.7), 2)
+        "hp": round(random.uniform(0.75, 0.85), 2),
+        "attack": round(random.uniform(1.25, 1.35), 2),
+        "defence": round(random.uniform(0.65, 0.75), 2),
+        "accuracy": round(random.uniform(1.35, 1.45), 2),
+        "evasion": round(random.uniform(1.25, 1.35), 2),
+        "crit_chance": round(random.uniform(1.45, 1.55), 2),
+        "crit_damage": round(random.uniform(1.35, 1.45), 2),
+        "armour_penetration": round(random.uniform(1.35, 1.45), 2),
+        "damage_reduction": round(random.uniform(0.65, 0.75), 2),
+        "block_chance": round(random.uniform(0.55, 0.65), 2)
     },
     "elemental": {
-        "hp": round(random.uniform(0.8, 1.0), 2),
-        "attack": round(random.uniform(1.2, 1.4), 2),
-        "defence": round(random.uniform(0.7, 0.9), 2),
-        "accuracy": round(random.uniform(1.1, 1.3), 2),
-        "evasion": round(random.uniform(1.0, 1.2), 2),
-        "crit_chance": round(random.uniform(0.9, 1.1), 2),
-        "crit_damage": round(random.uniform(1.2, 1.4), 2),
-        "armour_penetration": round(random.uniform(1.3, 1.5), 2),
-        "damage_reduction": round(random.uniform(0.8, 1.0), 2),
-        "block_chance": round(random.uniform(0.6, 0.8), 2)
+        "hp": round(random.uniform(0.85, 0.95), 2),
+        "attack": round(random.uniform(1.25, 1.35), 2),
+        "defence": round(random.uniform(0.75, 0.85), 2),
+        "accuracy": round(random.uniform(1.15, 1.25), 2),
+        "evasion": round(random.uniform(1.05, 1.15), 2),
+        "crit_chance": round(random.uniform(0.95, 1.05), 2),
+        "crit_damage": round(random.uniform(1.25, 1.35), 2),
+        "armour_penetration": round(random.uniform(1.35, 1.45), 2),
+        "damage_reduction": round(random.uniform(0.85, 0.95), 2),
+        "block_chance": round(random.uniform(0.65, 0.75), 2)
     },
     "undead": {
-        "hp": round(random.uniform(1.1, 1.3), 2),
-        "attack": round(random.uniform(0.8, 1.0), 2),
-        "defence": round(random.uniform(1.0, 1.2), 2),
-        "accuracy": round(random.uniform(0.8, 1.0), 2),
-        "evasion": round(random.uniform(0.7, 0.9), 2),
-        "crit_chance": round(random.uniform(0.7, 0.9), 2),
-        "crit_damage": round(random.uniform(0.8, 1.0), 2),
-        "armour_penetration": round(random.uniform(0.8, 1.0), 2),
-        "damage_reduction": round(random.uniform(1.2, 1.4), 2),
-        "block_chance": round(random.uniform(1.1, 1.3), 2)
+        "hp": round(random.uniform(1.15, 1.25), 2),
+        "attack": round(random.uniform(0.85, 0.95), 2),
+        "defence": round(random.uniform(1.05, 1.15), 2),
+        "accuracy": round(random.uniform(0.85, 0.95), 2),
+        "evasion": round(random.uniform(0.75, 0.85), 2),
+        "crit_chance": round(random.uniform(0.75, 0.85), 2),
+        "crit_damage": round(random.uniform(0.85, 0.95), 2),
+        "armour_penetration": round(random.uniform(0.85, 0.95), 2),
+        "damage_reduction": round(random.uniform(1.25, 1.35), 2),
+        "block_chance": round(random.uniform(1.15, 1.25), 2)
     },
     "beast": {
-        "hp": round(random.uniform(1.0, 1.2), 2),
-        "attack": round(random.uniform(1.1, 1.3), 2),
-        "defence": round(random.uniform(0.9, 1.1), 2),
-        "accuracy": round(random.uniform(0.8, 1.0), 2),
-        "evasion": round(random.uniform(0.8, 1.0), 2),
-        "crit_chance": round(random.uniform(0.7, 0.9), 2),
-        "crit_damage": round(random.uniform(1.1, 1.3), 2),
-        "armour_penetration": round(random.uniform(0.9, 1.1), 2),
-        "damage_reduction": round(random.uniform(0.8, 1.0), 2),
-        "block_chance": round(random.uniform(0.7, 0.9), 2)
+        "hp": round(random.uniform(1.05, 1.15), 2),
+        "attack": round(random.uniform(1.15, 1.25), 2),
+        "defence": round(random.uniform(0.95, 1.05), 2),
+        "accuracy": round(random.uniform(0.85, 0.95), 2),
+        "evasion": round(random.uniform(0.85, 0.95), 2),
+        "crit_chance": round(random.uniform(0.75, 0.85), 2),
+        "crit_damage": round(random.uniform(1.15, 1.25), 2),
+        "armour_penetration": round(random.uniform(0.95, 1.05), 2),
+        "damage_reduction": round(random.uniform(0.85, 0.95), 2),
+        "block_chance": round(random.uniform(0.75, 0.85), 2)
     },
     "spirit": {
-        "hp": round(random.uniform(0.6, 0.8), 2),
-        "attack": round(random.uniform(1.0, 1.2), 2),
-        "defence": round(random.uniform(0.6, 0.8), 2),
-        "accuracy": round(random.uniform(1.2, 1.4), 2),
-        "evasion": round(random.uniform(1.4, 1.6), 2),
-        "crit_chance": round(random.uniform(1.1, 1.3), 2),
-        "crit_damage": round(random.uniform(1.1, 1.3), 2),
-        "armour_penetration": round(random.uniform(1.3, 1.5), 2),
-        "damage_reduction": round(random.uniform(0.7, 0.9), 2),
-        "block_chance": round(random.uniform(0.5, 0.7), 2)
+        "hp": round(random.uniform(0.65, 0.75), 2),
+        "attack": round(random.uniform(1.05, 1.15), 2),
+        "defence": round(random.uniform(0.65, 0.75), 2),
+        "accuracy": round(random.uniform(1.25, 1.35), 2),
+        "evasion": round(random.uniform(1.45, 1.55), 2),
+        "crit_chance": round(random.uniform(1.15, 1.25), 2),
+        "crit_damage": round(random.uniform(1.15, 1.25), 2),
+        "armour_penetration": round(random.uniform(1.35, 1.45), 2),
+        "damage_reduction": round(random.uniform(0.75, 0.85), 2),
+        "block_chance": round(random.uniform(0.55, 0.65), 2)
     },
     "dragon": {
-        "hp": round(random.uniform(1.1, 1.3), 2),
-        "attack": round(random.uniform(1.1, 1.3), 2),
-        "defence": round(random.uniform(1.1, 1.3), 2),
-        "accuracy": round(random.uniform(0.9, 1.1), 2),
-        "evasion": round(random.uniform(0.8, 1.0), 2),
-        "crit_chance": round(random.uniform(1.0, 1.2), 2),
-        "crit_damage": round(random.uniform(1.2, 1.4), 2),
-        "armour_penetration": round(random.uniform(1.1, 1.3), 2),
-        "damage_reduction": round(random.uniform(1.0, 1.2), 2),
-        "block_chance": round(random.uniform(0.4, 0.6), 2)
+        "hp": round(random.uniform(1.15, 1.25), 2),
+        "attack": round(random.uniform(1.15, 1.25), 2),
+        "defence": round(random.uniform(1.15, 1.25), 2),
+        "accuracy": round(random.uniform(0.95, 1.05), 2),
+        "evasion": round(random.uniform(0.85, 0.95), 2),
+        "crit_chance": round(random.uniform(1.05, 1.15), 2),
+        "crit_damage": round(random.uniform(1.25, 1.35), 2),
+        "armour_penetration": round(random.uniform(1.15, 1.25), 2),
+        "damage_reduction": round(random.uniform(1.05, 1.15), 2),
+        "block_chance": round(random.uniform(0.45, 0.55), 2)
     },
     "arcane": {
-        "hp": round(random.uniform(0.8, 1.0), 2),
-        "attack": round(random.uniform(1.2, 1.4), 2),
-        "defence": round(random.uniform(0.6, 0.8), 2),
-        "accuracy": round(random.uniform(1.1, 1.3), 2),
-        "evasion": round(random.uniform(1.0, 1.2), 2),
-        "crit_chance": round(random.uniform(1.1, 1.3), 2),
-        "crit_damage": round(random.uniform(1.1, 1.3), 2),
-        "armour_penetration": round(random.uniform(1.2, 1.4), 2),
-        "damage_reduction": round(random.uniform(0.5, 0.7), 2),
-        "block_chance": round(random.uniform(0.5, 0.7), 2)
+        "hp": round(random.uniform(0.85, 0.95), 2),
+        "attack": round(random.uniform(1.25, 1.35), 2),
+        "defence": round(random.uniform(0.65, 0.75), 2),
+        "accuracy": round(random.uniform(1.15, 1.25), 2),
+        "evasion": round(random.uniform(1.05, 1.15), 2),
+        "crit_chance": round(random.uniform(1.15, 1.25), 2),
+        "crit_damage": round(random.uniform(1.15, 1.25), 2),
+        "armour_penetration": round(random.uniform(1.25, 1.35), 2),
+        "damage_reduction": round(random.uniform(0.55, 0.65), 2),
+        "block_chance": round(random.uniform(0.55, 0.65), 2)
     },
     "void": {
-        "hp": round(random.uniform(0.7, 0.9), 2),
-        "attack": round(random.uniform(1.2, 1.4), 2),
-        "defence": round(random.uniform(0.4, 0.6), 2),
-        "accuracy": round(random.uniform(1.4, 1.6), 2),
-        "evasion": round(random.uniform(1.3, 1.5), 2),
-        "crit_chance": round(random.uniform(1.1, 1.3), 2),
-        "crit_damage": round(random.uniform(1.1, 1.3), 2),
-        "armour_penetration": round(random.uniform(1.5, 1.7), 2),
-        "damage_reduction": round(random.uniform(0.6, 0.8), 2),
-        "block_chance": round(random.uniform(0.5, 0.7), 2)
+        "hp": round(random.uniform(0.75, 0.85), 2),
+        "attack": round(random.uniform(1.25, 1.35), 2),
+        "defence": round(random.uniform(0.45, 0.55), 2),
+        "accuracy": round(random.uniform(1.45, 1.55), 2),
+        "evasion": round(random.uniform(1.35, 1.45), 2),
+        "crit_chance": round(random.uniform(1.15, 1.25), 2),
+        "crit_damage": round(random.uniform(1.15, 1.25), 2),
+        "armour_penetration": round(random.uniform(1.55, 1.65), 2),
+        "damage_reduction": round(random.uniform(0.65, 0.75), 2),
+        "block_chance": round(random.uniform(0.55, 0.65), 2)
     },
     "warrior": {
-        "hp": round(random.uniform(0.9, 1.1), 2),
-        "attack": round(random.uniform(1.1, 1.3), 2),
-        "defence": round(random.uniform(1.0, 1.2), 2),
-        "accuracy": round(random.uniform(0.8, 1.0), 2),
-        "evasion": round(random.uniform(0.8, 1.0), 2),
-        "crit_chance": round(random.uniform(0.8, 1.0), 2),
-        "crit_damage": round(random.uniform(1.1, 1.3), 2),
-        "armour_penetration": round(random.uniform(1.0, 1.2), 2),
-        "damage_reduction": round(random.uniform(1.0, 1.2), 2),
-        "block_chance": round(random.uniform(0.7, 0.9), 2)
+        "hp": round(random.uniform(0.95, 1.05), 2),
+        "attack": round(random.uniform(1.15, 1.25), 2),
+        "defence": round(random.uniform(1.05, 1.15), 2),
+        "accuracy": round(random.uniform(0.85, 0.9), 2),
+        "evasion": round(random.uniform(0.85, 0.95), 2),
+        "crit_chance": round(random.uniform(0.85, 0.95), 2),
+        "crit_damage": round(random.uniform(1.15, 1.25), 2),
+        "armour_penetration": round(random.uniform(1.05, 1.15), 2),
+        "damage_reduction": round(random.uniform(1.05, 1.15), 2),
+        "block_chance": round(random.uniform(0.75, 0.85), 2)
     },
     "ice": {
-        "hp": round(random.uniform(1.1, 1.3), 2),
-        "attack": round(random.uniform(1.0, 1.2), 2),
-        "defence": round(random.uniform(1.1, 1.3), 2),
-        "accuracy": round(random.uniform(0.8, 1.0), 2),
-        "evasion": round(random.uniform(0.7, 0.9), 2),
-        "crit_chance": round(random.uniform(0.9, 1.1), 2),
-        "crit_damage": round(random.uniform(1.0, 1.2), 2),
-        "armour_penetration": round(random.uniform(0.9, 1.1), 2),
-        "damage_reduction": round(random.uniform(1.2, 1.4), 2),
-        "block_chance": round(random.uniform(0.7, 0.9), 2)
+        "hp": round(random.uniform(1.15, 1.25), 2),
+        "attack": round(random.uniform(1.05, 1.15), 2),
+        "defence": round(random.uniform(1.15, 1.25), 2),
+        "accuracy": round(random.uniform(0.85, 0.95), 2),
+        "evasion": round(random.uniform(0.75, 0.85), 2),
+        "crit_chance": round(random.uniform(0.95, 1.05), 2),
+        "crit_damage": round(random.uniform(1.05, 1.15), 2),
+        "armour_penetration": round(random.uniform(0.95, 1.05), 2),
+        "damage_reduction": round(random.uniform(1.25, 1.35), 2),
+        "block_chance": round(random.uniform(0.75, 0.85), 2)
     },
     "fire": {
-        "hp": round(random.uniform(0.8, 1.0), 2),
-        "attack": round(random.uniform(1.3, 1.5), 2),
-        "defence": round(random.uniform(0.65, 0.85), 2),
-        "accuracy": round(random.uniform(0.8, 1.0), 2),
-        "evasion": round(random.uniform(1.0, 1.2), 2),
-        "crit_chance": round(random.uniform(1.2, 1.4), 2),
-        "crit_damage": round(random.uniform(1.3, 1.5), 2),
-        "armour_penetration": round(random.uniform(1.2, 1.4), 2),
-        "damage_reduction": round(random.uniform(0.7, 0.9), 2),
-        "block_chance": round(random.uniform(0.7, 0.9), 2)
+        "hp": round(random.uniform(0.85, 0.95), 2),
+        "attack": round(random.uniform(1.35, 1.45), 2),
+        "defence": round(random.uniform(0.70, 0.80), 2),
+        "accuracy": round(random.uniform(0.85, 0.95), 2),
+        "evasion": round(random.uniform(1.05, 1.15), 2),
+        "crit_chance": round(random.uniform(1.25, 1.35), 2),
+        "crit_damage": round(random.uniform(1.35, 1.45), 2),
+        "armour_penetration": round(random.uniform(1.25, 1.35), 2),
+        "damage_reduction": round(random.uniform(0.75, 0.85), 2),
+        "block_chance": round(random.uniform(0.75, 0.85), 2)
     },
     "water": {
-        "hp": round(random.uniform(1.1, 1.3), 2),
-        "attack": round(random.uniform(0.9, 1.1), 2),
-        "defence": round(random.uniform(1.1, 1.3), 2),
-        "accuracy": round(random.uniform(1.0, 1.2), 2),
-        "evasion": round(random.uniform(1.1, 1.3), 2),
-        "crit_chance": round(random.uniform(0.8, 1.0), 2),
-        "crit_damage": round(random.uniform(0.8, 1.0), 2),
-        "armour_penetration": round(random.uniform(0.8, 1.0), 2),
-        "damage_reduction": round(random.uniform(1.1, 1.3), 2),
-        "block_chance": round(random.uniform(1.0, 1.2), 2)
+        "hp": round(random.uniform(1.15, 1.25), 2),
+        "attack": round(random.uniform(0.95, 1.05), 2),
+        "defence": round(random.uniform(1.15, 1.25), 2),
+        "accuracy": round(random.uniform(1.05, 1.15), 2),
+        "evasion": round(random.uniform(1.15, 1.25), 2),
+        "crit_chance": round(random.uniform(0.85, 0.95), 2),
+        "crit_damage": round(random.uniform(0.85, 0.95), 2),
+        "armour_penetration": round(random.uniform(0.85, 0.95), 2),
+        "damage_reduction": round(random.uniform(1.15, 1.25), 2),
+        "block_chance": round(random.uniform(1.05, 1.15), 2)
     },
     "lightning": {
-        "hp": round(random.uniform(0.7, 0.9), 2),
-        "attack": round(random.uniform(1.4, 1.6), 2),
-        "defence": round(random.uniform(0.6, 0.8), 2),
-        "accuracy": round(random.uniform(1.3, 1.5), 2),
-        "evasion": round(random.uniform(1.2, 1.4), 2),
-        "crit_chance": round(random.uniform(1.3, 1.5), 2),
-        "crit_damage": round(random.uniform(1.4, 1.6), 2),
-        "armour_penetration": round(random.uniform(1.2, 1.4), 2),
-        "damage_reduction": round(random.uniform(0.6, 0.8), 2),
-        "block_chance": round(random.uniform(0.6, 0.8), 2)
+        "hp": round(random.uniform(0.75, 0.85), 2),
+        "attack": round(random.uniform(1.45, 1.55), 2),
+        "defence": round(random.uniform(0.65, 0.75), 2),
+        "accuracy": round(random.uniform(1.35, 1.45), 2),
+        "evasion": round(random.uniform(1.25, 1.35), 2),
+        "crit_chance": round(random.uniform(1.35, 1.45), 2),
+        "crit_damage": round(random.uniform(1.45, 1.55), 2),
+        "armour_penetration": round(random.uniform(1.25, 1.35), 2),
+        "damage_reduction": round(random.uniform(0.65, 0.75), 2),
+        "block_chance": round(random.uniform(0.65, 0.75), 2)
     },
     "grass": {
-        "hp": round(random.uniform(1.1, 1.3), 2),
-        "attack": round(random.uniform(0.8, 1.0), 2),
-        "defence": round(random.uniform(1.0, 1.2), 2),
-        "accuracy": round(random.uniform(0.8, 1.0), 2),
-        "evasion": round(random.uniform(0.7, 0.9), 2),
-        "crit_chance": round(random.uniform(0.7, 0.9), 2),
-        "crit_damage": round(random.uniform(0.7, 0.9), 2),
-        "armour_penetration": round(random.uniform(0.7, 0.9), 2),
-        "damage_reduction": round(random.uniform(1.3, 1.5), 2),
-        "block_chance": round(random.uniform(1.2, 1.4), 2)
+        "hp": round(random.uniform(1.15, 1.25), 2),
+        "attack": round(random.uniform(0.85, 0.95), 2),
+        "defence": round(random.uniform(1.05, 1.15), 2),
+        "accuracy": round(random.uniform(0.85, 0.95), 2),
+        "evasion": round(random.uniform(0.75, 0.85), 2),
+        "crit_chance": round(random.uniform(0.75, 0.85), 2),
+        "crit_damage": round(random.uniform(0.75, 0.85), 2),
+        "armour_penetration": round(random.uniform(0.75, 0.85), 2),
+        "damage_reduction": round(random.uniform(1.35, 1.45), 2),
+        "block_chance": round(random.uniform(1.25, 1.35), 2)
     },
     "wind": {
-        "hp": round(random.uniform(0.7, 0.9), 2),
-        "attack": round(random.uniform(1.0, 1.2), 2),
-        "defence": round(random.uniform(0.7, 0.9), 2),
-        "accuracy": round(random.uniform(1.2, 1.4), 2),
-        "evasion": round(random.uniform(1.4, 1.6), 2),
-        "crit_chance": round(random.uniform(1.1, 1.3), 2),
-        "crit_damage": round(random.uniform(1.0, 1.2), 2),
-        "armour_penetration": round(random.uniform(1.0, 1.2), 2),
-        "damage_reduction": round(random.uniform(0.6, 0.8), 2),
-        "block_chance": round(random.uniform(0.6, 0.8), 2)
+        "hp": round(random.uniform(0.75, 0.85), 2),
+        "attack": round(random.uniform(1.05, 1.15), 2),
+        "defence": round(random.uniform(0.75, 0.85), 2),
+        "accuracy": round(random.uniform(1.25, 1.35), 2),
+        "evasion": round(random.uniform(1.45, 1.55), 2),
+        "crit_chance": round(random.uniform(1.15, 1.25), 2),
+        "crit_damage": round(random.uniform(1.05, 1.15), 2),
+        "armour_penetration": round(random.uniform(1.05, 1.15), 2),
+        "damage_reduction": round(random.uniform(0.65, 0.75), 2),
+        "block_chance": round(random.uniform(0.65, 0.75), 2)
     }
 }
 
@@ -1662,7 +1662,7 @@ class Enemy(Character):
             "boss": 1.35
         }
         
-        final_scale = min(tier_caps.get(self.tier, 1.4), base_scale * tier_scale)
+        final_scale = min(tier_caps.get(self.tier, 1.35), base_scale * tier_scale)
         return final_scale
     
     def _calculate_stats_with_debug(self, player, template):
@@ -1753,18 +1753,18 @@ class Enemy(Character):
         stats['level'] = random.randint(level_min, level_max)
         
         # Get scaling factor
-        level_scale = self.get_hybrid_level_scale(player.level, stats['level'])
+        debug['level_scale'] = self.get_hybrid_level_scale(player.level, stats['level'])
         
         debug['level_calc'] = {
             'min': level_min,
             'max': level_max,
             'chosen': stats['level'],
-            'scale': level_scale,
+            'scale': debug['level_scale'],
             'tier': self.tier
         }
         
-        debug['level_diff'] = max(1, stats['level'] - player.level)
-        debug['level_scale'] = min(1.5, 1 + (debug['level_diff'] * 0.1))
+        """debug['level_diff'] = max(1, stats['level'] - player.level)
+        debug['level_scale'] = min(1.5, 1 + (debug['level_diff'] * 0.1))"""
         
         debug['player_stats'] = {
             'max_hp': player.max_hp,
@@ -1778,12 +1778,12 @@ class Enemy(Character):
 
         # Calculate and store main stats
         stats['hp'] = int(player.max_hp * base_percentages["hp_percent"] / 100)
-        stats['attack'] = int((player.base_attack + player.level_modifiers.get("attack") + 
-                    (player.equipment_modifiers.get("attack") * 0.75)) * 
-                    (base_percentages["attack_percent"] / 100) * debug['level_scale'])
-        stats['defence'] = int((player.base_defence + player.level_modifiers.get("defence") + 
-                    (player.equipment_modifiers.get("defence") * 0.75)) * 
-                    (base_percentages["defence_percent"] / 100) * debug['level_scale'])
+        base_attack = (player.base_attack + player.level_modifiers.get("attack", 0)) * 2 # Increased level dependency
+        attack_equipment_bonus = player.equipment_modifiers.get("attack", 0) * 0.3 # Reduced equipment dependency
+        stats['attack'] = int((base_attack + attack_equipment_bonus) * ((base_percentages["attack_percent"] / 100) * debug['level_scale']))
+        base_defence = (player.base_defence + player.level_modifiers.get("defence", 0)) * 2 # Increased level dependency
+        defence_equipment_bonus = player.equipment_modifiers.get("defence", 0) * 0.3 # Reduced equipment dependency
+        stats['defence'] = int((base_defence + defence_equipment_bonus) * ((base_percentages["defence_percent"] / 100) * debug['level_scale']))
                     
         debug['final_percentages'] = base_percentages.copy()
         
@@ -1958,7 +1958,7 @@ class Enemy(Character):
         debug.append("\n5. Level Scaling:")
         debug.append(f"Level range: {self.debug_info['level_calc']['min']} - {self.debug_info['level_calc']['max']}")
         debug.append(f"Chosen level: {self.debug_info['level_calc']['chosen']}")
-        debug.append(f"Level difference: {self.debug_info['level_diff']}")
+        debug.append(f"Level difference: {self.debug_info['level_calc']['chosen'] - player.level}")
         debug.append(f"Level scale: {self.debug_info['level_scale']:.2f}")
         
         # Main stat calculations
@@ -1979,10 +1979,10 @@ class Enemy(Character):
         attack_percent = self.debug_info['final_percentages']['attack_percent']
         
         debug.append(f"\nAttack Calculation:")
-        debug.append(f"Base attack: {attack_base}")
-        debug.append(f"Level modifier: {attack_level}")
-        debug.append(f"Equipment modifier (60%): {attack_equipment * 0.75}")
-        debug.append(f"Combined base: {attack_base + attack_level + (attack_equipment * 0.75)}")
+        debug.append(f"Base attack: {attack_base * 2}")
+        debug.append(f"Level modifier: {attack_level * 2}")
+        debug.append(f"Equipment modifier (30%): {attack_equipment * 0.4}")
+        debug.append(f"Combined base: {(attack_base * 2) + (attack_level * 2) + (attack_equipment * 0.4)}")
         debug.append(f"Percentage modifier: {attack_percent}%")
         debug.append(f"Level scaling: {self.debug_info['level_scale']:.2f}")
         debug.append(f"Final attack: {self.attack}")
@@ -1994,10 +1994,10 @@ class Enemy(Character):
         defence_percent = self.debug_info['final_percentages']['defence_percent']
         
         debug.append(f"\nDefence Calculation:")
-        debug.append(f"Base defence: {defence_base}")
-        debug.append(f"Level modifier: {defence_level}")
-        debug.append(f"Equipment modifier (60%): {defence_equipment * 0.75}")
-        debug.append(f"Combined base: {defence_base + defence_level + (defence_equipment * 0.75)}")
+        debug.append(f"Base defence: {defence_base * 2}")
+        debug.append(f"Level modifier: {defence_level * 2}")
+        debug.append(f"Equipment modifier (30%): {defence_equipment * 0.4}")
+        debug.append(f"Combined base: {(defence_base * 2) + (defence_level * 2) + (defence_equipment * 0.4)}")
         debug.append(f"Percentage modifier: {defence_percent}%")
         debug.append(f"Level scaling: {self.debug_info['level_scale']:.2f}")
         debug.append(f"Final defence: {self.defence}")
