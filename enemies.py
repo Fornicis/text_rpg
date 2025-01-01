@@ -99,7 +99,7 @@ ENEMY_TEMPLATES = {
         "name": "Tree Sprite",
         "stat_focus": "spirit",
         "tier": "low",
-        "attack_types": ["normal", "draining", "stunning", "attack_weaken"],
+        "attack_types": ["attack_weaken", "normal", "draining", "poison"],
         "soultype": "standard",
         "monster_type": "spirit"
     },
@@ -776,7 +776,7 @@ ENEMY_TEMPLATES = {
         "name": "Chromatic Dragon",
         "stat_focus": random.choice(["dragon", "fire", "ice", "grass", "water", "wind", "lightning"]),
         "tier": "very-hard",
-        "attack_types": ["normal", "burn", "poison", "freeze", "stunning", "confusion"],
+        "attack_types": ["normal", "freeze", "burn", "poison", "stunning", "confusion"],
         "soultype": "standard",
         "monster_type": "dragon"
     },
@@ -1256,6 +1256,18 @@ STAT_FOCUSES = {
         "armour_penetration": round(random.uniform(1.05, 1.15), 2),
         "damage_reduction": round(random.uniform(0.65, 0.75), 2),
         "block_chance": round(random.uniform(0.65, 0.75), 2)
+    },
+    "test": {
+        "hp": 0.01,
+        "attack": 0.01,
+        "defence": 0.01,
+        "accuracy": 0.01,
+        "evasion": 0.01,
+        "crit_chance": 0.01,
+        "crit_damage": 0.01,
+        "armour_penetration": 0.01,
+        "damage_reduction": 0.01,
+        "block_chance": 0.01
     }
 }
 
@@ -1609,6 +1621,7 @@ class Enemy(Character):
         self.gold = gold
         self.tier = tier
         self.level = level
+        self._prev_hp = self.hp
         self.stunned = False
         self.monster_type = self._determine_monster_type(final_name)
         
@@ -2383,7 +2396,7 @@ def create_enemy(enemy_type, player=None):
         enemy.soultype = template.get("soultype", "standard")
         enemy.monster_type = template.get("monster_type", "unknown")
         enemy.stat_focus = stat_focus  # Store the focus for reference
-        print(enemy.debug_stat_calculation(player))
+        #print(enemy.debug_stat_calculation(player))
         return enemy
         
     return None

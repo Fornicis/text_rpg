@@ -1,5 +1,6 @@
 import os
 from player import *
+from display import MapDisplay
 
 class WorldMap:
     def __init__(self):
@@ -9,7 +10,7 @@ class WorldMap:
             #Easy Monster Areas (levels 1-4)
             "Deepwoods": {"enemies": ["Wood Spirit", "Deepwood Stalker", "Deep Bat", "Giant Firefly", "Treant"], "connected_to": ["Forest", "Swamp"], "min_level": 2},
             "Cave": {"enemies": ["Goblin", "Bat", "Spider", "Slime", "Frog"], "connected_to": ["Plains", "Temple"], "min_level": 2},
-            "Forest": {"enemies": ["Tree Sprite", "Snake", "Forest Hawk", "Locust", "Leprechaun"], "connected_to": ["Village", "Deepwoods", "Mountain"], "min_level": 1},
+            "Forest": {"enemies": ["Tree Sprite", "Snake", "Forest Hawk", "Leprechaun", "Locust"], "connected_to": ["Village", "Deepwoods", "Mountain"], "min_level": 1},
             "Plains": {"enemies": ["Rat", "Boar", "Plains Hawk", "Strider", "Bull"], "connected_to": ["Village", "Cave", "Desert"], "min_level": 1},
             
             #Medium Monster Areas (levels 5-9)
@@ -32,7 +33,7 @@ class WorldMap:
             "Death Caves": {"enemies": ["Necropolis Guardian", "Soul Reaver", "Bone Colossus", "Spectral Devourer", "Lich King"], "connected_to": ["Toxic Swamp", "Dragons Lair"], "min_level": 15},
             "Ancient Ruins": {"enemies": ["Timeless Sphinx", "Eternal Pharaoh", "Anubis Reborn", "Mummy Emperor", "Living Obelisk"], "connected_to": ["Ruins", "Death Valley"], "min_level": 15},
             "Death Valley": {"enemies": ["Apocalypse Horseman", "Abyssal Wyrm", "Void Titan", "Chaos Incarnate", "Eternity Warden"], "connected_to": ["Scorching Plains", "Ancient Ruins", "Volcanic Valley"], "min_level": 13},
-            "Dragons Lair": {"enemies": ["Ancient Wyvern", "Elemental Drake", "Dragonlord", "Chromatic Dragon", "Elder Dragon"], "connected_to": ["Mountain Peaks", "Death Caves", "Volcanic Valley"], "min_level": 13},
+            "Dragons Lair": {"enemies": ["Chromatic Dragon", "Elder Dragon", "Dragonlord", "Elemental Drake", "Ancient Wyvern"], "connected_to": ["Mountain Peaks", "Death Caves", "Volcanic Valley"], "min_level": 13},
             
             #Extreme Monster Areas (levels 25+)
             "Volcanic Valley": {"enemies": ["Magma Colossus", "Phoenix Overlord", "Volcanic Titan", "Inferno Wyrm", "Cinder Archfiend", "Cosmic Devourer", "Astral Behemoth", "Galactic Leviathan", "Nebula Colossus", "Celestial Titan"], "connected_to": ["Shadowed Valley", "Death Valley", "Dragons Lair", "Heavens"], "min_level": 17},
@@ -58,82 +59,25 @@ class WorldMap:
         return self._game_map[location]["min_level"]
     
     def display_map(self, current_location, player_level, player):
-        #Displays an ASCII representation of the world map, highlighting the current location
-        #and showing available paths based on the player's level.
-        os.system('cls' if os.name == 'nt' else 'clear')
-        print("\n=== World Map ===\n")
+        level_reqs = {loc: self._game_map[loc]["min_level"] for loc in self._game_map}
+        map_display = MapDisplay(player.display.screen, player.display.config)
         
-        map_art = """
-                                               [HEAVENS]
-                                                  |
-    [ANCIENT]-----[DEATH_V]--------[VOLCANIC]-----[DRAGONS]----[DEATH_C]
-          |                |                      |                   |                |
-          |                |                      |                   |                |            
-        [RUINS]        [SCORCHING]       [SHADOWED]     [MOUNTAIN_P]    [TOXIC]
-          |                |                      |                   |                |
-          |                |                      |                   |                |
-        [TEMPLE]---------[DESERT]----------------[VALLEY]------------[MOUNTAIN]-----------[SWAMP]
-          |                |                                          |                |
-          |                |                                          |                |
-        [CAVE]-----------[PLAINS]---------------[VILLAGE]-----------[FOREST]---------[DEEPWOODS]
-        """
+        # Get the main panel area from layout
+        layout = player.display.calculate_layout()
+        width, height, x, y = layout['main_panel']
         
-        # Define a dictionary to map markers to actual location names
-        location_markers = {
-            "[HEAVENS]": "Heavens",
-            "[ANCIENT]": "Ancient Ruins",
-            "[DEATH_V]": "Death Valley",
-            "[VOLCANIC]": "Volcanic Valley",
-            "[DRAGONS]": "Dragons Lair",
-            "[DEATH_C]": "Death Caves",
-            "[RUINS]": "Ruins",
-            "[SCORCHING]": "Scorching Plains",
-            "[SHADOWED]": "Shadowed Valley",
-            "[MOUNTAIN_P]": "Mountain Peaks",
-            "[TOXIC]": "Toxic Swamp",
-            "[TEMPLE]": "Temple",
-            "[DESERT]": "Desert",
-            "[VALLEY]": "Valley",
-            "[MOUNTAIN]": "Mountain",
-            "[SWAMP]": "Swamp",
-            "[CAVE]": "Cave",
-            "[PLAINS]": "Plains",
-            "[VILLAGE]": "Village",
-            "[FOREST]": "Forest",
-            "[DEEPWOODS]": "Deepwoods"
-        }
+        # Draw just the map elements in the main panel area
+        map_display.draw_map(current_location, player.visited_locations, player_level, level_reqs)
         
-        # Highlight current location
-        for marker, location in location_markers.items():
-            if location == current_location:
-                map_art = map_art.replace(marker, f"*{location}*")
-            elif location in player.visited_locations:
-                map_art = map_art.replace(marker, f"!{location}")
-            else:
-                map_art = map_art.replace(marker, location)
+        pygame.display.flip()
         
-        # Add zero-width spaces to the beginning of each line
-        map_art = "\u200B" + map_art.replace("\n", "\n\u200B")
-        
-        print(map_art)
-        
-        print("\nLegend:")
-        print("* Your current location *")
-        print("! Known location (Can teleport too)")
-        print("------ Direct connection")
-        print()
-        
-        # Display available directions
-        connected_locations = self.get_connected_locations(current_location)
-        if connected_locations:
-            print("You can go to:")
-            for loc in connected_locations:
-                min_level = self.get_min_level(loc)
-                if player_level >= min_level:
-                    print(f"  - {loc}")
-                else:
-                    print(f"  - {loc} (Locked - Required Level: {min_level})")
-        else:
-            print("There are no connected locations from here.")
-
-        input("\nPress Enter to continue...")
+        waiting = True
+        while waiting:
+            for event in pygame.event.get():
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+                    waiting = False
+                    # Redraw game screen when exiting map view
+                    player.display.draw_game_screen(player, current_location)
+                elif event.type == pygame.QUIT:
+                    pygame.quit()
+                    return

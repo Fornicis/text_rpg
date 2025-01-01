@@ -1,9 +1,10 @@
 import random
+import pygame
 from display import *
 from player import Player
 from enemies import create_enemy, Enemy
 from items import initialise_items
-from shop import Armourer, Alchemist, Inn
+from shop import Blacksmith, Alchemist, Inn
 from battle import Battle
 from world_map import WorldMap
 from save_system import save_game, load_game, get_save_files
@@ -16,14 +17,18 @@ class Game:
         self.current_location = "Village"
         self.world_map = WorldMap()
         self.items = initialise_items()
-        self.armourer = Armourer(self.items)
+        self.blacksmith = Blacksmith(self.items)
         self.alchemist = Alchemist(self.items)
         self.inn = Inn(self.items)
         self.battle = None
         self.random_events = RandomEventSystem()
+        self.display = Display()
+        self.display.set_game(self)
+        self.battle_display = BattleDisplay(self.display)
+        self.config = DisplayConfig()
         
         #Stocks the shops initially
-        self.armourer.stock_shop()
+        self.blacksmith.stock_shop()
         self.alchemist.stock_shop()
         self.inn.stock_shop()
         
@@ -31,15 +36,73 @@ class Game:
         self.autosave_manager = AutosaveManager(self)
 
     def create_character(self):
-        #Creates a new player character.
-        name = input("Enter your character's name: ")
-        self.player = Player(name)
-        self.initialise_battle()
-        print(f"\nWelcome, {self.player.name}! Your adventure begins in the Village.")
-        print("\nAutosave is enabled and will save your game every 10 turns.")
-        print("You can toggle autosave on/off using the [au] command.")
-        print("The system keeps your 3 most recent autosaves.")
-        pause()
+        """Create a new player character with a visual interface"""
+        visual_input = VisualInput(self.display)
+        
+        while True:
+            self.display.screen.fill('black')
+            
+            # Draw title
+            self.display.draw_text("=== CHARACTER CREATION ===", 
+                                (self.config.SCREEN_WIDTH // 2, 50), 
+                                'title', center=True)
+            
+            # Draw name input prompt
+            self.display.draw_text("Enter your name:", 
+                                (self.config.SCREEN_WIDTH // 2, 150), 
+                                'huge', center=True)
+            
+            # Draw input box
+            input_x = (self.config.SCREEN_WIDTH - visual_input.width) // 2
+            input_y = 200
+            visual_input.draw(input_x, input_y)
+            
+            # Draw instructions
+            self.display.draw_text("Press ENTER when finished", 
+                                (self.config.SCREEN_WIDTH // 2, 300), 
+                                'medium', center=True)
+            
+            pygame.display.flip()
+            self.display.clock.tick(self.display.config.FPS)
+            
+            # Handle events
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    return None
+                    
+                if visual_input.handle_event(event):
+                    self.player = Player(visual_input.text)
+                    self.player.give_starter_items()
+                    self.initialise_battle()
+                    
+                    # Show welcome message
+                    self.display.screen.fill('black')
+                    self.display.draw_text(f"Welcome, {self.player.name}!", 
+                                        (self.config.SCREEN_WIDTH // 2, 150), 
+                                        'huge', center=True)
+                    self.display.draw_text("Your adventure begins in the Village.", 
+                                        (self.config.SCREEN_WIDTH // 2, 250), 
+                                        'large', center=True)
+                    self.display.draw_text("Autosave is enabled and will save your game every 10 turns.", 
+                                        (self.config.SCREEN_WIDTH // 2, 350), 
+                                        'medium', center=True)
+                    self.display.draw_text("Press ENTER to continue...", 
+                                        (self.config.SCREEN_WIDTH // 2, 450), 
+                                        'medium', center=True)
+                    pygame.display.flip()
+                    
+                    # Wait for enter press
+                    waiting = True
+                    while waiting:
+                        for event in pygame.event.get():
+                            if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+                                waiting = False
+                            elif event.type == pygame.QUIT:
+                                return None
+                                
+                        self.display.clock.tick(self.display.config.FPS)
+                    
+                    return self.player
         
     def initialise_battle(self):
         #Ensures that battles are enabled even on reload
@@ -47,92 +110,22 @@ class Game:
             self.battle = Battle(self.player, self.items, self)
         
     def show_stats(self):
-        clear_screen()
+        self.display.clear_screen()
         self.player.show_stats()
         print(f"Current location: {self.current_location}\nDay: {self.player.days}")
-                
-    def move(self):
-        #Handles player movement between locations
-        clear_screen()
-        print("\nConnected locations:")
-        #Shows locations connected to current location using helper function
-        connected_locations = self.world_map.get_connected_locations(self.current_location) 
-        #Creates list of available locations if player meets level requirements
-        available_locations = [] 
-        
-        for i, location in enumerate(connected_locations, 1):
-            min_level = self.world_map.get_min_level(location)
-            if self.player.level >= min_level:
-                print(f"{i}. {location} (Required Level: {min_level})")
-                available_locations.append(location)
-            else:
-                print(f"X. {location} (Required Level: {min_level}) [LOCKED]")
-        
-        while True:
-            #Allows player to enter either location number, name or letters
-            choice = input("\nWhere do you want to go? (Enter number, name, or first few letters): ").strip()
-            
-            if choice.isdigit():
-                index = int(choice) - 1
-                if 0 <= index < len(available_locations):
-                    destination = available_locations[index]
-                    break
-            else:
-                matching_locations = [loc for loc in available_locations if loc.lower().startswith(choice.lower())]
-                if len(matching_locations) == 1:
-                    destination = matching_locations[0]
-                    break
-                elif len(matching_locations) > 1:
-                    print("Multiple matching locations found. Please be more specific:")
-                    for loc in matching_locations:
-                        print(f"- {loc}")
-                else:
-                    print("No matching location found.")
-            
-            print("Invalid choice. Please try again.")
-        
-        min_level = self.world_map.get_min_level(destination)
-        if self.player.stamina < 5:
-            print("You do not have enough energy to move, please rest up!")
-            pause()
-        elif self.player.level >= min_level:
-            self.current_location = destination
-            self.player.add_visited_location(destination)
-            print(f"You have arrived at {self.current_location}.")
-            self.player.use_stamina(5)
-            if self.current_location == "Village":
-                print("Welcome to the Village! You can rest, shop, or prepare for your next adventure here.")
-                return False  # Indicate that we should not run location actions
-            else:
-                return True  # Indicate that we should run location actions
-        else:
-            #If player isn't correct level, rejects move request
-            print(f"You need to be at least level {min_level} to enter {destination}.")
-            return False
         
     def location_actions(self):
-        #Handles actions available at the current location.
+        menu = LocationActionsMenu(self.display, self.player)
         while True:
-            self.player.show_stats()
-            action = input("\nWhat would you like to do?\n[e]xplore\n[u]se item\n[r]est\n[l]eave\n>").lower()
-            if action == 'e':
-                clear_screen()
-                self.encounter()
-                input("\nPress enter to continue...")
-            elif action == 'u':
-                clear_screen()
-                self.use_item_menu()
-                pause()
-            elif action == 'r':
-                clear_screen()
-                self.rest()
-            elif action == 'l':
+            result = menu.show_actions_menu(self)
+            if result == "quit":
+                return "quit"
+            elif not result:
                 break
-            else:
-                print("Invalid action. Try again.")
 
     def encounter(self):
-    # Check to see if random event triggers
+        # Check to see if random event triggers
+        self.display.text_buffer.clear()
         if self.random_events.trigger_random_event(self.player, self):
             return
 
@@ -149,7 +142,7 @@ class Game:
                 self.battle.battle(enemy)
 
                 if self.current_location == "Village":
-                    print("You find yourself back in the Village after your defeat.")
+                    self.battle_display.draw_battle_message("You find yourself back in the Village after your defeat.")
                     return
             else:
                 print("You explored the area but found nothing of interest.")
@@ -157,178 +150,162 @@ class Game:
             print("You explored the area but found nothing of interest.")
 
     def rest(self):
-        clear_screen()
+        #self.display.draw_game_screen(self.player, self.current_location)
         #Restores a portion of the player's health and stamina
         heal_amount = self.player.max_hp // 4  # Heal 25% of max HP
         stamina_restore = self.player.max_stamina // 4 # Restores 25% of max stamina
         self.player.heal(heal_amount)
         self.player.restore_stamina(stamina_restore)
         self.player.days += 1
-        print(f"You rest and recover {heal_amount} HP and {stamina_restore} stamina.")
-        print(f"It is now day {self.player.days}")
+        layout = self.display.calculate_layout()
+        self.display.draw_panel(*layout['battle_log_panel'])
+        self.display.draw_text(f"You rest and recover {heal_amount} HP and {stamina_restore} stamina.",
+                               (self.display.config.SCREEN_WIDTH // 2, self.display.config.SCREEN_HEIGHT - 250),
+                               'large', center=True)
+        self.display.draw_text(f"It is now day {self.player.days}",
+                               (self.display.config.SCREEN_WIDTH // 2, self.display.config.SCREEN_HEIGHT - 200),
+                               'large', center=True)
 
     def equip_menu(self):
-        while True:
-            clear_screen()
-            print("\n=== Equipment Menu ===")
-            print("\nCurrently Equipped:")
-            for slot, item in self.player.equipped.items():
-                if item:
-                    print(f"{slot.capitalize()}: {item.name}")
-                    stats = [
-                        f"Attack: +{item.attack}" if item.attack > 0 else None,
-                        f"Defence: +{item.defence}" if item.defence > 0 else None,
-                        f"Accuracy: +{item.accuracy}" if item.accuracy > 0 else None,
-                        f"Damage Reduction: +{item.damage_reduction}" if hasattr(item, 'damage_reduction') and item.damage_reduction > 0 else None,
-                        f"Evasion: +{item.evasion}" if hasattr(item, 'evasion') and item.evasion > 0 else None,
-                        f"Crit Chance: +{item.crit_chance}%" if hasattr(item, 'crit_chance') and item.crit_chance > 0 else None,
-                        f"Crit Damage: +{item.crit_damage}%" if hasattr(item, 'crit_damage') and item.crit_damage > 0 else None,
-                        f"Block Chance: +{item.block_chance}%" if hasattr(item, 'block_chance') and item.block_chance > 0 else None,
-                    ]
-                    if slot == "weapon":
-                        stamina_cost = self.player.get_weapon_stamina_cost(item.weapon_type) if hasattr(item, 'weapon_type') and item.weapon_type else 0
-                        stats.append(f"Stamina use: {stamina_cost}")
-                        if hasattr(item, 'weapon_type') and item.weapon_type:
-                            stats.append(f"Weapon type: {item.weapon_type.title()}")
-                    
-                    # Add soulbound info if applicable
-                    if hasattr(item, 'soulbound') and item.soulbound:
-                        stats.append("\nSOULBOUND")
-                        if hasattr(item, 'current_level'):
-                            stats.append(f"Level: {item.current_level}")
-                            
-                    print("  " + ", ".join(filter(None, stats)))
-                else:
-                    print(f"{slot.capitalize()}: None")
-
-            print("\nInventory:")
-            equippable_items = [item for item in self.player.inventory if item.type in self.player.equipped]
-            for i, item in enumerate(equippable_items, 1):
-                stats = [
-                    f"Attack: +{item.attack}" if item.attack > 0 else None,
-                    f"Accuracy: +{item.accuracy}" if item.accuracy > 0 else None,
-                    f"Armour Penetration: +{item.armour_penetration}" if hasattr(item, 'armour_penetration') and item.armour_penetration > 0 else None,
-                    f"Defence: +{item.defence}" if item.defence > 0 else None,
-                    f"Damage Reduction: +{item.damage_reduction}" if hasattr(item, 'damage_reduction') and item.damage_reduction > 0 else None,
-                    f"Evasion: +{item.evasion}" if hasattr(item, 'evasion') and item.evasion > 0 else None,
-                    f"Crit Chance: +{item.crit_chance}%" if hasattr(item, 'crit_chance') and item.crit_chance > 0 else None,
-                    f"Crit Damage: +{item.crit_damage}%" if hasattr(item, 'crit_damage') and item.crit_damage > 0 else None,
-                    f"Block Chance: +{item.block_chance}%" if hasattr(item, 'block_chance') and item.block_chance > 0 else None,
-                ]
-                if item.type == "weapon":
-                    stamina_cost = self.player.get_weapon_stamina_cost(item.weapon_type) if hasattr(item, 'weapon_type') and item.weapon_type else 0
-                    stats.append(f"Stamina Cost: {stamina_cost}")
-                    if hasattr(item, 'weapon_type') and item.weapon_type:
-                        stats.append(f"Weapon type: {item.weapon_type.title()}")
-                
-                # Add soulbound info if applicable
-                if hasattr(item, 'soulbound') and item.soulbound:
-                    stats.append("\nSOULBOUND")
-                    if hasattr(item, 'current_level'):
-                        stats.append(f"Level: {item.current_level}")
-                    if hasattr(item, 'growth_stats'):
-                        stats.append(f"Growth: {', '.join(stat.replace('_', ' ').title() for stat in item.growth_stats)}")
-                        
-                print(f"{i}. {item.name} (Type: {item.type.capitalize()}) - " + ", ".join(filter(None, stats)))
-
-            choice = input("\nEnter the number of the item you want to equip (or 'q' to quit): ")
-            if choice.lower() == 'q':
-                break
-
-            try:
-                item_index = int(choice) - 1
-                if 0 <= item_index < len(equippable_items):
-                    selected_item = equippable_items[item_index]
-                    current_item = self.player.equipped[selected_item.type]
-                    print(f"\nComparing {selected_item.name} with current {selected_item.type}:")
-                    self.compare_items(current_item, selected_item)
-                    confirm = input("\nDo you want to equip this item? (y/n): ")
-                    if confirm.lower() == 'y':
-                        self.player.equip_item(selected_item)
-                        print(f"\n{selected_item.name} equipped!")
-                else:
-                    print("Invalid item number. Please try again.")
-            except ValueError:
-                print("Invalid input. Please enter a number or 'q' to quit.")
-
-            self.player.recalculate_stats()
-            input("\nPress Enter to continue...")
-
-    def compare_items(self, current_item, new_item):
-        def print_stat_change(stat_name, current_val, new_val):
-            if current_val != new_val:
-                change = new_val - current_val
-                print(f"  {stat_name}: {current_val} -> {new_val} ({change:+d})")
-
-        stats = [
-            ("Attack", "attack"),
-            ("Accuracy", "accuracy"),
-            ("Armour Penetration", "armour_penetration"),
-            ("Defence", "defence"),
-            ("Damage Reduction", "damage_reduction"),
-            ("Evasion", "evasion"),
-            ("Crit Chance", "crit_chance"),
-            ("Crit Damage", "crit_damage"),
-            ("Block Chance", "block_chance"),
-        ]
-
-        for stat_name, stat_attr in stats:
-            current_val = getattr(current_item, stat_attr, 0) if current_item else 0
-            new_val = getattr(new_item, stat_attr, 0)
-            print_stat_change(stat_name, current_val, new_val)
-
-        if new_item.type == "weapon":
-            current_stamina_cost = self.player.get_weapon_stamina_cost(current_item.weapon_type) if current_item else 0
-            new_stamina_cost = self.player.get_weapon_stamina_cost(new_item.weapon_type)
-            print_stat_change("Stamina Cost", current_stamina_cost, new_stamina_cost)
-            print(f"  Weapon Type: {current_item.weapon_type.title() if current_item else 'None'} -> {new_item.weapon_type.title()}")
+        equipment_menu = EquipmentMenu(self.display, self.player)
+        equipment_menu.show_equipment_menu()
+        self.player.recalculate_stats
+        self.display.draw_game_screen(self.player, self.current_location)
     
     def use_item_menu(self, in_combat=False, enemy=None):
-        #Enables player to use items and makes sure that only usable items are shown
-        usable_items = self.player.show_usable_items()
+        """Visual menu for using items"""
+        if in_combat:
+            self.battle_display.draw_battle_screen(self.player, game.current_location, enemy)
+        else:
+            self.display.draw_game_screen(self.player, self.current_location)
+        
+        layout = self.display.calculate_layout()
+        battle_log = layout['battle_log_panel']
+        x = battle_log[2]
+        y = battle_log[3]
+        width = battle_log[0]
+        height = battle_log[1]
+        
+        usable_items = [item for item in self.player.inventory 
+                        if item.type in ["consumable", "food", "drink", "weapon coating", "soul_crystal"]]
         if not usable_items:
+            if in_combat:
+                self.display.draw_text("You have no usable items.",
+                                    (x + width//2, y + 30), 'large', center=True)
+            else:
+                self.display.draw_text("You have no usable items.",
+                                       (self.display.config.SCREEN_WIDTH // 2,
+                                        self.display.config.SCREEN_HEIGHT - 250),
+                                       'large', center=True)
             return None
-
+        
+        # Draw items in battle log area
+        self.display.draw_panel(width, height, x, y)
+        
+        self.display.draw_text("Usable Items:", 
+                            (x + width//2, y + 20), 'large', center=True)
+        
+        # Show items with scrolling if needed
+        items_per_page = 6
+        scroll_offset = 0
+        
         while True:
-            #Allows player to use the item number or name to use item
-            choice = input("\nEnter the number or name of the item you want to use (or 'c' to cancel): ").strip().lower()
+            # Clear item display area
+            self.display.draw_panel(width, height, x, y)
             
-            if choice == 'c':
-                return None
-            
-            selected_item = None
-            if choice.isdigit():
-                index = int(choice) - 1
-                if 0 <= index < len(usable_items):
-                    selected_item = usable_items[index]
-            else:
-                matching_items = [item for item in usable_items if item.name.lower().startswith(choice)]
-                if len(matching_items) == 1:
-                    selected_item = matching_items[0]
-                elif len(matching_items) > 1:
-                    print("Multiple matching items found. Please be more specific:")
-                    for item in matching_items:
-                        print(f"- {item.name}")
+            # Group identical items
+            item_groups = {}
+            for item in usable_items:
+                key = (item.name, item.type)
+                if key in item_groups:
+                    item_groups[key]['count'] += item.stack_size if hasattr(item, 'stack_size') else 1
                 else:
-                    print("No matching item found.")
+                    item_groups[key] = {
+                        'item': item,
+                        'count': item.stack_size if hasattr(item, 'stack_size') else 1
+                    }
             
-            if selected_item:
-                #Checks to see if selected item is on cooldown, if it is refuses the use
-                if selected_item.name in self.player.cooldowns and self.player.cooldowns[selected_item.name] > 0:
-                    print(f"You can't use {selected_item.name} yet. Cooldown: {self.player.cooldowns[selected_item.name]} turns.")
-                elif in_combat:
-                    if selected_item.effect_type in ["healing", "damage", "buff", "stamina"]:
-                        return self.use_combat_item(selected_item, enemy)
+            # Display visible items
+            visible_groups = list(item_groups.values())[scroll_offset:scroll_offset + items_per_page]
+            for i, group in enumerate(visible_groups):
+                item = group['item']
+                count = group['count']
+                item_y = y + 60 + (i * 30)
+                
+                # Show cooldown if applicable
+                if item.name in self.player.cooldowns and self.player.cooldowns[item.name] > 0:
+                    cooldown_text = f"{item.name} x{count} (Cooldown: {self.player.cooldowns[item.name]})"
+                    self.display.draw_text(f"{i+1}. {cooldown_text}",
+                                        (x + 20, item_y), 'medium', colour='gray')
+                else: 
+                    if isinstance(item, SoulCrystal):
+                        if item.used:
+                            effect_desc = "Depleted"
+                        else:
+                            effect_desc = "Soul Crystal - see inventory for details"
+                        self.display.draw_text(f"{i+1}. {item.name} ({effect_desc})",
+                                            (x + 20, item_y), 'medium')
                     else:
-                        print(f"You can't use {selected_item.name} in combat.")
-                else:
-                    success, message = self.player.use_item(selected_item, self)
-                    print(message)
-                    if success:
-                        pause()
-                    return selected_item if success else None
+                        # Show item with effect description
+                        effect_desc = self.player.get_effect_description(item)
+                        self.display.draw_text(f"{i+1}. {item.name} x{count}: {effect_desc}",
+                                            (x + 20, item_y), 'medium')
+            
+            # Show navigation instructions
+            instruction_y = y + 20
+            if len(usable_items) > items_per_page:
+                self.display.draw_text("UP/DOWN: Scroll | Select with 1-6 | ESC: Cancel",
+                                    (x + width//2, instruction_y), 'medium', center=True)
             else:
-                print("Invalid choice. Please try again.")
+                self.display.draw_text("Select with 1-6 | ESC: Cancel",
+                                    (x + width//2, instruction_y), 'medium', center=True)
+            
+            pygame.display.flip()
+            
+            # Handle input
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    return None
+                    
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        return None
+                        
+                    elif event.key == pygame.K_UP and scroll_offset > 0:
+                        scroll_offset -= 1
+                        
+                    elif event.key == pygame.K_DOWN:
+                        if scroll_offset < len(usable_items) - items_per_page:
+                            scroll_offset += 1
+                            
+                    elif event.key in range(pygame.K_1, pygame.K_9 + 1):
+                        index = event.key - pygame.K_1
+                        if index < len(visible_groups):
+                            selected_item = visible_groups[index]['item']
+                            
+                            if selected_item.name in self.player.cooldowns and self.player.cooldowns[selected_item.name] > 0:
+                                continue
+                                
+                            if in_combat:
+                                if selected_item.effect_type in ["healing", "damage", "buff", "stamina"]:
+                                    return self.battle.use_combat_item(selected_item, enemy)
+                                else:
+                                    continue
+                            else:
+                                success, message = self.player.use_item(selected_item)
+                                if success and selected_item.effect_type == "teleport":
+                                    destination = self.player.use_teleport_scroll(game)
+                                    if destination:
+                                        self.current_location = destination
+                                        return selected_item
+                                elif success:
+                                    return selected_item
+                            self.display.pause()    
+                            # Refresh the display after use
+                            pygame.draw.rect(self.display.screen, 'gray20', 
+                                        (x, y, width, height))
+            
+            self.display.clock.tick(self.display.config.FPS)
         
     def choose_save_file(self, for_loading=False):
         #Allows the player to choose which save file they wish to overwrite if available, if not allows the player to make one
@@ -358,18 +335,149 @@ class Game:
                     print("Invalid choice. Please try again.")
             except ValueError:
                 print("Please enter a number.")
+                
+    def handle_save(self):
+        """Handle visual save menu"""
+        from display import SaveMenuDisplay
+        save_menu = SaveMenuDisplay(self.display, self.player)
+        save_file = save_menu.show_save_menu()
+        
+        if save_file:
+            save_game(self.player, self.current_location, save_file)
+            return True
+        return False
+    
+    def handle_quit(self):
+        """Handle game quit sequence"""
+        save_menu = SaveMenuDisplay(self.display, self.player)
+        
+        self.display.screen.fill('black')
+        self.display.draw_text("Save before quitting?",
+                            (self.config.SCREEN_WIDTH // 2, self.config.SCREEN_HEIGHT // 2 - 50), 
+                            'large', center=True)
+        self.display.draw_text("ENTER: Yes | ESC: No",
+                            (self.config.SCREEN_WIDTH // 2, self.config.SCREEN_HEIGHT // 2 + 50), 
+                            'medium', center=True)
+        pygame.display.flip()
+        waiting = True
+        while waiting:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    return "quit"
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_RETURN:
+                        save_menu.show_save_menu()
+                        waiting = False
+                    elif event.key == pygame.K_ESCAPE:
+                        waiting = False
+            self.display.clock.tick(self.display.config.FPS)
+        
+        self.display.cleanup()
+        return "quit"
+    
+    def handle_game_events(self):
+        """Handle game events and player actions"""
+        self.display.draw_game_screen(self.player, self.current_location)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return self.handle_quit()
+            
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_q:
+                    return self.handle_quit()
+                
+                # Process the input and update state
+                action_type = self.process_input(event.key)
+                if action_type == "quit":
+                    return self.handle_quit()
+                elif action_type in ["move", "rest", "explore"]:
+                    # Update state only when input was processed
+                    self.player.update_cooldowns()
+                    self.player.update_buffs()
+                    self.blacksmith.rotate_stock(self.player.level)
+                    self.alchemist.rotate_stock(self.player.level)
+                    self.inn.rotate_stock(self.player.level)
+                    self.autosave_manager.increment_turn()
+                    
+        return None
+    
+    def process_input(self, key):
+        """Process keyboard input and return True is state should update"""
+        # General commands available everywhere
+        if key == pygame.K_ESCAPE or key == pygame.K_q:
+            return "quit"
+        elif key == pygame.K_m:
+            if self.display.handle_movement(self):
+                return "move"
+        elif key == pygame.K_i:
+            self.display.clear_screen()
+            self.player.show_inventory()
+            self.display.pause()
+            return True
+        elif key == pygame.K_e:
+            self.display.clear_screen()
+            self.equip_menu()
+            return True
+        elif key == pygame.K_u:
+            used_item = self.use_item_menu()
+            if used_item:
+                self.player.show_cooldowns()
+            self.display.pause()
+            return True
+        elif key == pygame.K_v:
+            self.world_map.display_map(self.current_location, self.player.level, self.player)
+            return True
+        elif key == pygame.K_k:
+            self.player.display_kill_stats()
+            self.display.pause()
+            return True
+        elif key == pygame.K_s:
+            self.handle_save()
+            return True
+        elif key == pygame.K_t:
+            self.autosave_manager.toggle_autosave()
+            return True
+        elif key == pygame.K_r:
+            self.rest()
+            self.display.pause()
+            return "rest"
+
+        # Village-specific commands
+        if self.current_location == "Village":
+            if key == pygame.K_a:
+                self.alchemist.visual_shop_menu(self.player)
+                return True
+            elif key == pygame.K_b:
+                self.blacksmith.visual_shop_menu(self.player)
+                return True
+            elif key == pygame.K_n:
+                self.inn.inn_menu(self.player)
+                return True
+            
+        # Non-Village specific commands
+        if self.current_location != "Village":
+            if key == pygame.K_l:
+                self.location_actions()
+                return True
+
+        return None
+    
         
     def game_loop(self):
         #Main game loop that handles player actions.
         while True:
-            action = title_screen()
+            action = self.display.display_title()
+            if action == "quit":
+                self.display.cleanup()
+                return
             #Creates a new character if new game is selected
-            if action == "new_game":
+            elif action == "new_game":
                 self.create_character()
                 break
             elif action == "load_game":
                 #If load game is selected, asks the player to select which save they want to use, if not returns the player to main menu
-                save_file = self.choose_save_file(for_loading=True)
+                save_file = self.display.display_load_game()
                 if save_file:
                     #If save file is selected sets the current player and location to the data saved, if it fails automatically starts new character creation
                     loaded_player, loaded_location= load_game(save_file)
@@ -380,101 +488,24 @@ class Game:
                         self.initialise_battle()
                         break
                     else:
-                        print("Failed to load the game. Starting a new game.")
+                        self.display.draw_text("Failed to load game. Starting new character creation.", (self.config.TEXT_AREA_X + self.config.PADDING, self.config.TEXT_AREA_Y + 25))
                         self.create_character()
                         break
                 else:
-                    print("No save file selected. Returning to main menu.")
-                    input("Press Enter to continue...")
+                    self.display.clear_screen()
+                    self.display.draw_text("No save file selected. Returning to main menu.", ((self.config.SCREEN_WIDTH // 2), (self.config.SCREEN_HEIGHT // 2) - 50), size='large', center=True)
+                    self.display.pause()
+            elif action == "help":
+                self.display.display_help()
         
+        # Main game loop
         while True:
-            self.player.update_cooldowns() #Reduces the cooldown on items by 1 on every action (Might change to only occur during battles)
-            self.player.update_buffs() #Reduces the duration of buffs by 1
-            self.show_stats() #Ensures the player can see their status easily
-            if self.current_location == "Village":
-                #Provides a set of options players can do if in the village, such as using shops and resting, otherwise prevents these actions
-                action = input("\nWhat do you want to do?\n[m]ove\n[i]nventory\n[c]onsumables\n[e]quip"
-                            "\n[u]se item\n[a]lchemist\n[ar]mourer\n[in]n\n[r]est\n[v]iew map\n[k]ill log\n[sa]ve game\n[au]tosave toggle\n[q]uit\n>").lower()
-            else:
-                action = input("\nWhat do you want to do?\n[m]ove\n[i]nventory\n[c]onsumables\n[e]quip"
-                            "\n[l]ocation actions\n[u]se item\n[v]iew map\n[k]ill log\n[sa]ve game\n[au]tosave toggle\n[q]uit\n>").lower()
-            #Handling of choices by player depending on what is chosen
-            if action == "m":
-                #Moves the palyer to different location if level requirements met
-                clear_screen()
-                self.world_map.display_map(self.current_location, self.player.level, self.player)
-                self.move()
-                if self.current_location != "Village":
-                    self.location_actions()
-            elif action == "i":
-                #Open the player inventory
-                clear_screen()
-                self.player.show_inventory()
-                pause()
-            elif action == "c":
-                #Shows the players consumables and cooldowns active
-                clear_screen()
-                self.player.show_consumables()
-                self.player.show_cooldowns()
-                pause()
-            elif action == "e":
-                #Opens the equip menu
-                clear_screen()
-                self.equip_menu()
-            elif action == "u":
-                #Opens the item usage menu
-                clear_screen()
-                used_item = self.use_item_menu()
-                if used_item:
-                    self.player.show_cooldowns()
-                pause()
-            elif action == "r":
-                #Rests the player restoring 25% health
-                self.rest()
-                pause()
-            elif action == "in":
-                #Accesses the inn
-                self.inn.inn_menu(self.player)
-            elif action == "v":
-                #Opens the world map for the player
-                self.world_map.display_map(self.current_location, self.player.level, self.player)
-            elif action == "k":
-                self.player.display_kill_stats()
-                pause()
-            elif action == "q":
-                #Prompts the player if they want to save the game before quitting
-                save_option = input("Do you want to save before quitting? (y/n): ").lower()
-                if save_option == "y":
-                    save_file = self.choose_save_file()
-                    save_game(self.player, self.current_location, self.player.days, save_file)
-                print("Thanks for playing!")
+            self.display.draw_game_screen(self.player, self.current_location)
+            result = self.handle_game_events()
+            if result == "quit":
                 return
-            elif action == "l" and self.current_location != "Village":
-                #Opens the location actions if the player is not in the village
-                clear_screen()
-                self.location_actions()
-            elif action == "ar" and self.current_location == "Village":
-                #Accesses the weapon and armour store as long as the player is in the village location
-                self.armourer.shop_menu(self.player)
-            elif action == "a" and self.current_location == "Village":
-                #Accesses the alchemist (consumables) shop as long as the player is in the village location
-                self.alchemist.shop_menu(self.player)
-            elif action == "sa":
-                #Allows the player to save at any point in case of unexpected crashes, will look into making an autosave feature
-                save_file = self.choose_save_file()
-                save_game(self.player, self.current_location, save_file)
-            elif action == "au":
-                self.autosave_manager.toggle_autosave()
-            elif action == "d":
-                self.player.print_debug_modifiers()
-                pause()
-            else:
-                print("Invalid action. Try again.")
-              
-            self.armourer.rotate_stock(self.player.level)  # Check if it's time to rotate stock after each action
-            self.alchemist.rotate_stock(self.player.level) #^
-            self.inn.rotate_stock(self.player.level)#^^
-            self.autosave_manager.increment_turn() # Increments turn for autosave manager function
+            
+            self.display.clock.tick(self.display.config.FPS)
 
 if __name__ == "__main__":
     game = Game()

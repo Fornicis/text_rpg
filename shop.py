@@ -1,11 +1,13 @@
 import random
+import pygame
 from player import Player
 from items import Item, SoulCrystal
-from display import clear_screen
+from display import Display, ShopDisplay
 
 class BaseShop:
     # Standard shop class, this will allow easy addition of other shops without having to rewrite lots of code
     def __init__(self, all_items):
+        self.display = Display()
         self.inventory = {} # Dictionary of items in the shop
         self.all_items = all_items 
         self.restock_counter = 0 # Counter to check if its time for new items to be stocked
@@ -203,7 +205,7 @@ class BaseShop:
     def buy_items(self, player):
         """Handle buying items with stack support"""
         while True:
-            clear_screen()
+            self.display.clear_screen(self)
             self.display_inventory(player)
             print(f"\nYour gold: {player.gold}")
             print("\nEnter the numbers of items you want to buy, followed by quantity.")
@@ -286,8 +288,19 @@ class BaseShop:
                         # Create new item with proper stack size
                         new_item = type(item)(
                             item.name, item.type, item.value, item.tier,
-                            effect_type=item.effect_type, effect=item.effect,
-                            cooldown=item.cooldown, duration=item.duration,
+                            attack=item.attack,
+                            defence=item.defence,
+                            accuracy=item.accuracy,
+                            crit_chance=getattr(item, 'crit_chance', 0),
+                            crit_damage=getattr(item, 'crit_damage', 0),
+                            armour_penetration=getattr(item, 'armour_penetration', 0),
+                            damage_reduction=getattr(item, 'damage_reduction', 0),
+                            evasion=getattr(item, 'evasion', 0),
+                            block_chance=getattr(item, 'block_chance', 0),
+                            effect_type=item.effect_type,
+                            effect=item.effect,
+                            cooldown=item.cooldown,
+                            duration=item.duration,
                             tick_effect=item.tick_effect,
                             weapon_type=item.weapon_type,
                             stamina_restore=item.stamina_restore
@@ -311,7 +324,7 @@ class BaseShop:
 
     def sell_items(self, player):
         while True:
-            clear_screen()
+            self.display.clear_screen()
             display_items = self.display_sellable_items(player)
             
             print("\nEnter item number to sell (or 'q' to quit):")
@@ -370,8 +383,22 @@ class BaseShop:
             input("\nPress Enter to continue...")
             
     def get_sellable_items(self, player):
-        # Shows items the player can sell
-        return [item for item in player.inventory if self.can_sell_item(item)]
+        """Return grouped sellable items from player inventory"""
+        sellable_items = [item for item in player.inventory if self.can_sell_item(item)]
+        grouped_items = {}
+        
+        for item in sellable_items:
+            if item.type == "soul_crystal":
+                # Soul crystals don't stack, add individually
+                sellable_items.append(item)
+            else:
+                # Group stackable items by name and type
+                key = (item.name, item.type)
+                if key not in grouped_items:
+                    grouped_items[key] = item
+        
+        # Return soul crystals and one instance of each stackable item
+        return list(grouped_items.values()) + [item for item in sellable_items if item.type == "soul_crystal"]
 
     def can_sell_item(self, item):
         # Check if item can be sold, to be overwritten in child classes
@@ -395,8 +422,17 @@ class BaseShop:
                 break
             else:
                 print("Invalid choice. Please try again.")
+                
+    def visual_shop_menu(self, player):
+        shop_display = ShopDisplay(self.display, player)
+        while True:
+            shop_display.draw_shop_interface(self, player)
+            result = shop_display.handle_shop_events(self, player)
+            if result == "exit":
+                break
+            self.display.clock.tick(self.display.config.FPS)
 
-class Armourer(BaseShop):
+class Blacksmith(BaseShop):
     # Child class of shop called Armour, sells weapons and armour
     def __init__(self, all_items):
         super().__init__({k: v for k, v in all_items.items() if v.type in ["weapon", "shield", "helm", "chest", "boots", "gloves", "back", "legs", "belt", "ring"] or "Sharpening Stone" in v.name})
@@ -418,39 +454,92 @@ class Inn(BaseShop):
     # Shop class for inn selling food and drink and offering improved rest functions
     def __init__(self, all_items):
         super().__init__({k: v for k, v in all_items.items() if v.type == "food" or v.type == "drink"})
+        self.shop_display = None
 
     def can_sell_item(self, item):
         # Checks if item can be solde to the inn
         return item.type in ["food", "drink"]
     
     def inn_menu(self, player):
-        # Displays the menu for the inn with numerical choices
+        shop_display = ShopDisplay(self.display, player)
+        rest_cost = player.level * 10
+        
+        location_image = pygame.image.load("assets/area_images/inn.jpg")
+        location_image = pygame.transform.scale(location_image, (self.display.config.SCREEN_WIDTH, self.display.config.SCREEN_HEIGHT))
+        
         while True:
-            clear_screen()
-            print("\n--- Welcome to the Inn ---")
-            print(f"Your gold: {player.gold}")
-            print(f"Your stamina: {player.stamina}/{player.max_stamina}")
-            print(f"\n1. Rest (Restore full HP and Stamina) - {player.level * 10} gold")
-            print("2. Buy food and drinks")
-            print("3. Exit Inn")
-
-            choice = input("Enter your choice: ")
-
-            if choice == '1':
-                if player.gold >= (player.level * 10):
-                    player.gold -= (player.level * 10)
-                    player.hp = player.max_hp
-                    player.stamina = player.max_stamina
-                    player.days += 1
-                    print(f"You rest at the inn, fully restoring your HP and Stamina.")
-                    print(f"It is now day {player.days}.")
-                else:
-                    print("You don't have enough gold to rest at the inn.")
-            elif choice == '2':
-                self.buy_items(player)
-            elif choice == '3':
-                break
-            else:
-                print("Invalid choice. Please try again.")
-
-            input("\nPress Enter to continue...")
+            self.display.screen.fill('black')
+            self.display.screen.blit(location_image, (0, 0))
+            # Draw inn header
+            self.display.draw_text("=== WELCOME TO THE INN ===",
+                                   (self.display.config.SCREEN_WIDTH // 2, 50),
+                                   'title', 'gold', center = True)
+            
+            # Draw player stats
+            self.display.draw_text(f"Gold: {player.gold}",
+                                   (50,100), 'large')
+            self.display.draw_text(f"HP: {player.hp}/{player.max_hp}",
+                                   (50, 130), 'large')
+            self.display.draw_text(f"Stamina: {player.stamina}/{player.max_stamina}",
+                                   (50, 160), 'large')
+            
+            # Draw rest option
+            self.display.draw_text(f"Press R to rest for {rest_cost} gold",
+                                   (self.display.config.SCREEN_WIDTH // 2, 200),
+                                   'huge', center=True)
+            
+            self.display.draw_text(f"Press B to buy/sell items",
+                                   (self.display.config.SCREEN_WIDTH // 2, 250),
+                                   'huge', center=True)
+            # Handle events
+            
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT or (
+                    event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE
+                ):
+                    return
+                
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_r:
+                        if player.gold >= rest_cost:
+                            player.gold -= rest_cost
+                            player.hp = player.max_hp
+                            player.stamina = player.max_stamina
+                            player.days += 1
+                            
+                            # Add pause
+                            waiting = True
+                            while waiting:
+                                for pause_event in pygame.event.get():
+                                    if pause_event.type == pygame.KEYDOWN and pause_event.key == pygame.K_RETURN:
+                                        waiting = False
+                                    elif pause_event.type == pygame.QUIT:
+                                        return
+                                # Display rest message
+                                self.display.screen.fill('black')
+                                self.display.draw_text("You have rested at the Inn, fully restoring your HP and Stamina.", 
+                                                    (self.display.config.SCREEN_WIDTH // 2, 300), 
+                                                    'large', 'gold', center=True)
+                                self.display.draw_text(f"Gold remaining: {player.gold}", 
+                                                    (self.display.config.SCREEN_WIDTH // 2, 330), 
+                                                    'large', 'gold', center=True)
+                                self.display.draw_text(f"Days passed: {player.days}", 
+                                                    (self.display.config.SCREEN_WIDTH // 2, 360), 
+                                                    'large', 'gold', center=True)
+                                self.display.draw_text("Press ENTER to continue...", 
+                                                    (self.display.config.SCREEN_WIDTH // 2, 400), 
+                                                    'medium', center=True)
+                                pygame.display.flip()
+                                self.display.clock.tick(self.display.config.FPS)
+                    
+                    elif event.key == pygame.K_b:
+                        # Handle player buying/selling items
+                        while True:
+                            shop_display.draw_shop_interface(self, player)
+                            result = shop_display.handle_shop_events(self, player)
+                            if result == "exit":
+                                break
+                            self.display.clock.tick(self.display.config.FPS)
+                            
+            pygame.display.flip()
+            self.display.clock.tick

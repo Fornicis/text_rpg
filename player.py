@@ -1,6 +1,7 @@
+import pygame
 import random, time
 from items import Item, initialise_items, SoulCrystal
-from display import pause, title_screen
+from display import Display, ItemUseDisplay, InventoryDisplay, BattleDisplay
 from game_config import VARIANT_TYPES
 from status_effects import *
 
@@ -91,7 +92,7 @@ PLAYER_ATTACK_TYPES = {
         "effect": "self_damage"
     },
     # Stance attacks
-    "defensive": {
+    "defensive_stance": {
         "name": "Defensive Stance",
         "stamina_modifier": 2,
         "damage_modifier": 0,
@@ -141,15 +142,15 @@ WEAPON_ATTACK_TYPES = {
     ],
     "medium": [
         "normal", "power", "stunning", "reckless", "sweep",
-        "balanced", "defensive", "power_stance"
+        "balanced", "defensive_stance", "power_stance"
     ],
     "heavy": [
         "normal", "power", "stunning", "reckless", "crushing",
-        "cleave", "defensive", "power_stance", "berserker_stance"
+        "cleave", "defensive_stance", "power_stance", "berserker_stance"
     ],
     "soulbound": [
         "normal", "quick", "triple", "precision", "flurry",
-        "power", "reckless", "stunning", "crushing", "sweep", "cleave", "balanced", "defensive",
+        "power", "reckless", "stunning", "crushing", "sweep", "cleave", "balanced", "defensive_stance",
         "power_stance", "berserker_stance", "accuracy_stance", "evasion_stance"
     ]
 }
@@ -159,6 +160,7 @@ class Character:
         # Initialize basic character attributes
         self.name = name
         self.hp = hp
+        self._prev_hp = hp
         self.max_hp = hp
         self.attack_types = {
             "normal": {"name": "Normal Attack", "stamina_modifier": 0, "damage_modifier": 1},
@@ -186,8 +188,10 @@ class Character:
         self.stunned = False
         self.confused = False
         self.status_effects = []
-        self.pause = pause
-        self.title_screen = title_screen
+        self.display = Display()
+        self.pause = Display.pause
+        self.title_screen = Display.display_title
+        self.battle_display = BattleDisplay(self.display)
         self.buff_modifiers = {"attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, 
                               "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, 
                               "damage_reduction": 0, "block_chance": 0}
@@ -197,13 +201,6 @@ class Character:
         self.debuff_modifiers = {"attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, 
                                 "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, 
                                 "damage_reduction": 0, "block_chance": 0}
-    
-    def display_attack_animation(self, attacker_name, attack_name):
-        #Shows the enemy attacking in a dramatic way!
-        print(f"\n{attacker_name} is preparing to attack...")
-        time.sleep(1)  # Pause for dramatic effect
-        print(f">>> {attack_name.upper()} <<<")
-        time.sleep(0.5)
         
     def show_stats(self):
         # Show basic stats
@@ -373,7 +370,7 @@ class Character:
         random_damage = random.randint(int(base_damage * 0.9), int(base_damage * 1.1))
         # print(f"Random Damage: {random_damage}") Debug Print
         
-        # Apply armor penetration
+        # Apply armour penetration
         effective_defence = max(0, (defender.defence + getattr(soul_crystal_modifiers, "defence", 0)) - (attacker.armour_penetration + getattr(soul_crystal_modifiers, "armour_penetration", 0)))
         
         # Calculate initial damage
@@ -413,8 +410,10 @@ class Character:
         # Check to see who is attacking
         if isinstance(self, Player):
             attack_info = PLAYER_ATTACK_TYPES[attack_type]
+            self.battle_display.display_attack_animation(self.name, attack_info['name'])
         else:  # Enemy attacker
             attack_info = ENEMY_ATTACK_TYPES[attack_type]
+            self.battle_display.display_attack_animation(self.name, attack_info['name'], is_player=False)
         message = f"{self.name} used {attack_info['name']}."
         total_damage = 0
         hits = 1 + attack_info.get("extra_attacks", 0)
@@ -430,6 +429,14 @@ class Character:
             damage, hit_type, hit_chance, freeze_shatter = self.calculate_damage(self, target, attack_type)
             shattered_freeze = shattered_freeze or freeze_shatter
             
+            # Display hit animation and damage
+            self.battle_display.display_damage_numbers(target, damage, hit_type, isinstance(self, Player))
+            
+            # Handle self_damage display
+            if attack_info.get('effect') == 'self_damage':
+                self_damage = int(damage * 0.2)  # 20% of the damage dealt
+                self.battle_display.display_damage_numbers(self, self_damage, "self_damage", isinstance(self, Player), True)
+            
             if hit_type == "miss":
                 message += f"\n{self.name}'s attack missed {target.name}!"
             elif hit_type == "blocked":
@@ -441,36 +448,68 @@ class Character:
                 if damage > 0:
                     successful_hits += 1 # Increment by 1 on successful hit
                 if i == 0:
-                    message += f"\n{self.name} dealt {damage} damage to {target.name}."
+                    message += f"\n{self.name} dealt {damage} damage to {target.name}!"
                 else:
-                    message += f"\n{self.name} dealt an additional {damage} damage to {target.name}."
+                    message += f"\n{self.name} dealt an additional {damage} damage to {target.name}!"
                 
                 if hit_type == "critical":
                     message += " Critical hit!"
-                    if shattered_freeze:
-                        message += "\nThe frozen state shatters with the critical hit!" 
+                    shattered_freeze = True
+                    if "Freeze" in [effect.name for effect in target.status_effects] and shattered_freeze:
+                        target.remove_status_effect("Freeze")
+                        message += "\nThe frozen state shatters with the critical hit!"
+                
+                if attack_info.get('effect') == 'self_damage':
+                    # Create red flash for self damage
+                    self_damage = int(damage * 0.2)
+                    layout = self.battle_display.layout['battle_panel']
+                    width, height, x, y = layout
+                    original_surface = self.battle_display.display.screen.copy()
+                    flash_surface = pygame.Surface((width, height))
+                    flash_surface.fill((255, 0, 0))
+                    
+                    for _ in range(3):
+                        # Show flash
+                        for alpha in range(0, 128, 32): # Fade in
+                            flash_surface.set_alpha(alpha)
+                            self.battle_display.display.screen.blit(original_surface, (0, 0))
+                            self.battle_display.display.screen.blit(flash_surface, (x, y))
+                            self.display.draw_text(f"{self.name} takes {self_damage} damage as recoil from their {attack_info['name']} attack!", 
+                                                   (x + width // 2, y + height // 5), 'large', 'white', center=True)
+                            pygame.display.flip()
+                            pygame.time.wait(100)
+                            
+                        for alpha in range(128, 0, -32): # Fade out
+                            flash_surface.set_alpha(alpha)
+                            self.battle_display.display.screen.blit(original_surface, (0, 0))
+                            self.battle_display.display.screen.blit(flash_surface, (x, y))
+                            self.display.draw_text(f"{self.name} takes {self_damage} damage as recoil from their {attack_info['name']} attack!", 
+                                                   (x + width // 2, y + height // 5), 'large', 'white', center=True)
+                            pygame.display.flip()
+                            pygame.time.wait(100)
+                        
+                        self.battle_display.display.screen.blit(original_surface, (0, 0))
+                        pygame.display.flip()
                     
         if total_damage > 0 and hits > 1:
             message += f"\nTotal damage dealt: {total_damage}"
 
-        self.display_attack_animation(self.name, attack_info['name'])
+        #self.battle_display.display_attack_animation(self.name, attack_info['name'])
         
-        print(message.rstrip())
-        
-        if attack_hit and 'effect' in attack_info:
-            if attack_info['effect'] == 'self_damage':
-                effect = SELF_DAMAGE(total_damage, attack_type)
-                self.apply_status_effect(effect)
+        #print(message.rstrip())
                 
         if isinstance(self, Player) and self.weapon_coating and successful_hits > 0:
             total_stacks = self.weapon_coating['stacks'] * successful_hits
-            print(f"{target.name} is poisoned by your coated weapon! ({successful_hits} hits, {total_stacks} total poison stacks)")
+            message += f"\n{target.name} is poisoned by your coated weapon!"
+            message += f"\n({successful_hits} hits, {total_stacks} total poison stacks)"
             poison_effect = POISON(
                 duration=self.weapon_coating['duration'],
                 strength= total_stacks
             )
             target.apply_status_effect(poison_effect)
-            self.update_weapon_coating()
+        
+        if isinstance(self, Player) and successful_hits > 0:
+            self.update_weapon_buff()
         
         self.remove_status_effect("Freeze")
         
@@ -486,6 +525,7 @@ class Character:
 
     def take_damage(self, damage):
         # Reduce HP when taking damage, minimum 0
+        self._prev_hp = self.hp
         self.hp = max(0, self.hp - int(damage))
 
     def heal(self, amount):
@@ -493,33 +533,47 @@ class Character:
         self.hp = min(self.max_hp, self.hp + int(amount))
     
     def apply_status_effect(self, new_effect):
+        #print("Battle display object:", self.battle_display)
+        #print("Trying to draw message")
         existing_effect = next((e for e in self.status_effects if e.name == new_effect.name), None)
         
         if existing_effect:
-            if existing_effect.stackable:
+            #print(f"DEBUG: Updating existing effect: {existing_effect.name}")
+            
+            # Handle DoT effects
+            if isinstance(new_effect, DotEffect):
                 existing_effect.strength += new_effect.strength
                 existing_effect.remaining_duration = max(existing_effect.remaining_duration, new_effect.initial_duration)
-                existing_effect.is_active = True
-                print(f"{self.name}'s {existing_effect.name} is stacked to {existing_effect.strength} and refreshed for {existing_effect.remaining_duration} turns!")
-            else:
+                self.battle_display.draw_battle_message(f"\n{self.name}'s {existing_effect.name} is intensified to {existing_effect.strength} stacks!")
+                return True
+                
+            # Handle stat-based effects
+            if hasattr(new_effect, 'stat_changes'):
+                for stat, value in new_effect.stat_changes.items():
+                    if hasattr(existing_effect, 'total_reductions'):
+                        existing_effect.total_reductions[stat] = existing_effect.total_reductions.get(stat, 0) + value
+                        
+                        if new_effect.is_debuff:
+                            self.debuff_modifiers[stat] = 0
+                            self.debuff_modifiers[stat] = existing_effect.total_reductions[stat]
+                            self.battle_display.draw_battle_message(f"\n{self.name}'s {stat.replace('_', ' ').title()} is reduced by an additional {value}!")
+                            
                 existing_effect.remaining_duration = max(existing_effect.remaining_duration, new_effect.initial_duration)
-                existing_effect.strength = max(existing_effect.strength, new_effect.strength)
-                existing_effect.is_active = True
-                if new_effect.name != "Stun" and new_effect.initial_duration > 1:
-                    print(f"{self.name}'s {existing_effect.name} is refreshed for {existing_effect.remaining_duration} turns!")
-                #print(f"{self.name}'s {existing_effect.name} is refreshed to strength {existing_effect.strength} for {existing_effect.remaining_duration} turns!")
+                self.recalculate_stats()
+            return True
+
         else:
-            self.status_effects.append(new_effect)
+            """if hasattr(new_effect, 'total_reductions'):
+                print(f"DEBUG: New total reductions: {new_effect.total_reductions}")"""
             apply_result = new_effect.on_apply(self)
-            if apply_result and new_effect.remaining_duration > 1:
-                if new_effect.stackable:
-                    #print(f"{self.name} is affected by {new_effect.name} with {new_effect.strength} stack(s) for {new_effect.remaining_duration} turns!")
-                    pass
-                elif new_effect.name != "Stun":
-                    if new_effect.initial_duration > 1:
-                        print(f"{self.name} is affected by {new_effect.name} for {new_effect.remaining_duration} turns!")
-            else:
-                self.status_effects.remove(new_effect)
+            #print(f"DEBUG: Apply result: {apply_result}")
+            if apply_result:
+                self.status_effects.append(new_effect)
+                #print(f"DEBUG: Status effect added: {new_effect.name}")
+                self.battle_display.display_status_effects(self, new_effect.name)
+                return True
+
+        return True
 
     def update_status_effects(self, character):
         for effect in character.status_effects[:]:
@@ -553,7 +607,7 @@ class Character:
     def apply_debuff(self, stat, value):
         """Apply a debuff to a stat"""
         if stat in self.debuff_modifiers:
-            self.debuff_modifiers[stat] += value
+            self.debuff_modifiers[stat] = value
             self.recalculate_stats()
 
     def remove_debuff(self, stat, value):
@@ -635,11 +689,12 @@ class Player(Character):
         self.buff_modifiers = {"temp_max_hp": 0, "temp_max_stamina": 0, "attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, "damage_reduction": 0, "block_chance": 0}
         self.combat_buff_modifiers = {"attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, "damage_reduction": 0, "block_chance": 0}
         self.debuff_modifiers = {"attack": 0, "defence": 0, "accuracy": 0, "evasion": 0, "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, "damage_reduction": 0, "block_chance": 0}
-        self.weapon_buff_modifiers = {"attack": 0, "accuracy": 0, "crit_chance": 0, "crit_damage": 0, "armour_penetration": 0, "block_chance": 0}
+        self.weapon_buff_modifiers = {'attack': 0, 'accuracy': 0, 'crit_chance': 0, 'crit_damage': 0, 'armour_penetration': 0, 'block_chance': 0}
         self.cooldowns = {}
         self.active_buffs = {}
         self.active_hots = {}
         self.combat_buffs = {}
+        self.active_debuffs = {}
         self.weapon_buff = {'value': 0, 'duration': 0}
         self.soul_crystal_effects = {}
         self.weapon_coating = None
@@ -663,13 +718,12 @@ class Player(Character):
             "ring": None,
         }
         self.items = initialise_items()
-        self.give_starter_items()
+        #self.give_starter_items()
         
     def give_starter_items(self):
-        #Gives starter items to the player
         starter_items = [
             "Wooden Sword",
-            "Peasants Top",
+            "Peasants Top", 
             "Peasants Bottoms",
             "Minor Health Potion",
             "Small Bomb",
@@ -677,18 +731,50 @@ class Player(Character):
             "Basic Sharpening Stone"
         ]
         
-        for item_name in starter_items:
-            #Adds starter items to the players inventory
+        # Clear screen and setup
+        self.display.screen.fill('black')
+        self.display.draw_text("=== STARTER ITEMS ===", 
+                            (self.display.config.SCREEN_WIDTH // 2, 50), 
+                            'title', center=True)
+        
+        # Display items one by one with animation
+        for i, item_name in enumerate(starter_items):
             item = self.items[item_name]
             self.inventory.append(item)
-            print(f"Added {item.name} to inventory.")
             
+            # Calculate position
+            y_pos = 150 + (i * 40)
+            
+            # Draw item name and type
+            self.display.draw_text(f"{item.name} [{item.type.title()}]",
+                                (self.display.config.SCREEN_WIDTH // 2, y_pos),
+                                'large', center=True)
+            
+            # Auto-equip if equipment
             if item.type in ["weapon", "helm", "chest", "waist", "legs", "boots", "gloves", "shield", "back", "ring"]:
-                #Auto equips the players start equipment to save time
                 self.equip_item(item)
+                self.display.draw_text("(Auto-equipped)",
+                                    (self.display.config.SCREEN_WIDTH // 2 + 200, y_pos),
+                                    'medium', colour='green', center=True)
+            
+            pygame.display.flip()
+            pygame.time.wait(500)  # Delay between items
         
-        print("\nStarter items added and equipped:")
-        self.show_inventory()
+        # Show completion message
+        self.display.draw_text("Press ENTER to continue...",
+                            (self.display.config.SCREEN_WIDTH // 2, y_pos + 80),
+                            'medium', center=True)
+        pygame.display.flip()
+        
+        # Wait for ENTER
+        waiting = True
+        while waiting:
+            for event in pygame.event.get():
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+                    waiting = False
+                elif event.type == pygame.QUIT:
+                    pygame.quit()
+                    return
         
     def gain_exp(self, amount, enemy_level):
         # Gain experience and level up if threshold reached, scales down with overlevelling
@@ -707,12 +793,27 @@ class Player(Character):
         scaled_exp = int(amount * scaling_factor)
         #Gain exp based on scaled exp
         self.exp += scaled_exp
-        print(f"You gained {scaled_exp} experience!")
+        self.battle_display.draw_battle_message(f"You gained {scaled_exp} experience!")
         #Check for level up
         if self.exp >= self.level * 100:
             self.level_up()
     
     def level_up(self):
+        # Capture previous stats for comparison
+        old_stats = {
+            'max_hp': self.max_hp,
+            'attack': self.attack,
+            'defence': self.defence,
+            'accuracy': self.accuracy,
+            'evasion': self.evasion,
+            'crit_chance': self.crit_chance,
+            'crit_damage': self.crit_damage,
+            'armour_penetration': self.armour_penetration,
+            'damage_reduction': self.damage_reduction,
+            'block_chance': self.block_chance,
+            'max_stamina': self.max_stamina
+        }
+        
         # Increase player stats on level up
         self.level += 1
         max_hp = random.randint(40, 60)
@@ -739,46 +840,195 @@ class Player(Character):
         self.max_stamina += 10
         stamina_restore = self.max_stamina // 4
         self.restore_stamina(stamina_restore)
+        
+        # Update equipment stats and remaining exp
         self.update_equipment_stats()
         self.exp = self.exp // 4
-        print(f"Congratulations! You reached level {self.level}!")
-        print(f"Your stats have increased:\nAttack: +{attack}\nDefence: +{defence}\nEvasion: +{evasion}\nAccuracy: +{accuracy}\nCrit Chance: +{crit_chance}%\nCrit Damage: +{crit_damage}%\nArmour Pentration: +{armour_penetration}\nDamage Reduction: +{damage_reduction}\nBlock Chance: +{block_chance}%")
+        self.recalculate_stats()
+        
+        # Get layout of main panel
+        layout = self.display.calculate_layout()
+        main_panel = layout['battle_panel']
+        width, height, x, y = main_panel
+        
+        base_y = y
+        
+        # Create overlay for main panel
+        overlay = pygame.Surface((width, height))
+        overlay.fill(('black'))
+        overlay.set_alpha(200)
+        
+        # Draw overlay
+        self.display.screen.blit(overlay, (x, base_y))
+        
+        # Display level up message
+        self.display.draw_text(" === LEVEL UP ===",
+                               (x + width // 2, base_y + 50),
+                               'title', 'gold', center=True)
+        
+        base_y += 100
+        
+        self.display.draw_text(f"You have reached level {self.level}!",
+                               (x + width // 2, base_y),
+                               'large', 'white', center=True)
+        
+        base_y += 50
+        
+        stat_changes = [
+            (f"Max HP: {old_stats['max_hp']} -> {self.max_hp}", max_hp),
+            (f"Attack: {old_stats['attack']} -> {self.attack}", attack),
+            (f"Accuracy: {old_stats['accuracy']} -> {self.accuracy}", accuracy),
+            (f"Armour Penetration: {old_stats['armour_penetration']} -> {self.armour_penetration}", armour_penetration),
+            (f"Crit Chance: {old_stats['crit_chance']} -> {self.crit_chance}", crit_chance),
+            (f"Crit Damage: {old_stats['crit_damage']} -> {self.crit_damage}", crit_damage),
+            (f"Defence: {old_stats['defence']} -> {self.defence}", defence),
+            (f"Evasion: {old_stats['evasion']} -> {self.evasion}", evasion),
+            (f"Block Chance: {old_stats['block_chance']} -> {self.block_chance}", block_chance),
+            (f"Damage Reduction: {old_stats['damage_reduction']} -> {self.damage_reduction}", damage_reduction),
+            (f"Max Stamina: {old_stats['max_stamina']} -> {self.max_stamina}", 10)
+        ]
+        
+        for stat_text, increase in stat_changes:
+            self.display.draw_text(stat_text + f" (+{increase})",
+                                   (x + width // 2, base_y),
+                                   'medium', 'green', center=True)
+            base_y += 30
+            
+        # Display continue prompt
+        self.display.draw_text("Press ENTER to continue",
+                               (x + width // 2, base_y),
+                               'medium', 'white', center=True)
+        
+        pygame.display.flip()
+        self.display.pause(show_prompt=False)
+        
+        """self.battle_display.draw_battle_message(f"Congratulations! You reached level {self.level}!")
+        self.battle_display.draw_battle_message(f"Your stats have increased:\nAttack: +{attack}\nDefence: +{defence}\nEvasion: +{evasion}\nAccuracy: +{accuracy}\nCrit Chance: +{crit_chance}%\nCrit Damage: +{crit_damage}%\nArmour Pentration: +{armour_penetration}\nDamage Reduction: +{damage_reduction}\nBlock Chance: +{block_chance}%")"""
     
     def lose_level(self):
-        #Players lose a level and all related stats if they lose a battle, can not go below level 1 or lose more than base stats
-        if self.level > 1:
-            self.level -= 1
-            max_hp = random.randint(40, 60)
-            self.max_hp -= max_hp
-            self.hp = self.max_hp
-            attack = random.randint(2, 5)
-            self.level_modifiers["attack"] -= attack
-            defence = random.randint(1, 4)
-            self.level_modifiers["defence"] -= defence
-            accuracy = random.randint(2, 6)
-            self.level_modifiers["accuracy"] -= accuracy
-            evasion = round(random.uniform(0.5, 1.5), 1)
-            self.level_modifiers["evasion"] -= evasion
-            crit_chance = random.randint(1, 3)
-            self.level_modifiers["crit_chance"] -= crit_chance
-            crit_damage = random.randint(2, 6)
-            self.level_modifiers["crit_damage"] -= crit_damage
-            armour_penetration = random.randint(1, 3)
-            self.level_modifiers["armour_penetration"] -= armour_penetration
-            damage_reduction = random.randint(1, 2)
-            self.level_modifiers["damage_reduction"] -= damage_reduction
-            block_chance = round(random.uniform(0.5, 1.5), 1)
-            self.level_modifiers["block_chance"] -= block_chance
-            self.max_stamina -= 10
-            print(f"Your stats have decreased:\nMax Hp: -{max_hp}\nAttack: -{attack}\nDefence: -{defence}\nEvasion: -{evasion}\nAccuracy: -{accuracy}\nCrit Chance: -{crit_chance}%\nCrit Damage: -{crit_damage}%\nArmour Pentration: -{armour_penetration}\nDamage Reduction: -{damage_reduction}\nBlock Chance: -{block_chance}%")
-        else:
-            print("You're only a puny level 1. We won't take any levels from you...peasant.")
+        if self.level <= 1:
+            # Display level 1 message
+            layout = self.display.calculate_layout()
+            main_panel = layout['main_panel']
+            width, height, x, y = main_panel
+            
+            overlay = pygame.Surface((width, height))
+            overlay.fill((0, 0, 0))
+            overlay.set_alpha(200)
+            self.display.screen.blit(overlay, (x, y))
+            
+            self.display.draw_text("=== DIVINE PROTECTION ===",
+                                (x + width // 2, y + height // 2 - 30),
+                                'title', 'gold', center=True)
+            self.display.draw_text("You're only level 1. The deities protect you from losing any power.",
+                                (x + width // 2, y + height // 2 + 30),
+                                'large', 'white', center=True)
+            
+            pygame.display.flip()
+            self.display.pause()
+            return
+            
+        # Capture previous stats
+        old_stats = {
+            "level": self.level,
+            "max_hp": self.max_hp,
+            "attack": self.attack,
+            "defence": self.defence,
+            "accuracy": self.accuracy,
+            "evasion": self.evasion,
+            "crit_chance": self.crit_chance,
+            "crit_damage": self.crit_damage,
+            "armour_penetration": self.armour_penetration,
+            "damage_reduction": self.damage_reduction,
+            "block_chance": self.block_chance,
+            "max_stamina": self.max_stamina
+        }
+        
+        # Perform stat decreases
+        self.level -= 1
+        max_hp = random.randint(40, 60)
+        self.max_hp -= max_hp
+        self.hp = self.max_hp
+        attack = random.randint(2, 5)
+        self.level_modifiers["attack"] -= attack
+        defence = random.randint(1, 4)
+        self.level_modifiers["defence"] -= defence
+        accuracy = random.randint(2, 6)
+        self.level_modifiers["accuracy"] -= accuracy
+        evasion = round(random.uniform(0.5, 1.5), 1)
+        self.level_modifiers["evasion"] -= evasion
+        crit_chance = random.randint(1, 3)
+        self.level_modifiers["crit_chance"] -= crit_chance
+        crit_damage = random.randint(2, 6)
+        self.level_modifiers["crit_damage"] -= crit_damage
+        armour_penetration = random.randint(1, 3)
+        self.level_modifiers["armour_penetration"] -= armour_penetration
+        damage_reduction = random.randint(1, 2)
+        self.level_modifiers["damage_reduction"] -= damage_reduction
+        block_chance = round(random.uniform(0.5, 1.5), 1)
+        self.level_modifiers["block_chance"] -= block_chance
+        self.max_stamina -= 10
+        
+        # Update stats
+        self.update_equipment_stats()
+        self.recalculate_stats()
+        
+        # Display level loss information
+        layout = self.display.calculate_layout()
+        main_panel = layout['battle_panel']
+        width, height, x, y = main_panel
+        
+        # Create overlay
+        overlay = pygame.Surface((width, height))
+        overlay.fill((0, 0, 0))
+        overlay.set_alpha(200)
+        
+        # Draw overlay
+        self.display.screen.blit(overlay, (x, y))
+        
+        # Display level loss message
+        self.display.draw_text("=== LEVEL LOST ===",
+                            (x + width // 2, y + 50),
+                            'title', 'red', center=True)
+        self.display.draw_text(f"You have fallen to level {self.level}",
+                            (x + width // 2, y + 100),
+                            'large', 'white', center=True)
+        
+        # Display stat changes
+        current_y = y + 150
+        stat_changes = [
+            (f"Max HP: {old_stats['max_hp']} -> {self.max_hp}", -max_hp),
+            (f"Attack: {old_stats['attack']} -> {self.attack}", -attack),
+            (f"Accuracy: {old_stats['accuracy']} -> {self.accuracy}", -accuracy),
+            (f"Armour Pen: {old_stats['armour_penetration']} -> {self.armour_penetration}", -armour_penetration),
+            (f"Crit Chance: {old_stats['crit_chance']}% -> {self.crit_chance}%", -crit_chance),
+            (f"Crit Damage: {old_stats['crit_damage']}% -> {self.crit_damage}%", -crit_damage),
+            (f"Defence: {old_stats['defence']} -> {self.defence}", -defence),
+            (f"Evasion: {old_stats['evasion']} -> {self.evasion}", -evasion),
+            (f"Block Chance: {old_stats['block_chance']}% -> {self.block_chance}%", -block_chance),
+            (f"Damage Red: {old_stats['damage_reduction']} -> {self.damage_reduction}", -damage_reduction),
+            (f"Max Stamina: {old_stats['max_stamina']} -> {self.max_stamina}", -10)
+        ]
+        
+        for stat_text, decrease in stat_changes:
+            colour = 'red' if decrease < 0 else 'white'
+            self.display.draw_text(stat_text + f" ({decrease})",
+                                (x + width // 2, current_y),
+                                'medium', colour, center=True)
+            current_y += 30
+        
+        # Display continue prompt
+        self.display.draw_text("Press ENTER to continue...",
+                            (x + width // 2, y + height - 50),
+                            'medium', center=True)
+        
+        pygame.display.flip()
             
     def lose_gold(self):
         #Players lose half their gold
         lost_gold = self.gold // 2
         self.gold -= lost_gold
-        print(f"You've lost {lost_gold} gold. You now have {self.gold} remaining.")
+        self.battle_display.draw_battle_message(f"You've lost {lost_gold} gold. You now have {self.gold} remaining.")
         
     def respawn(self):
         #Player respawns back with half their max HP and stamina, lose one respawn chance
@@ -786,19 +1036,19 @@ class Player(Character):
         self.stamina = self.max_stamina // 2
         self.respawn_counter -= 1
         if self.respawn_counter >= 1:
-            print(f"You've been resurrected with {self.hp} HP and {self.stamina} stamina. Do not take this opportunity lightly, you only have {self.respawn_counter} chances left.")
+            self.battle_display.draw_battle_message(f"You've been resurrected with {self.hp} HP and {self.stamina} stamina. Do not take this opportunity lightly, you only have {self.respawn_counter} chances left.")
         elif self.respawn_counter == 0:
-            print(f"You've been resurrected with {self.hp} HP and {self.stamina} stamina. Do not take this opportunity lightly, this is your final chance, lose again and you lose forever.")
+            self.battle_display.draw_battle_message(f"You've been resurrected with {self.hp} HP and {self.stamina} stamina. Do not take this opportunity lightly, this is your final chance, lose again and you lose forever.")
         else:
             self.game_over()
 
     def game_over(self):
         #Tells the player their final stats after their last death, brings player back to the title_screen
-        print("You have been defeated for the final time, the deities have given up on you and you have met the forever death.")
-        print("Your final stats are:")
+        self.battle_display.draw_battle_message("You have been defeated for the final time, the deities have given up on you and you have met the forever death.")
+        self.battle_display.draw_battle_message("Your final stats are:")
         self.final_stats()
         self.pause()
-        print("Now it's time to try again, appease the deities through prowess this time.")
+        self.battle_display.draw_battle_message("Now it's time to try again, appease the deities through prowess this time.")
         self.pause()
         self.title_screen()
         
@@ -858,7 +1108,7 @@ class Player(Character):
         # First add level modifiers
         for stat in stats:
             if stat in self.level_modifiers:
-                stats[stat] += self.level_modifiers[stat]
+                stats[stat] += round(self.level_modifiers[stat], 2)
 
         # Then add equipment modifiers
         for stat in stats:
@@ -931,31 +1181,15 @@ class Player(Character):
             if self.equipped[item.type]:
                 self.unequip_item(item.type)
             self.equipped[item.type] = item
-            if item.type == "weapon":
-                self.equipment_modifiers["attack"] += getattr(item, "attack", 0)
-                self.equipment_modifiers["accuracy"] += getattr(item, "accuracy", 0)
-                self.equipment_modifiers["crit_chance"] += getattr(item, "crit_chance", 0)
-                self.equipment_modifiers["crit_damage"] += getattr(item, "crit_damage", 0)
-                self.equipment_modifiers["armour_penetration"] += getattr(item, "armour_penetration", 0)
-                self.equipment_modifiers["block_chance"] += getattr(item, "block_chance", 0)
-            elif item.type == "ring":
-                self.equipment_modifiers["attack"] += getattr(item, "attack", 0)
-                self.equipment_modifiers["crit_chance"] += getattr(item, "crit_chance", 0)
-                self.equipment_modifiers["crit_damage"] += getattr(item, "crit_damage", 0)
-                self.equipment_modifiers["defence"] += getattr(item, "defence", 0)
-                self.equipment_modifiers["evasion"] += getattr(item, "evasion", 0)
-                self.equipment_modifiers["damage_reduction"] += getattr(item, "damage_reduction", 0)
-                # Add any additional ring stats here if needed
-            else:
-                self.equipment_modifiers["attack"] += getattr(item, "attack", 0)
-                self.equipment_modifiers["defence"] += getattr(item, "defence", 0)
-                self.equipment_modifiers["accuracy"] += getattr(item, "accuracy", 0)
-                self.equipment_modifiers["crit_chance"] += getattr(item, "crit_chance", 0)
-                self.equipment_modifiers["crit_damage"] += getattr(item, "crit_damage", 0)
-                self.equipment_modifiers["evasion"] += getattr(item, "evasion", 0)
-                self.equipment_modifiers["damage_reduction"] += getattr(item, "damage_reduction", 0)
-                self.equipment_modifiers["block_chance"] += getattr(item, "block_chance", 0)
-                # Add any additional armour stats here if needed
+            self.equipment_modifiers["attack"] += getattr(item, "attack", 0)
+            self.equipment_modifiers["accuracy"] += getattr(item, "accuracy", 0)
+            self.equipment_modifiers["crit_chance"] += getattr(item, "crit_chance", 0)
+            self.equipment_modifiers["crit_damage"] += getattr(item, "crit_damage", 0)
+            self.equipment_modifiers["armour_penetration"] += getattr(item, "armour_penetration", 0)
+            self.equipment_modifiers["block_chance"] += getattr(item, "block_chance", 0)
+            self.equipment_modifiers["defence"] += getattr(item, "defence", 0)
+            self.equipment_modifiers["evasion"] += getattr(item, "evasion", 0)
+            self.equipment_modifiers["damage_reduction"] += getattr(item, "damage_reduction", 0)
             self.recalculate_stats()
             if item in self.inventory:
                 self.inventory.remove(item)
@@ -975,31 +1209,16 @@ class Player(Character):
         # Unequip an item and remove its stats from the appropriate dictionary
         item = self.equipped[slot]
         if item:
-            if slot == "weapon":
-                self.equipment_modifiers["attack"] -= getattr(item, "attack", 0)
-                self.equipment_modifiers["accuracy"] -= getattr(item, "accuracy", 0)
-                self.equipment_modifiers["crit_chance"] -= getattr(item, "crit_chance", 0)
-                self.equipment_modifiers["crit_damage"] -= getattr(item, "crit_damage", 0)
-                self.equipment_modifiers["armour_penetration"] -= getattr(item, "armour_penetration", 0)
-                self.equipment_modifiers["block_chance"] -= getattr(item, "block_chance", 0)
-            elif item.type == "ring":
-                self.equipment_modifiers["attack"] -= getattr(item, "attack", 0)
-                self.equipment_modifiers["crit_chance"] -= getattr(item, "crit_chance", 0)
-                self.equipment_modifiers["crit_damage"] -= getattr(item, "crit_damage", 0)
-                self.equipment_modifiers["defence"] -= getattr(item, "defence", 0)
-                self.equipment_modifiers["evasion"] -= getattr(item, "evasion", 0)
-                self.equipment_modifiers["damage_reduction"] -= getattr(item, "damage_reduction", 0)
-                # Remove any additional ring stats here if needed
-            else:
-                self.equipment_modifiers["attack"] -= getattr(item, "attack", 0)
-                self.equipment_modifiers["defence"] -= getattr(item, "defence", 0)
-                self.equipment_modifiers["accuracy"] -= getattr(item, "accuracy", 0)
-                self.equipment_modifiers["crit_chance"] -= getattr(item, "crit_chance", 0)
-                self.equipment_modifiers["crit_damage"] -= getattr(item, "crit_damage", 0)
-                self.equipment_modifiers["evasion"] -= getattr(item, "evasion", 0)
-                self.equipment_modifiers["damage_reduction"] -= getattr(item, "damage_reduction", 0)
-                self.equipment_modifiers["block_chance"] -= getattr(item, "block_chance", 0)
-                # Remove any additional armour stats here if needed
+            
+            self.equipment_modifiers["attack"] -= getattr(item, "attack", 0)
+            self.equipment_modifiers["accuracy"] -= getattr(item, "accuracy", 0)
+            self.equipment_modifiers["crit_chance"] -= getattr(item, "crit_chance", 0)
+            self.equipment_modifiers["crit_damage"] -= getattr(item, "crit_damage", 0)
+            self.equipment_modifiers["armour_penetration"] -= getattr(item, "armour_penetration", 0)
+            self.equipment_modifiers["block_chance"] -= getattr(item, "block_chance", 0)
+            self.equipment_modifiers["defence"] -= getattr(item, "defence", 0)
+            self.equipment_modifiers["evasion"] -= getattr(item, "evasion", 0)
+            self.equipment_modifiers["damage_reduction"] -= getattr(item, "damage_reduction", 0)        
             self.recalculate_stats()
             self.inventory.append(item)
             self.equipped[slot] = None
@@ -1058,19 +1277,28 @@ class Player(Character):
 
         self.recalculate_stats()
     
-    def apply_debuff(self, stat, value):
+    def apply_debuff(self, stat, value, duration=0):
+        # Initialise the key if it doesn't exist
+        if stat not in self.debuff_modifiers:
+            self.debuff_modifiers[stat] = 0
+            
         self.debuff_modifiers[stat] += value
+        if duration > 0:
+            self.active_debuffs[stat] = {'value': value, 'duration': duration}
         self.recalculate_stats()
 
     def remove_debuff(self, stat, value):
         self.debuff_modifiers[stat] -= value
         self.recalculate_stats()
     
-    def apply_weapon_buff(self, value, duration):
-        self.weapon_buff_modifiers["attack"] += value
+    def apply_weapon_buff(self, value, duration, stat):
+        if stat not in self.weapon_buff_modifiers:
+            self.weapon_buff_modifiers[stat] = 0
+            
+        self.weapon_buff_modifiers[stat] += value
         self.weapon_buff = {'value': value, 'duration': duration}
         self.recalculate_stats()
-        print(f"Applied a weapon buff of {value} attack for {duration} turns.")
+        print(f"Applied a weapon buff of {value} {stat} for {duration} turns.")
     
     def apply_hot(self, item):
         #Applies any HoT items and displays the length of the effect
@@ -1157,6 +1385,17 @@ class Player(Character):
                     # Format the stat name for display
                     display_stat = stat.replace('_', ' ').title()
                     print(f"Your {display_stat} buff has worn off.")
+                    
+        # Update debuffs
+        for stat, debuff_info in list(self.active_debuffs.items()):
+            if 'duration' in debuff_info:
+                debuff_info['duration'] -= 1
+                if debuff_info['duration'] <= 0:
+                    self.debuff_modifiers[stat] -= debuff_info['value']
+                    del self.active_debuffs[stat]
+                    # Format the stat name for display
+                    display_stat = stat.replace('_', ' ').title()
+                    print(f"Your {display_stat} debuff has worn off.")
 
         # Handle temporary max increases
         for stat in ["temp_max_hp", "temp_max_stamina"]:
@@ -1172,15 +1411,7 @@ class Player(Character):
                     # Format the stat name for display
                     display_stat = "HP" if stat == "temp_max_hp" else "Stamina"
                     print(f"Your temporary maximum {display_stat} increase has worn off.")
-        
-        # Update weapon buff
-        if self.weapon_buff['duration'] > 0:
-            self.weapon_buff['duration'] -= 1
-            if self.weapon_buff['duration'] <= 0:
-                self.weapon_buff_modifiers["attack"] -= self.weapon_buff['value']
-                print("Your weapon's sharpening effect has worn off")
-                self.weapon_buff = {'value': 0, 'duration': 0}
-        
+                
         self.recalculate_stats()            
     
     def update_cooldowns(self):
@@ -1203,21 +1434,30 @@ class Player(Character):
             else:
                 print(f"{hot_name} healed you for {heal_amount} HP and has worn off.")
                 del self.active_hots[hot_name]
-
-    def update_weapon_coating(self):
+                     
+    def update_weapon_buff(self):
+        # Update weapon buff
+        if self.weapon_buff['duration'] > 0:
+            self.weapon_buff['duration'] -= 1
+            if self.weapon_buff['duration'] <= 0:
+                self.weapon_buff_modifiers["attack"] -= self.weapon_buff['value']
+                print("Your weapon's enhancing effect has worn off")
+                self.weapon_buff = {'value': 0, 'duration': 0}
+                self.recalculate_stats()
+                
         if self.weapon_coating:
             self.weapon_coating['remaining_duration'] -= 1
             if self.weapon_coating['remaining_duration'] <= 0:
                 print(f"\nThe {self.weapon_coating['name']} on your weapon has worn off.")
                 self.weapon_coating = None
-    
+        
     def remove_combat_buffs(self):
         #Removes any combat related buffs at the end of the battle
         for stat, buff_info in self.combat_buffs.items():
             self.combat_buff_modifiers[stat] -= buff_info['value']
         self.combat_buffs.clear()
         self.recalculate_stats()
-        print("Any combat buffs you had have worn off.")
+        self.battle_display.draw_battle_message("Any combat buffs you had have worn off.")
         
     def add_item(self, item):
         """Add an item to inventory, handling stacks"""
@@ -1263,10 +1503,12 @@ class Player(Character):
         return None
         
     def use_item(self, item, game=None):
-        """Use an item from inventory, handling stacks properly"""
+        """Use an item from inventory with visual feedback"""
+        item_display = ItemUseDisplay(self.display)
+        
         if item.type == "soul_crystal":
             success, message = item.use(self)
-            return success, message 
+            return success, message
             
         if item.name in self.cooldowns and self.cooldowns[item.name] > 0:
             print(f"You can't use {item.name} yet. Cooldown: {self.cooldowns[item.name]} turns.")
@@ -1279,46 +1521,55 @@ class Player(Character):
             if item.effect_type == "healing":
                 heal_amount = min(item.effect, self.max_hp - self.hp)
                 self.heal(heal_amount)
+                item_display.show_item_use(item, heal_amount)
                 message += f"You used {item.name} and restored {heal_amount} HP. "
+                
             elif item.effect_type == "stamina":
                 stamina_restore = min(item.stamina_restore, self.max_stamina - self.stamina)
                 self.restore_stamina(stamina_restore)
+                item_display.show_item_use(item, stamina_restore)
                 message += f"You used {item.name} and restored {stamina_restore} Stamina. "
+                
             elif item.effect_type == "buff":
                 duration = getattr(item, 'duration', 0)
                 combat_only = getattr(item, 'combat_only', True)
                 
-                if isinstance(item.effect, list):  # Handle multiple stat buffs
+                if isinstance(item.effect, list):
                     for stat, value in item.effect:
                         self.apply_buff(stat, value, duration, combat_only)
+                    item_display.show_item_use(item, item.effect)
                     message += f"You used {item.name} and gained multiple buffs. "
-                else:  # Handle single stat buff
+                else:
                     stat, value = item.effect if isinstance(item.effect, tuple) else ("all stats", item.effect)
                     self.apply_buff(stat, value, duration, combat_only)
-                    if combat_only:
-                        message += f"You used {item.name} and gained a combat-only {stat} buff of {value}. "
-                    elif duration > 0:
-                        message += f"You used {item.name} and gained a temporary {stat} buff of {value} for {duration} turns. "
-                    else:
-                        message += f"You used {item.name} and gained a permanent {stat} buff of {value}. "
+                    item_display.show_item_use(item, (stat, value))
+                    message += f"You used {item.name} and gained a buff. "
+                    
             elif item.effect_type == "weapon_buff":
                 if self.equipped['weapon']:
                     stat, value = item.effect
-                    self.apply_weapon_buff(value, item.duration)
-                    message += f"You used {item.name} on your {self.equipped['weapon'].name}. Its attack is increased by {value} for {item.duration} turns. "
+                    self.apply_weapon_buff(value, item.duration, stat)
+                    item_display.show_item_use(item, (value, item.duration))
+                    message += f"You used {item.name} on your weapon. "
                 else:
                     return False, "You don't have a weapon equipped to use this item on."
+                    
             elif item.effect_type == "hot":
                 success, hot_message = self.apply_hot(item)
                 if success:
+                    item_display.show_item_use(item, (item.tick_effect, item.duration))
                     message += hot_message
                 else:
                     return False, hot_message
+                    
             elif item.effect_type == "teleport":
-                if game:
-                    return self.use_teleport_scroll(game)
+                if item.stack_size > 1:
+                    item.stack_size -= 1
                 else:
-                    return False, "Cannot use teleport scroll outside of game context!"
+                    self.inventory.remove(item)
+                self.cooldowns[item.name] = item.cooldown
+                return True, f"You used {item.name} and teleported to that location."
+                
             elif item.effect_type == "poison" and item.type == "weapon coating":
                 if self.equipped['weapon']:
                     if self.equipped['weapon'].weapon_type == "light":
@@ -1355,28 +1606,87 @@ class Player(Character):
             return False, message
         
     def use_teleport_scroll(self, game):
-        #Allows the use of the teleport scroll to move to any previously visited location
-        print("\nVisited locations:")
-        for i, location in enumerate(sorted(self.visited_locations), 1):
-            print(f"{i}. {location}")
-        
-        while True:
-            choice = input("\nEnter the number of the location you want to teleport to (or 'c' to cancel): ")
-            if choice.lower() == 'c':
-                return False, "Teleportation cancelled."
+        if not self.visited_locations:
+            return False, "You haven't visited any locations yet!"
             
-            try:
-                index = int(choice) - 1
-                locations = sorted(self.visited_locations)
-                if 0 <= index < len(locations):
-                    destination = locations[index]
-                    game.current_location = destination
-                    return True, f"You have teleported to {destination}."
-                else:
-                    print("Invalid choice. Please try again.")
-            except ValueError:
-                print("Invalid input. Please enter a number or 'c' to cancel.")
+        destination = self.show_teleport_menu()
+        if destination:
+            game.current_location = destination
+            self.display.draw_text(f"You teleported to {destination}.", (self.display.config.SCREEN_WIDTH // 2, self.display.config.SCREEN_HEIGHT - 250), 'large', center=True)
+            return destination
+        self.display.draw_text("You cancel your teleport scroll.", (self.display.config.SCREEN_WIDTH // 2, self.display.config.SCREEN_HEIGHT - 30), 'large', center=True)
+        pygame.display.flip()
+        pygame.time.wait(1000)
+        return
 
+    def show_teleport_menu(self):
+        """Display visual menu for teleport scroll selection"""
+        from world_map import WorldMap
+        self.world_map = WorldMap()
+
+        layout = self.display.calculate_layout()
+        battle_log = layout['battle_log_panel']
+        width = battle_log[0]
+        height = battle_log[1] 
+        x = battle_log[2]
+        y = battle_log[3]
+        
+        # Sort locations by level requirement
+        locations_by_level = []
+        for loc in sorted(self.visited_locations):
+            level_req = self.world_map.get_min_level(loc)
+            locations_by_level.append((loc, level_req))
+        locations_by_level.sort(key=lambda x: x[1])  # Sort by level requirement
+        
+        items_per_page = 6
+        scroll_offset = 0
+        available_locations = []
+
+        while True:
+            self.display.draw_panel(width, height, x, y)
+            self.display.draw_text("=== TELEPORT LOCATIONS ===",
+                                    (x + width // 2, y + 20),
+                                    'large', center=True)
+            
+            visible_items = locations_by_level[scroll_offset:scroll_offset + items_per_page]
+            for i, (location, min_level) in enumerate(visible_items, 1):
+                if self.level >= min_level:
+                    self.display.draw_text(f"{i}. {location} (Level {min_level})",
+                                            (x + width // 2, y + 30 + i * 30),
+                                            'medium', center=True)
+                    available_locations.append(location)
+                else:
+                    self.display.draw_text(f"X. {location} (Level {min_level}) [LOCKED]",
+                                            (x + width // 2, y + 30 + i * 30),
+                                            'medium', colour='red', center=True)
+            
+            nav_text = "UP/DOWN: Scroll | 1-6: Select | ESC: Cancel" if len(locations_by_level) > items_per_page else "1-6: Select | ESC: Cancel"
+            self.display.draw_text(nav_text, (x + width // 2, y + height - 30), 'medium', center=True)
+            
+            pygame.display.flip()
+            
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT or (
+                    event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE
+                ):
+                    return None
+                    
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_UP and scroll_offset > 0:
+                        scroll_offset -= 1
+                    elif event.key == pygame.K_DOWN:
+                        if scroll_offset < len(locations_by_level) - items_per_page:
+                            scroll_offset += 1
+                    elif event.key in range(pygame.K_1, pygame.K_7):
+                        index = event.key - pygame.K_1
+                        if index < len(visible_items):
+                            location = visible_items[index][0]
+                            if location in available_locations:
+                                self.display.draw_panel(width, height, x, y)
+                                return location
+                            
+            self.display.clock.tick(self.display.config.FPS)
+    
     def show_usable_items(self):
         """Shows a list of usable items if available, else prints that none are available"""
         usable_items = [item for item in self.inventory 
@@ -1414,40 +1724,19 @@ class Player(Character):
     
     def show_inventory(self):
         """Display inventory with stack sizes"""
-        print("\nInventory:")
-        
-        # Group stackable items
-        item_counts = {}
-        for item in self.inventory:
-            if item.is_stackable():
-                if item.name in item_counts:
-                    item_counts[item.name]["count"] += item.stack_size
-                else:
-                    item_counts[item.name] = {
-                        "item": item,
-                        "count": item.stack_size
-                    }
-                    
-        # Display non-stackable items and stacks
-        idx = 1
-        for i, item in enumerate(self.inventory, 1):
-            if not item.is_stackable():
-                self._display_item(idx, item)
-                idx += 1
-                
-        # Display stacked items
-        for name, data in item_counts.items():
-            if data["count"] > 0:
-                self._display_stacked_item(idx, data["item"], data["count"])
-                idx += 1
+        inventory_display = InventoryDisplay(self.display, self)
+        inventory_display.show_inventory()
     
     def _display_item(self, idx, item):
         """Helper method to display a single item"""
         stats = []
         if isinstance(item, SoulCrystal):
-            # Special handling for soul crystals
+        # Call soul crystal's own effect description method
             effect_desc = item.get_effect_description()
-            print(f"{idx}. {item.name} [{effect_desc}] (Value: {item.value} gold)")
+            print(f"{idx}. {item.name} [{item.type.title()} - {item.tier.title()}]")
+            # Print effect description indented for readability
+            for line in effect_desc.split('\n'):
+                print(f"    {line}")
             return
 
         # Regular item display logic
@@ -1593,134 +1882,98 @@ class Player(Character):
             available_attacks[name] = attack
         
         return available_attacks
-
+            
     def display_attack_options(self):
-        """Display available attack options with costs"""
-        print("\nChoose your attack type:")
+        """Display available attack options with costs using PyGame"""
         available_attacks = self.get_available_attack_types()
         weapon_type = self.equipped.get("weapon", {"weapon_type": "light"}).weapon_type
         base_stamina = self.get_weapon_stamina_cost(weapon_type)
         
+        # Use main battle log area for attack options
+        layout = self.display.calculate_layout()
+        battle_log = layout['battle_log_panel']
+        x = battle_log[2]
+        y = battle_log[3]
+        width = battle_log[0]
+        height = battle_log[1]
+        
+        # Clear and redraw battle log panel
+        self.display.draw_panel(width, height, x, y)
+        
+        # Draw title
+        self.display.draw_text("Choose your attack:",
+                            (x + width // 2, y + 20),
+                            'large', center=True)
+        
+        # Draw each attack option
+        current_y = y + 60
         for i, (_, attack) in enumerate(available_attacks.items(), 1):
-            # Basic attack info
             cost = base_stamina + attack['stamina_modifier']
-            info = [f"Stamina cost: {cost}"]
             
-            # Add damage modifier if it does damage
+            # Format attack info
+            info = [f"Stamina: {cost}"]
             if attack['damage_modifier'] > 0:
-                damage = int(attack['damage_modifier'] * 100)
-                info.append(f"Damage: {damage}%")
-                
-            # Add number of attacks if it has extra
+                info.append(f"Damage: {int(attack['damage_modifier'] * 100)}%")
             if 'extra_attacks' in attack:
-                total_hits = attack['extra_attacks'] + 1
-                info.append(f"Hits: {total_hits}")
-                
-            # Add stat buffs if any
-            if 'stat_buffs' in attack:
+                info.append(f"Hits: {attack['extra_attacks'] + 1}")
+            if 'stat_buffs' in attack and attack['stat_buffs']:
                 buffs = [f"{stat.replace('_', ' ').title()} +{value}" 
                         for stat, value in attack['stat_buffs'].items()]
                 info.append("Buffs: " + ", ".join(buffs))
-                
-            # Add stance info if it's a stance
-            if 'stance' in attack:
-                stance = attack['stance']
-                for key, value in stance.items():
-                    if key.endswith('_percentage'):
-                        info.append(f"{key.split('_')[0].title()} +{value}%")
-                info.append(f"Duration: {stance['duration']} turns")
-                
-            # Add effects if any
-            if attack.get('effect'):
+            if 'effect' in attack and attack['effect']:
                 info.append(f"Effect: {attack['effect'].replace('_', ' ').title()}")
+            if 'stance_type' in attack:
+                # Get stance effect from status_effects.py mappings
+                stance_effects = {
+                    'defensive': {
+                        'buffs': {'def': 33, 'bc': 33, 'dr': 33},
+                        'debuffs': {'att': 16, 'crit%': 16}
+                    },
+                    'power': {
+                        'buffs': {'att': 33, 'ap': 33, 'cdmg': 33},
+                        'debuffs': {'def': 16, 'eva': 16}
+                    },
+                    'berserker': {
+                        'buffs': {'att': 100, 'ap': 50, 'crit%': 50, 'cdmg': 100},
+                        'debuffs': {'def': 50, 'eva': 50, 'bc': 50, 'dr': 50}
+                    },
+                    'accuracy': {
+                        'buffs': {'acc': 66, 'crit%': 33},
+                        'debuffs': {'bc': 16, 'eva': 16}
+                    },
+                    'evasion': {
+                        'buffs': {'eva': 66, 'crit%': 33, 'cdmg': 33},
+                        'debuffs': {'def': 33, 'bc': 33, 'dr': 33}
+                    }
+                }
                 
-            # Add self damage warning if applicable
-            if attack.get('self_damage'):
-                info.append("Deals 20% self damage")
+                stance = stance_effects[attack['stance_type']]
+                if stance['buffs']:
+                    buffs = [f"{stat.replace('_', ' ').title()} +{value}%" 
+                            for stat, value in stance['buffs'].items()]
+                    info.append("Buffs: " + ", ".join(buffs))
+                if stance['debuffs']:
+                    debuffs = [f"{stat.replace('_', ' ').title()} -{value}%" 
+                             for stat, value in stance['debuffs'].items()]
+                    info.append("Debuffs: " + ", ".join(debuffs))
+                info.append(f"Duration: {attack['duration']} turns")
                 
-            # Print the formatted attack option
-            print(f"[{i}] {attack['name']} ({', '.join(info)})")
+            
+            # Draw attack option
+            self.display.draw_text(f"{i}. {attack['name']} ({', '.join(info)})",
+                                (x + 20, current_y),
+                                'small')
+            current_y += 30
+        
+        pygame.display.flip()
 
     def display_kill_stats(self):
+        from display import KillLogDisplay
         """
         Displays kill statistics organized by type and includes used souls
         """
-        print("\n=== Enemy Kill Statistics ===")
-        
-        # Current Kills
-        if self.kill_tracker or self.variant_kill_tracker or self.boss_kill_tracker:
-            print("\nCurrent Kills:")
-            if self.kill_tracker:
-                print("\nStandard Monster Kills:")
-                for enemy, count in sorted(self.kill_tracker.items(), key=lambda x: (-x[1], x[0])):
-                    print(f"{enemy}: {count}")
-                
-            if self.variant_kill_tracker:
-                print("\nVariant Type Kills:")
-                for variant, count in sorted(self.variant_kill_tracker.items(), key=lambda x: (-x[1], x[0])):
-                    print(f"{variant}: {count}")
-                    
-            if hasattr(self, 'boss_kill_tracker') and self.boss_kill_tracker:
-                print("\nBoss Monster Kills:")
-                for boss, count in sorted(self.boss_kill_tracker.items(), key=lambda x: (-x[1], x[0])):
-                    print(f"{boss}: {count}")
-        
-        # Used Kills
-        if hasattr(self, 'used_kill_tracker') and (self.used_kill_tracker or 
-            getattr(self, 'used_variant_tracker', {}) or 
-            getattr(self, 'used_boss_kill_tracker', {})):
-            print("\nUsed Kills (Traded to Soul Collector):")
-            if self.used_kill_tracker:
-                print("\nTraded Standard Monster Kills:")
-                for enemy, count in sorted(self.used_kill_tracker.items(), key=lambda x: (-x[1], x[0])):
-                    print(f"{enemy}: {count}")
-                
-            if hasattr(self, 'used_variant_tracker') and self.used_variant_tracker:
-                print("\nTraded Variant Type Kills:")
-                for variant, count in sorted(self.used_variant_tracker.items(), key=lambda x: (-x[1], x[0])):
-                    print(f"{variant}: {count}")
-                    
-            if hasattr(self, 'used_boss_kill_tracker') and self.used_boss_kill_tracker:
-                print("\nTraded Boss Monster Kills:")
-                for boss, count in sorted(self.used_boss_kill_tracker.items(), key=lambda x: (-x[1], x[0])):
-                    print(f"{boss}: {count}")
-        
-        # Calculate and display totals
-        current_standard_kills = sum(self.kill_tracker.values())
-        current_variant_kills = sum(self.variant_kill_tracker.values()) if self.variant_kill_tracker else 0
-        current_boss_kills = sum(self.boss_kill_tracker.values()) if hasattr(self, 'boss_kill_tracker') else 0
-        
-        used_standard_kills = sum(self.used_kill_tracker.values()) if hasattr(self, 'used_kill_tracker') else 0
-        used_variant_kills = sum(self.used_variant_tracker.values()) if hasattr(self, 'used_variant_tracker') else 0
-        used_boss_kills = sum(self.used_boss_kill_tracker.values()) if hasattr(self, 'used_boss_kill_tracker') else 0
-        
-        print(f"\nKill Totals:")
-        print(f"Current Standard Monsters: {current_standard_kills}")
-        print(f"Traded Standard Monsters: {used_standard_kills}")
-        
-        if current_variant_kills > 0 or used_variant_kills > 0:
-            print(f"Current Variant Monsters: {current_variant_kills}")
-            print(f"Traded Variant Monsters: {used_variant_kills}")
-            
-        if current_boss_kills > 0 or used_boss_kills > 0:
-            print(f"Current Boss Monsters: {current_boss_kills}")
-            print(f"Traded Boss Monsters: {used_boss_kills}")
-        
-        # Calculate current and used souls
-        current_souls = (current_standard_kills + 
-                        (current_variant_kills * 5) + 
-                        (current_boss_kills * 10))
-        
-        used_souls = (used_standard_kills + 
-                    (used_variant_kills * 5) + 
-                    (used_boss_kills * 10))
-        
-        print(f"\nSouls Available: {current_souls}")
-        print(f"Souls Traded: {used_souls}")
-        print(f"Total Souls Earned: {current_souls + used_souls}")
-        
-        print("\nNote: Standard kills = 1 soul, Variants = 5 souls, Bosses = 10 souls")
-        print("Souls can be traded with the Soul Collector random event for rewards!")
+        kill_display = KillLogDisplay(self.display, self)
+        kill_display.show_kill_log()
     
     def record_kill(self, enemy_name):
         """

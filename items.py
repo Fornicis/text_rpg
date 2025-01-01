@@ -806,43 +806,43 @@ class SoulCrystal(Item):
         return success, f"Soul Crystal activated!{message}"
         
     def get_description(self):
-        """Get detailed description of crystal's effects (for creation)"""
+        """Get detailed description of crystal's effects with formatted layout"""
+        if self.used:
+            return "A depleted soul crystal."
+        
         desc = []
         
-        if self.used:
-            desc.append("A depleted soul crystal.")
-            return "\n".join(desc)
-                
-        # List stored stat buffs
-        desc.append("Stored Buffs:")
-        for stat, (value, duration) in sorted(self.stored_buffs.items()):
-            stat_name = stat.replace('_', ' ').title()
-            desc.append(f"- {stat_name}: +{value} for {duration} turns")
-                
-        # List special effects with full details
+        # Stored Buffs Section
+        if self.stored_buffs:
+            desc.append("Stored Buffs:")
+            for stat, (value, duration) in sorted(self.stored_buffs.items()):
+                stat_name = stat.replace('_', ' ').title()
+                desc.append(f"* {stat_name}: +{value} for {duration} turns")
+        
+        # Special Effects Section
         if self.special_effects:
             desc.append("\nSpecial Effects:")
             for effect in self.special_effects:
-                desc.append(f"- {effect.get_full_description()}")
-                    
-        # Show soul sources if any
+                desc.append(f"* {effect.get_full_description()}")
+        
+        # Soul Sources Section
         if self.soul_source:
             desc.append("\nCreated from:")
             if "standard" in self.soul_source:
                 desc.append("Standard Souls:")
                 for monster, count in sorted(self.soul_source["standard"].items()):
-                    desc.append(f"- {count}x {monster}")
-                    
+                    desc.append(f"* {count}x {monster}")
+            
             if "variant" in self.soul_source:
                 desc.append("Variant Souls:")
                 for variant, count in sorted(self.soul_source["variant"].items()):
-                    desc.append(f"- {count}x {variant}")
-                        
+                    desc.append(f"* {count}x {variant}")
+                
             if "boss" in self.soul_source:
                 desc.append("Boss Souls:")
                 for boss, count in sorted(self.soul_source["boss"].items()):
-                    desc.append(f"- {count}x {boss}")
-                
+                    desc.append(f"* {count}x {boss}")
+        
         return "\n".join(desc)
 
     def get_effect_description(self):
@@ -853,7 +853,7 @@ class SoulCrystal(Item):
         effect_parts = []
         
         # Add stat buffs
-        effect_parts.append("Stored Buffs:")
+        effect_parts.append("\nStored Buffs:")
         for stat, (value, duration) in sorted(self.stored_buffs.items()):
             effect_parts.append(f"- {stat.replace('_', ' ').title()} +{value} for {duration} turns")
         

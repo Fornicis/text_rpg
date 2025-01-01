@@ -1,8 +1,9 @@
 import os
 import json
+import pygame
 from datetime import datetime
 from save_system import save_game, SAVE_DIRECTORY
-from display import pause
+from display import Display
 
 class AutosaveManager:
     def __init__(self, game, autosave_frequency = 10):
@@ -12,6 +13,7 @@ class AutosaveManager:
             game: Reference to the main game instance
             auto_save frequency: Number of turns between autosaves
         """
+        self.display = Display()
         self.game = game
         self.autosave_frequency = autosave_frequency
         self.turns_since_autosave = 0
@@ -22,8 +24,9 @@ class AutosaveManager:
         """Toggles autosave on/off."""
         self.autosave_enabled = not self.autosave_enabled
         status = "enabled" if self.autosave_enabled else "disabled"
-        print(f"\nAutosave {status}.")
-        pause()
+        self.display.draw_text(f"Autosave {status}", (self.display.config.SCREEN_WIDTH // 2, self.display.config.SCREEN_HEIGHT // 1.3), size='large', colour='white', center=True)
+        self.display.pause()
+        pygame.display.flip()
         
     def increment_turn(self):
         """Increment turn counter and performs autosave if needed."""
